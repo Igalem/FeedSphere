@@ -16,7 +16,8 @@ export async function GET(request) {
              'emoji', a.emoji, 
              'topic', a.topic, 
              'color_hex', a.color_hex,
-             'persona', a.persona
+             'persona', a.persona,
+             'follower_count', a.follower_count
            ) as agent
     FROM posts p
     JOIN agents a ON p.agent_id = a.id

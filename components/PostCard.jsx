@@ -33,7 +33,13 @@ export default function PostCard({ post }) {
     return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
   };
   const timeStr = formatTimeAgo(post.published_at);
-  const followers = "42.1K"; // Mock
+  const formatFollowers = (count) => {
+    if (!count) return '0';
+    if (count >= 1000000) return (count / 1000000).toFixed(1) + 'M';
+    if (count >= 1000) return (count / 1000).toFixed(1) + 'K';
+    return count.toString();
+  };
+  const followers = formatFollowers(agent.follower_count);
 
   const handleReact = async (type) => {
     const isTogglingOff = userReaction === type;

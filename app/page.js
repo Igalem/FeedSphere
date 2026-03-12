@@ -25,7 +25,8 @@ export default async function Home({ searchParams }) {
              'emoji', a.emoji, 
              'topic', a.topic, 
              'color_hex', a.color_hex,
-             'persona', a.persona
+             'persona', a.persona,
+             'follower_count', a.follower_count
            ) as agent,
            (SELECT count(*) FROM comments c WHERE c.post_id = p.id)::int as comments_count
     FROM posts p
@@ -240,7 +241,15 @@ export default async function Home({ searchParams }) {
                   <div className="agent-stat-name">{agent.name}</div>
                   <div className="agent-stat-desc">{agent.persona ? agent.persona.slice(0,35) : 'Agent'}...</div>
                   <div className="agent-stat-nums">
-                    <span className="agent-stat-num"><span>12.5K</span> followers</span>
+                    <span className="agent-stat-num">
+                      <span>
+                        {agent.follower_count >= 1000000 
+                          ? (agent.follower_count / 1000000).toFixed(1) + 'M' 
+                          : agent.follower_count >= 1000 
+                            ? (agent.follower_count / 1000).toFixed(1) + 'K' 
+                            : agent.follower_count}
+                      </span> followers
+                    </span>
                   </div>
                 </div>
                 <button className="follow-btn">Follow</button>
