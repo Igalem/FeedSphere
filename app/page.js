@@ -1,5 +1,6 @@
 import { db } from '@/lib/db';
 import PostCard from '@/components/PostCard';
+import FeedContent from '@/components/FeedContent';
 import Link from 'next/link';
 
 export const revalidate = 60;
@@ -20,10 +21,10 @@ const TRENDING = [
 ];
 
 export default async function Home({ searchParams }) {
-  const { topic } = await searchParams; 
-  const filterTopic = topic || 'All';
+  const { agent: agentSlug } = await searchParams; 
+  const activeAgentSlug = agentSlug || 'All';
 
-  // Fetch agents for the sidebar/discover
+  // Fetch all agents for the filters and sidebar
   let agents = [];
   try {
     const res = await db.query('SELECT * FROM agents ORDER BY name ASC');
@@ -46,22 +47,20 @@ export default async function Home({ searchParams }) {
   `;
   
   const values = [];
-  if (filterTopic !== 'All') {
-    sql += ` WHERE a.topic = $1`;
-    values.push(filterTopic);
+  if (activeAgentSlug !== 'All') {
+    sql += ` WHERE a.slug = $1`;
+    values.push(activeAgentSlug);
   }
   
-  sql += ` ORDER BY COALESCE(p.published_at, p.created_at) DESC LIMIT 50`;
+  sql += ` ORDER BY COALESCE(p.published_at, p.created_at) DESC LIMIT 10`;
 
-  let posts = [];
+  let initialPosts = [];
   try {
     const res = await db.query(sql, values);
-    posts = res.rows;
+    initialPosts = res.rows;
   } catch (error) {
     console.error("DB Fetch Error:", error);
   }
-
-  const topics = ['All', 'Sports', 'Tech', 'Finance', 'Debates'];
 
   return (
     <div className="app">
@@ -74,9 +73,9 @@ export default async function Home({ searchParams }) {
 
         <nav>
           <div className="nav-label">Navigate</div>
-          <div className="nav-item active">
+          <Link href="/" className={`nav-item ${activeAgentSlug === 'All' ? 'active' : ''}`} style={{ textDecoration: 'none' }}>
             <span className="nav-icon">🏠</span> Home Feed
-          </div>
+          </Link>
           <div className="nav-item">
             <span className="nav-icon">🔥</span> Trending
             <span className="badge">24</span>
@@ -103,13 +102,15 @@ export default async function Home({ searchParams }) {
           <div className="nav-label">My Agents</div>
           <div className="sidebar-agents">
             {agents.slice(0, 5).map(agent => (
-              <div key={agent.id} className="agent-nav">
-                <div className="agent-avatar-sm" style={{ background: `${agent.color_hex}22` }}>
+              <Link key={agent.id} href={`/?agent=${agent.slug}`} className={`agent-nav ${activeAgentSlug === agent.slug ? 'active' : ''}`} style={{ textDecoration: 'none' }}>
+                <div className="agent-avatar-sm" style={{ background: `${agent.color_hex}22`, border: activeAgentSlug === agent.slug ? `1px solid ${agent.color_hex}` : 'none' }}>
                   {agent.emoji}
                 </div>
-                <span className="agent-name-sm">{agent.name.split(' ')[0]} {agent.name.split(' ')[1] || ''}</span>
-                <div className="agent-dot"></div>
-              </div>
+                <span className="agent-name-sm" style={{ color: activeAgentSlug === agent.slug ? 'var(--text)' : 'var(--muted)' }}>
+                  {agent.name.split(' ')[0]} {agent.name.split(' ')[1] || ''}
+                </span>
+                {activeAgentSlug === agent.slug && <div className="agent-dot"></div>}
+              </Link>
             ))}
           </div>
         </div>
@@ -120,24 +121,26 @@ export default async function Home({ searchParams }) {
         <div className="feed-header">
           <div className="feed-title">Your Feed</div>
           <div className="feed-filters">
-            {topics.map(t => (
+            <Link
+              href="/"
+              className={`filter-btn ${activeAgentSlug === 'All' ? 'active' : ''}`}
+            >
+              All
+            </Link>
+            {agents.map(agent => (
               <Link
-                key={t}
-                href={t === 'All' ? '/' : `/?topic=${t}`}
-                className={`filter-btn ${filterTopic === t ? 'active' : ''}`}
+                key={agent.slug}
+                href={`/?agent=${agent.slug}`}
+                className={`filter-btn ${activeAgentSlug === agent.slug ? 'active' : ''}`}
               >
-                {t === 'Sports' ? '⚽ Sports' : t === 'Tech' ? '💻 Tech' : t === 'Finance' ? '📈 Finance' : t === 'Debates' ? '⚔️ Debates' : 'All'}
+                {agent.emoji} {agent.name.split(' ')[0]}
               </Link>
             ))}
           </div>
         </div>
 
         <div id="feedContent">
-          {posts.length === 0 ? (
-             <div style={{ textAlign:'center', padding:'40px', color:'var(--muted)' }}>No posts yet...</div>
-          ) : (
-            posts.map(post => <PostCard key={post.id} post={post} />)
-          )}
+          <FeedContent initialPosts={initialPosts} activeAgent={agentSlug} />
         </div>
       </main>
 

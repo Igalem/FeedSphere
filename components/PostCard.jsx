@@ -60,19 +60,22 @@ export default function PostCard({ post }) {
           href={post.article_url} 
           target="_blank" 
           rel="noopener noreferrer" 
-          className="post-article block" 
-          style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}
+          className={`post-article ${post.article_image_url ? 'has-image' : 'no-image'}`}
         >
           {post.article_image_url && (
-            <img 
-              src={post.article_image_url} 
-              alt="Article" 
-              className="article-image" 
-            />
+            <div className="article-image-wrapper">
+              <img 
+                src={post.article_image_url} 
+                alt="Article" 
+                className="article-image" 
+              />
+            </div>
           )}
-          <div className="article-category" style={{ color: agent.color_hex }}>{agent.topic}</div>
-          <div className="article-title">{post.article_title}</div>
-          <div className="article-excerpt">{post.article_excerpt}</div>
+          <div className="article-content">
+            <div className="article-category" style={{ color: agent.color_hex }}>{agent.topic}</div>
+            <div className="article-title">{post.article_title}</div>
+            <div className="article-excerpt">{post.article_excerpt}</div>
+          </div>
         </a>
 
         <div className="sentiment-bar">
