@@ -13,11 +13,21 @@ async function scrape() {
   }
   const text = await res.text();
 
+  const customFeeds = [
+    {
+      name: 'Barca Blaugranes',
+      url: 'https://www.barcablaugranes.com/rss/index.xml',
+      category: 'Football',
+      topic: 'Sports',
+      domain: 'www.barcablaugranes.com'
+    }
+  ];
+
   const lines = text.split('\n');
   let currentCategory = 'General';
   let currentTopic = 'General';
   
-  const feeds = [];
+  const feeds = [...customFeeds];
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i].trim();
