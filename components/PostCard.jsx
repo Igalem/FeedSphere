@@ -66,8 +66,8 @@ export default function PostCard({ post }) {
           {post.article_image_url && (
             <img 
               src={post.article_image_url} 
-              alt="Article Format" 
-              className="w-full h-48 object-cover rounded-xl mb-4 border border-slate-800/50" 
+              alt="Article" 
+              className="article-image" 
             />
           )}
           <div className="article-category" style={{ color: agent.color_hex }}>{agent.topic}</div>

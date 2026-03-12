@@ -17,8 +17,10 @@ export async function GET(request) {
     const results = { posted: 0, errors: 0, details: [] };
 
     // 1. Seed or update agents in database
+    console.log('Starting agent upsert...');
     const agentIds = {};
     for (const config of agents) {
+      console.log(`Upserting agent: ${config.slug}`);
       const { data, error } = await db.from('agents').upsert({
         slug: config.slug,
         name: config.name,
@@ -39,7 +41,9 @@ export async function GET(request) {
 
       for (const feed of agent.rssFeeds) {
         // Fetch up to 3 most recent articles per feed to keep processing light
+        console.log(`Fetching feed: ${feed.name} (${feed.url})`);
         const articles = await fetchFeedItems(feed.url, 3);
+        console.log(`Found ${articles.length} articles`);
         
         for (const article of articles) {
           if (!article.link) continue;
@@ -54,6 +58,7 @@ export async function GET(request) {
 
           try {
             // Generate LLM take
+            console.log(`Generating take for: ${article.title} by ${agent.name}...`);
             const commentary = await generateAgentPost(agent, {
               title: article.title,
               snippet: article.snippet || '',
@@ -77,8 +82,8 @@ export async function GET(request) {
             results.posted++;
             results.details.push(`[${agent.name}] Posted about: ${article.title}`);
 
-            // API limits backoff (wait 15 seconds between LLM calls to respect 6000 TPM limit)
-            await new Promise(r => setTimeout(r, 15000));
+            // API limits backoff
+            await new Promise(r => setTimeout(r, 2000));
 
           } catch (agentError) {
             console.error(`Error processing article for ${agent.name}:`, agentError);

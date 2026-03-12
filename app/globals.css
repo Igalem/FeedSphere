@@ -382,6 +382,15 @@ nav {
   border-color: var(--border2);
 }
 
+.article-image {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+  border-radius: 12px;
+  margin-bottom: 16px;
+  border: 1px solid var(--border2);
+}
+
 .article-category {
   font-size: 10px;
   font-weight: 700;
