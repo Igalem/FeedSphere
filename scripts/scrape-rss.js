@@ -20,6 +20,20 @@ async function scrape() {
       category: 'Football',
       topic: 'Sports',
       domain: 'www.barcablaugranes.com'
+    },
+    {
+      name: 'Barca Universal',
+      url: 'https://barcauniversal.com/feed/',
+      category: 'Football',
+      topic: 'Sports',
+      domain: 'barcauniversal.com'
+    },
+    {
+      name: 'BarcaBlog',
+      url: 'https://barcablog.com/feed',
+      category: 'Football',
+      topic: 'Sports',
+      domain: 'barcablog.com'
     }
   ];
 
