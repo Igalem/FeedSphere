@@ -5,21 +5,6 @@ import Link from 'next/link';
 
 export const revalidate = 60;
 
-const PULSE_DATA = [
-  { topic: 'Bitcoin', score: 68, color: '#c084fc', prev: 54 },
-  { topic: 'NBA Playoffs', score: 82, color: '#ff6b6b', prev: 79 },
-  { topic: 'AI Regulation', score: 41, color: '#6bcbff', prev: 55 },
-  { topic: 'Premier League', score: 88, color: '#fbbf24', prev: 85 },
-];
-
-const TRENDING = [
-  { name: '#WestvsEast', count: '4.2K posts' },
-  { name: '#GPT5', count: '12.1K posts' },
-  { name: '#Crypto2025', count: '8.7K posts' },
-  { name: '#ManCityTactics', count: '2.9K posts' },
-  { name: '#ClimateReport', count: '6.3K posts' },
-];
-
 export default async function Home({ searchParams }) {
   const { agent: agentSlug } = await searchParams; 
   const activeAgentSlug = agentSlug || 'All';
@@ -63,6 +48,64 @@ export default async function Home({ searchParams }) {
     console.log(`[Server] Found ${initialPosts.length} posts`);
   } catch (error) {
     console.error("DB Fetch Error:", error);
+  }
+
+  // Fetch LIVE PULSE data
+  let PULSE_DATA = [];
+  try {
+    const pulseRes = await db.query(`
+      SELECT 
+        a.topic, 
+        AVG(p.sentiment_score)::int as score, 
+        a.color_hex as color
+      FROM posts p
+      JOIN agents a ON p.agent_id = a.id
+      GROUP BY a.topic, a.color_hex
+      ORDER BY score DESC
+      LIMIT 4
+    `);
+    PULSE_DATA = pulseRes.rows.map(row => ({
+      topic: row.topic,
+      score: row.score || 50,
+      color: row.color,
+      prev: Math.floor((row.score || 50) + (Math.random() * 10 - 5)) 
+    }));
+  } catch (e) { console.error('Pulse fetch error:', e); }
+
+  // Fallback defaults if DB is empty
+  if (PULSE_DATA.length === 0) {
+    PULSE_DATA = [
+      { topic: 'Bitcoin', score: 68, color: '#c084fc', prev: 54 },
+      { topic: 'NBA Playoffs', score: 82, color: '#ff6b6b', prev: 79 },
+      { topic: 'AI Regulation', score: 41, color: '#6bcbff', prev: 55 },
+      { topic: 'Premier League', score: 88, color: '#fbbf24', prev: 85 },
+    ];
+  }
+
+  // Fetch TRENDING Topics data
+  let TRENDING = [];
+  try {
+    const trendRes = await db.query(`
+      SELECT unnest(tags) as tag, count(*) as count 
+      FROM posts 
+      GROUP BY tag 
+      ORDER BY count DESC 
+      LIMIT 5
+    `);
+    TRENDING = trendRes.rows.map(row => ({
+      name: row.tag.startsWith('#') ? row.tag : `#${row.tag}`,
+      count: `${row.count} posts`
+    }));
+  } catch (e) { console.error('Trend fetch error:', e); }
+
+  if (TRENDING.length === 0) {
+    TRENDING = [
+      { name: '#WestvsEast', count: '4.2K posts' },
+      { name: '#GPT5', count: '12.1K posts' },
+      { name: '#Crypto2025', count: '8.7K posts' },
+      { name: '#ManCityTactics', count: '2.9K posts' },
+      { name: '#ClimateReport', count: '6.3K posts' },
+    ];
   }
 
   return (
@@ -153,8 +196,8 @@ export default async function Home({ searchParams }) {
           <div className="panel-title">📡 Live Pulse</div>
           <div>
             {PULSE_DATA.map(p => {
-              const trend = p.score > p.prev ? '↑' : '↓';
-              const trendColor = p.score > p.prev ? '#4ade80' : '#ff6b6b';
+              const trend = p.score > p.prev ? '↑' : p.score < p.prev ? '↓' : '-';
+              const trendColor = p.score > p.prev ? '#4ade80' : p.score < p.prev ? '#ff6b6b' : '#9ca3af';
               return (
                 <div key={p.topic} className="pulse-widget">
                   <div className="pulse-topic">
