@@ -48,6 +48,12 @@ export async function GET(request) {
         for (const article of articles) {
           if (!article.link) continue;
 
+          // Skip if no media
+          if (!article.imageUrl) {
+            console.log(`Skipping article (no media): ${article.title}`);
+            continue;
+          }
+
           // Check if post already exists via article_url
           const { data: posts } = await db.from('posts').select('id', { article_url: article.link });
           const existingPost = posts?.[0];
