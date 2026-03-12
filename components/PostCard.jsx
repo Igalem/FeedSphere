@@ -1,77 +1,84 @@
 "use client";
-import React from 'react';
-import AgentAvatar from './AgentAvatar';
-import { getAgentBySlug } from '@/lib/agents';
+import React, { useState } from 'react';
 
 export default function PostCard({ post }) {
-  // We'll hydrate agent details based on agent_id or a joined agent object from DB
-  // For now, assume post.agent is joined or we fallback via slug if needed.
-  // We'll require the DB query to join the 'agents' table.
   const agent = post.agent; 
-
   if (!agent) return null;
 
+  const [liked, setLiked] = useState(false);
+  const [bookmarked, setBookmarked] = useState(false);
+  const [commentsOpen, setCommentsOpen] = useState(false);
+
+  // Compute mock sentiment/likes until Phase 4 implements it
+  const sentiment = 40 + ((post.id || 0).toString().length * 7 || 50) % 60; // Random deterministic
+  const sentColor = sentiment > 65 ? '#4ade80' : sentiment > 40 ? '#fbbf24' : '#ff6b6b';
+  const timeStr = post.published_at ? new Date(post.published_at).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' }) : 'Recently';
+  
+  const followers = "42.1K"; // Mock
+
   return (
-    <article className="group relative w-full mb-6 backdrop-blur-xl bg-slate-900/40 border border-slate-700/50 hover:bg-slate-800/60 hover:border-slate-600/50 transition-all duration-300 rounded-2xl p-6 shadow-xl overflow-hidden">
-      
-      {/* Background Glow matching agent color */}
-      <div 
-        className="absolute -top-24 -right-24 w-48 h-48 rounded-full blur-[80px] opacity-20 pointer-events-none transition-opacity duration-300 group-hover:opacity-40"
-        style={{ backgroundColor: agent.color_hex }}
-      />
-
-      <div className="flex items-start justify-between mb-4 relative z-10">
-        <AgentAvatar agent={agent} size="md" showName={true} />
-        <div className="flex flex-col items-end gap-1">
-          <div className="text-[10px] font-medium text-slate-500 uppercase tracking-widest bg-slate-800/30 px-2 py-0.5 rounded border border-slate-700/50">
-            {post.published_at ? new Date(post.published_at).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' }) : 'Recently'}
+    <>
+      <div className="post-card">
+        <div className="post-header">
+          <div className="agent-avatar" style={{ background: `${agent.color_hex}22`, borderColor: `${agent.color_hex}33` }}>
+            {agent.emoji}
           </div>
-          <div className="text-[10px] font-semibold px-2 py-0.5 bg-indigo-500/10 rounded text-indigo-400 ring-1 ring-indigo-500/20">
-            Auto-generated
+          <div className="post-meta">
+            <div className="post-agent-name">
+              {agent.name}
+              <span className="agent-tag" style={{ background: `${agent.color_hex}22`, color: agent.color_hex }}>
+                {agent.topic}
+              </span>
+            </div>
+            <div className="post-time">{timeStr} · <span style={{ color: agent.color_hex }}>{followers} followers</span></div>
           </div>
         </div>
-      </div>
 
-      <div className="pl-16 relative z-10">
-        {/* Agent Take */}
-        <p className="text-lg text-slate-100 font-medium leading-relaxed mb-5">
-          "{post.agent_commentary}"
-        </p>
+        <div className="post-source">
+          <span className="source-pill">📰 {post.source_name || 'RSS Feed'}</span>
+          <span className="agent-tag" style={{ background: '#ffffff0a', color: 'var(--muted)', fontSize: '10px', padding: '2px 8px', borderRadius: '20px' }}>
+            {agent.topic}
+          </span>
+        </div>
 
-        {/* Source Article Card */}
-        <a 
-          href={post.article_url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="block w-full bg-slate-950/50 border border-slate-800 rounded-xl p-4 hover:border-slate-700 transition-colors"
-        >
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-              {post.source_name}
-            </span>
+        <div className="post-commentary">"{post.agent_commentary}"</div>
+
+        <div className="post-article">
+          <div className="article-category" style={{ color: agent.color_hex }}>{agent.topic}</div>
+          <div className="article-title">{post.article_title}</div>
+          <div className="article-excerpt">{post.article_excerpt}</div>
+        </div>
+
+        <div className="sentiment-bar">
+          <span className="sentiment-label">Sentiment</span>
+          <div className="sentiment-track">
+            <div className="sentiment-fill" style={{ width: `${sentiment}%`, background: sentColor }}></div>
           </div>
-          <h3 className="text-md font-bold text-slate-200 mb-1 leading-snug">
-            {post.article_title}
-          </h3>
-          <p className="text-sm text-slate-500 line-clamp-2">
-            {post.article_excerpt}
-          </p>
-        </a>
+          <span className="sentiment-val" style={{ color: sentColor }}>{sentiment}%</span>
+        </div>
 
-        {/* Engagement Bar Placeholder */}
-        <div className="flex items-center gap-4 mt-5 pt-4 border-t border-slate-800/50">
-          <button className="flex items-center gap-2 text-sm text-slate-400 hover:text-white transition-colors">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
-            <span>Discuss</span>
+        <div className="post-actions">
+          <button className={`action-btn ${liked ? 'liked' : ''}`} onClick={() => setLiked(!liked)}>
+            ❤️ {liked ? 848 : 847}
           </button>
-          
-          <div className="flex space-x-2 ml-auto">
-            {/* These will be functional in Phase 3/4 */}
-            <span className="px-2 py-1 bg-slate-800 rounded-md text-xs font-medium text-slate-300 cursor-pointer hover:bg-slate-700">🔥 Fire</span>
-            <span className="px-2 py-1 bg-slate-800 rounded-md text-xs font-medium text-slate-300 cursor-pointer hover:bg-slate-700">🧠 Insightful</span>
-          </div>
+          <button className="action-btn" onClick={() => setCommentsOpen(!commentsOpen)}>
+            💬 124
+          </button>
+          <button className="action-btn">🔄 203</button>
+          <div className="action-sep"></div>
+          <button className={`action-btn ${bookmarked ? 'bookmarked' : ''}`} onClick={() => setBookmarked(!bookmarked)}>
+            🔖
+          </button>
+          <button className="action-btn">↗️ Share</button>
         </div>
       </div>
-    </article>
+      
+      <div className={`comments-section ${commentsOpen ? 'open' : ''}`}>
+        <div className="comment-input-row">
+          <div className="user-avatar">You</div>
+          <textarea className="comment-input" placeholder="Share your take..."></textarea>
+        </div>
+      </div>
+    </>
   );
 }
