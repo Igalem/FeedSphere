@@ -5,10 +5,14 @@ export default function PostCard({ post }) {
   const agent = post.agent; 
   if (!agent) return null;
 
-  const [reactions, setReactions] = useState(post.reaction_counts || { fire: 0, brain: 0, trash: 0, called: 0 });
-  const [userReactions, setUserReactions] = useState({}); // Track which reactions the user has clicked
+  const [reactions, setReactions] = useState(post.reaction_counts || { fire: 0, brain: 0, cold: 0, spot_on: 0 });
+  const [userReaction, setUserReaction] = useState(null); // Track the single reaction the user has clicked
   const [bookmarked, setBookmarked] = useState(false);
   const [commentsOpen, setCommentsOpen] = useState(false);
+  const [comments, setComments] = useState([]);
+  const [newCommentStr, setNewCommentStr] = useState('');
+  const [loadingComments, setLoadingComments] = useState(false);
+  const [localAddedComments, setLocalAddedComments] = useState(0);
 
   // Use real sentiment_score from post, fallback to 50
   const sentiment = post.sentiment_score || 50; 
@@ -32,22 +36,89 @@ export default function PostCard({ post }) {
   const followers = "42.1K"; // Mock
 
   const handleReact = async (type) => {
+    const isTogglingOff = userReaction === type;
+    const oldReaction = userReaction;
+    const newReaction = isTogglingOff ? null : type;
+
     // Optimistic update
-    setReactions(prev => ({ ...prev, [type]: (prev[type] || 0) + 1 }));
-    setUserReactions(prev => ({ ...prev, [type]: true }));
+    setReactions(prev => {
+      const updated = { ...prev };
+      if (oldReaction && updated[oldReaction] > 0) updated[oldReaction] -= 1;
+      if (newReaction) updated[newReaction] = (updated[newReaction] || 0) + 1;
+      return updated;
+    });
+    setUserReaction(newReaction);
 
     try {
       const res = await fetch('/api/posts/react', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ postId: post.id, reactionType: type })
+        body: JSON.stringify({ 
+          postId: post.id, 
+          reactionType: newReaction, 
+          oldReactionType: oldReaction 
+        })
       });
       if (!res.ok) {
-        // Rollback on error if needed
         console.error('Failed to react');
       }
     } catch (err) {
       console.error(err);
+    }
+  };
+
+  const toggleComments = async () => {
+    const willOpen = !commentsOpen;
+    setCommentsOpen(willOpen);
+    if (willOpen && comments.length === 0) {
+      setLoadingComments(true);
+      try {
+        const res = await fetch(`/api/posts/${post.id}/comments`);
+        if (res.ok) {
+          const data = await res.json();
+          setComments(data.comments || []);
+        }
+      } catch (err) {
+        console.error("Failed to load comments", err);
+      } finally {
+        setLoadingComments(false);
+      }
+    }
+  };
+
+  const handleSendComment = async () => {
+    if (!newCommentStr.trim()) return;
+
+    const tmpId = 'temp-' + Date.now();
+    const optimisticComment = {
+      id: tmpId,
+      content: newCommentStr,
+      username: 'You',
+      created_at: new Date().toISOString()
+    };
+    setComments([...comments, optimisticComment]);
+    setNewCommentStr('');
+    setLocalAddedComments(prev => prev + 1);
+
+    try {
+      const res = await fetch(`/api/posts/${post.id}/comments`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: optimisticComment.content })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setComments(prev => prev.map(c => c.id === tmpId ? data.comment : c));
+      }
+    } catch (err) {
+      console.error("Failed to post comment", err);
+    }
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendComment();
     }
   };
 
@@ -117,35 +188,54 @@ export default function PostCard({ post }) {
         </div>
 
         <div className="post-actions">
-          <button className={`action-btn ${userReactions.fire ? 'liked' : ''}`} onClick={() => handleReact('fire')}>
-            🔥 {reactions.fire || 0}
+          <button className={`action-btn ${userReaction === 'fire' ? 'liked' : ''}`} onClick={() => handleReact('fire')}>
+            🔥 Fire {reactions.fire || 0}
           </button>
-          <button className={`action-btn ${userReactions.brain ? 'liked' : ''}`} onClick={() => handleReact('brain')}>
-            🧠 {reactions.brain || 0}
+          <button className={`action-btn ${userReaction === 'brain' ? 'liked' : ''}`} onClick={() => handleReact('brain')}>
+            🧠 Brain {reactions.brain || 0}
           </button>
-          <button className={`action-btn ${userReactions.trash ? 'liked' : ''}`} onClick={() => handleReact('trash')}>
-            🗑️ {reactions.trash || 0}
+          <button className={`action-btn ${userReaction === 'cold' ? 'liked' : ''}`} onClick={() => handleReact('cold')}>
+            🧊 Cold {reactions.cold || 0}
           </button>
-          <button className={`action-btn ${userReactions.called ? 'liked' : ''}`} onClick={() => handleReact('called')}>
-            ⚖️ {reactions.called || 0}
+          <button className={`action-btn ${userReaction === 'spot_on' ? 'liked' : ''}`} onClick={() => handleReact('spot_on')}>
+            🎯 Spot On {reactions.spot_on || 0}
           </button>
           
           <div className="action-sep"></div>
           
-          <button className="action-btn" onClick={() => setCommentsOpen(!commentsOpen)}>
-            💬 12
+          <button className="action-btn" onClick={toggleComments}>
+            💬 Comment {Math.max((post.comments_count || 0) + localAddedComments, comments.length)}
           </button>
           <button className={`action-btn ${bookmarked ? 'bookmarked' : ''}`} onClick={() => setBookmarked(!bookmarked)}>
-            🔖
+            🔖 Book
           </button>
           <button className="action-btn">↗️</button>
         </div>
       </div>
       
       <div className={`comments-section ${commentsOpen ? 'open' : ''}`}>
-        <div className="comment-input-row">
+        <div className="comments-list" style={{ marginBottom: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          {loadingComments && <div style={{ fontSize: '13px', color: 'var(--muted)' }}>Loading comments...</div>}
+          {!loadingComments && comments.map((c) => (
+            <div key={c.id} className="comment-item" style={{ fontSize: '13px', padding: '8px', background: '#ffffff0a', borderRadius: '8px' }}>
+              <div style={{ fontWeight: '600', color: c.agent_color ? c.agent_color : '#fff', marginBottom: '4px' }}>
+                {c.agent_name ? `${c.agent_emoji} ${c.agent_name}` : c.username}
+              </div>
+              <div style={{ color: '#ccc' }}>{c.content}</div>
+            </div>
+          ))}
+        </div>
+        <div className="comment-input-row" style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
           <div className="user-avatar">You</div>
-          <textarea className="comment-input" placeholder="Share your take..."></textarea>
+          <textarea 
+            className="comment-input" 
+            placeholder="Share your take..." 
+            value={newCommentStr}
+            onChange={e => setNewCommentStr(e.target.value)}
+            onKeyDown={handleKeyDown}
+            style={{ flex: 1, minHeight: '38px', borderRadius: '8px', resize: 'none', background: '#000', border: '1px solid #333', padding: '8px 12px', color: 'var(--text)' }}
+          ></textarea>
+          <button onClick={handleSendComment} className="send-btn" style={{ padding: '8px 12px', borderRadius: '8px', background: 'var(--primary)', border: 'none', color: '#fff', cursor: 'pointer', fontWeight: 'bold' }}>{">"}</button>
         </div>
       </div>
     </>

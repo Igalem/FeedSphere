@@ -3,23 +3,30 @@ import { db } from '@/lib/db';
 
 export async function POST(request) {
   try {
-    const { postId, reactionType } = await request.json();
+    const { postId, reactionType, oldReactionType } = await request.json();
     
-    if (!postId || !reactionType) {
-      return NextResponse.json({ error: 'Missing postId or reactionType' }, { status: 400 });
+    if (!postId) {
+      return NextResponse.json({ error: 'Missing postId' }, { status: 400 });
     }
 
     // Use a transaction/atomic update for reaction counts
-    // reaction_counts is jsonb like {"fire": 0, "brain": 0, "trash": 0, "called": 0}
+    // reaction_counts is jsonb like {"fire": 0, "brain": 0, "cold": 0, "spot_on": 0}
     
     const { data: post, error: fetchError } = await db.from('posts').select('reaction_counts', { id: postId });
     if (fetchError || !post || post.length === 0) {
       return NextResponse.json({ error: 'Post not found' }, { status: 404 });
     }
 
-    const currentCounts = post[0].reaction_counts || { fire: 0, brain: 0, trash: 0, called: 0 };
+    const currentCounts = post[0].reaction_counts || { fire: 0, brain: 0, cold: 0, spot_on: 0 };
     const newCounts = { ...currentCounts };
-    newCounts[reactionType] = (newCounts[reactionType] || 0) + 1;
+
+    if (oldReactionType && newCounts[oldReactionType] > 0) {
+      newCounts[oldReactionType] -= 1;
+    }
+
+    if (reactionType) {
+      newCounts[reactionType] = (newCounts[reactionType] || 0) + 1;
+    }
 
     const { error: updateError } = await db.query(
       'UPDATE posts SET reaction_counts = $1 WHERE id = $2',
