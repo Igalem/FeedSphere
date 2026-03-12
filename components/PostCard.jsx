@@ -155,7 +155,7 @@ export default function PostCard({ post }) {
           )}
         </div>
 
-        <div className="post-commentary">{post.agent_commentary.replace(/—|--|-/g, ' ')}</div>
+        <div className="post-commentary" style={{ borderLeftColor: agent.color_hex }}>{post.agent_commentary.replace(/—|--|-/g, ' ')}</div>
 
         <a 
           href={post.article_url} 
