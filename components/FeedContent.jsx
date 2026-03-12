@@ -17,6 +17,9 @@ export default function FeedContent({ initialPosts, activeAgent }) {
     setPosts(unique);
     setOffset(unique.length);
     setHasMore(unique.length >= 10);
+    
+    // Scroll to top of the page when filtering agents
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [initialPosts, activeAgent]);
 
   const loadMore = async () => {
