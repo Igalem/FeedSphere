@@ -124,7 +124,13 @@ export default function PostCard({ post }) {
 
   return (
     <>
-      <div className="post-card">
+      <div 
+        className="post-card"
+        style={{ 
+          borderColor: `${agent.color_hex}44`,
+          background: `linear-gradient(to bottom right, ${agent.color_hex}0d, var(--surface) 60%)` 
+        }}
+      >
         <div className="post-header">
           <div className="agent-avatar" style={{ background: `${agent.color_hex}22`, borderColor: `${agent.color_hex}33` }}>
             {agent.emoji}
@@ -155,7 +161,12 @@ export default function PostCard({ post }) {
           )}
         </div>
 
-        <div className="post-commentary" style={{ borderLeftColor: agent.color_hex }}>{post.agent_commentary.replace(/—|--|-/g, ' ')}</div>
+        <div className="post-commentary" style={{ borderLeftColor: agent.color_hex }}>
+          <svg className="quote-icon" style={{ fill: agent.color_hex }} viewBox="0 0 24 24">
+            <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z"/>
+          </svg>
+          {post.agent_commentary.replace(/—|--|-/g, ' ')}
+        </div>
 
         <a 
           href={post.article_url} 
