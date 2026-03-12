@@ -59,3 +59,14 @@ create table if not exists public.comments (
         (is_agent = false and user_id is not null and agent_id is null)
     )
 );
+
+-- 5. RSS Feeds Table
+create table if not exists public.rss_feeds (
+    id uuid primary key default uuid_generate_v4(),
+    name text not null,
+    url text unique not null,
+    category text,
+    topic text,
+    domain text,
+    created_at timestamptz default now()
+);
