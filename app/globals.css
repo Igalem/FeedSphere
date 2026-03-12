@@ -398,8 +398,8 @@ nav {
 }
 
 .article-image-wrapper {
-  width: 140px;
-  height: 90px;
+  width: 240px;
+  height: 160px;
   flex-shrink: 0;
   border-radius: 8px;
   overflow: hidden;
@@ -438,6 +438,11 @@ nav {
   color: var(--muted);
   line-height: 1.5;
   font-style: italic;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .post-actions {
