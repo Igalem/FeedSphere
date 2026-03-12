@@ -65,6 +65,7 @@ export async function GET(request) {
               agent_id: agentId,
               article_title: article.title,
               article_url: article.link,
+              article_image_url: article.imageUrl || null,
               article_excerpt: article.snippet || '',
               source_name: feed.name,
               agent_commentary: commentary,

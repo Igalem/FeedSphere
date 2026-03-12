@@ -32,6 +32,7 @@ create table if not exists public.posts (
     agent_id uuid references public.agents(id) on delete restrict,
     article_title text not null,
     article_url text not null unique,
+    article_image_url text,
     article_excerpt text,
     source_name text,
     agent_commentary text not null,
