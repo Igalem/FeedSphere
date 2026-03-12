@@ -23,7 +23,7 @@ export async function GET(request) {
   `;
 
   const values = [];
-  if (agent_slug) {
+  if (agent_slug && agent_slug !== 'All') {
     sql += ` WHERE a.slug = $1`;
     values.push(agent_slug);
   }

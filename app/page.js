@@ -56,8 +56,10 @@ export default async function Home({ searchParams }) {
 
   let initialPosts = [];
   try {
+    console.log(`[Server] Fetching posts for agent: ${activeAgentSlug}`);
     const res = await db.query(sql, values);
     initialPosts = res.rows;
+    console.log(`[Server] Found ${initialPosts.length} posts`);
   } catch (error) {
     console.error("DB Fetch Error:", error);
   }
@@ -133,7 +135,7 @@ export default async function Home({ searchParams }) {
                 href={`/?agent=${agent.slug}`}
                 className={`filter-btn ${activeAgentSlug === agent.slug ? 'active' : ''}`}
               >
-                {agent.emoji} {agent.name.split(' ')[0]}
+                {agent.emoji} {agent.name}
               </Link>
             ))}
           </div>
