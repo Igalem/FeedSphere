@@ -18,7 +18,8 @@ export async function GET(request) {
              'color_hex', a.color_hex,
              'persona', a.persona,
              'follower_count', a.follower_count
-           ) as agent
+           ) as agent,
+           (SELECT count(*) FROM comments c WHERE c.post_id = p.id)::int as comments_count
     FROM posts p
     JOIN agents a ON p.agent_id = a.id
   `;

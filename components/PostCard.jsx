@@ -11,8 +11,13 @@ export default function PostCard({ post }) {
   const [commentsOpen, setCommentsOpen] = useState(false);
   const [comments, setComments] = useState([]);
   const [newCommentStr, setNewCommentStr] = useState('');
+  const [totalComments, setTotalComments] = useState(post.comments_count || 0);
   const [loadingComments, setLoadingComments] = useState(false);
-  const [localAddedComments, setLocalAddedComments] = useState(0);
+
+  // Sync count if prop changes
+  React.useEffect(() => {
+    setTotalComments(post.comments_count || 0);
+  }, [post.comments_count]);
 
   // Use real sentiment_score from post, fallback to 50
   const sentiment = post.sentiment_score || 50; 
@@ -82,7 +87,12 @@ export default function PostCard({ post }) {
         const res = await fetch(`/api/posts/${post.id}/comments`);
         if (res.ok) {
           const data = await res.json();
-          setComments(data.comments || []);
+          const fetchedComments = data.comments || [];
+          setComments(fetchedComments);
+          // Sync totalCount if fetched is higher
+          if (fetchedComments.length > totalComments) {
+            setTotalComments(fetchedComments.length);
+          }
         }
       } catch (err) {
         console.error("Failed to load comments", err);
@@ -104,7 +114,7 @@ export default function PostCard({ post }) {
     };
     setComments([...comments, optimisticComment]);
     setNewCommentStr('');
-    setLocalAddedComments(prev => prev + 1);
+    setTotalComments(prev => prev + 1);
 
     try {
       const res = await fetch(`/api/posts/${post.id}/comments`, {
@@ -220,39 +230,46 @@ export default function PostCard({ post }) {
           
           <div className="action-sep"></div>
           
-          <button className="action-btn" onClick={toggleComments}>
-            💬 Comment {Math.max((post.comments_count || 0) + localAddedComments, comments.length)}
+          <button 
+            className="action-btn" 
+            onClick={toggleComments}
+            style={{ color: totalComments > 0 ? '#e8ff47' : 'inherit' }}
+          >
+            💬 Comment {totalComments}
           </button>
           <button className={`action-btn ${bookmarked ? 'bookmarked' : ''}`} onClick={() => setBookmarked(!bookmarked)}>
             🔖 Book
           </button>
           <button className="action-btn">↗️</button>
         </div>
-      </div>
-      
-      <div className={`comments-section ${commentsOpen ? 'open' : ''}`}>
-        <div className="comments-list" style={{ marginBottom: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          {loadingComments && <div style={{ fontSize: '13px', color: 'var(--muted)' }}>Loading comments...</div>}
-          {!loadingComments && comments.map((c) => (
-            <div key={c.id} className="comment-item" style={{ fontSize: '13px', padding: '8px', background: '#ffffff0a', borderRadius: '8px' }}>
-              <div style={{ fontWeight: '600', color: c.agent_color ? c.agent_color : '#fff', marginBottom: '4px' }}>
-                {c.agent_name ? `${c.agent_emoji} ${c.agent_name}` : c.username}
+
+        <div className={`comments-section ${commentsOpen ? 'open' : ''}`} style={{ marginTop: '16px', borderTop: '1px solid #ffffff10', paddingTop: '16px' }}>
+          <div className="comments-list" style={{ marginBottom: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {loadingComments && <div style={{ fontSize: '13px', color: 'var(--muted)' }}>Loading comments...</div>}
+            {!loadingComments && comments.map((c) => (
+              <div key={c.id} className="comment-item" style={{ fontSize: '13px', padding: '8px', background: '#ffffff0a', borderRadius: '8px' }}>
+                <div style={{ fontSize: '12px', color: '#fff', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontWeight: '600', color: c.agent_color ? c.agent_color : '#fff' }}>
+                    {c.agent_name ? `${c.agent_emoji} ${c.agent_name}` : c.username}
+                  </span>
+                  <span style={{ fontSize: '11px', color: 'var(--muted)' }}>· {formatTimeAgo(c.created_at)}</span>
+                </div>
+                <div style={{ color: '#ccc', fontSize: '13px' }}>{c.content}</div>
               </div>
-              <div style={{ color: '#ccc' }}>{c.content}</div>
-            </div>
-          ))}
-        </div>
-        <div className="comment-input-row" style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
-          <div className="user-avatar">You</div>
-          <textarea 
-            className="comment-input" 
-            placeholder="Share your take..." 
-            value={newCommentStr}
-            onChange={e => setNewCommentStr(e.target.value)}
-            onKeyDown={handleKeyDown}
-            style={{ flex: 1, minHeight: '38px', borderRadius: '8px', resize: 'none', background: '#000', border: '1px solid #333', padding: '8px 12px', color: 'var(--text)' }}
-          ></textarea>
-          <button onClick={handleSendComment} className="send-btn" style={{ padding: '8px 12px', borderRadius: '8px', background: 'var(--primary)', border: 'none', color: '#fff', cursor: 'pointer', fontWeight: 'bold' }}>{">"}</button>
+            ))}
+          </div>
+          <div className="comment-input-row" style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
+            <div className="user-avatar">You</div>
+            <textarea 
+              className="comment-input" 
+              placeholder="Share your take..." 
+              value={newCommentStr}
+              onChange={e => setNewCommentStr(e.target.value)}
+              onKeyDown={handleKeyDown}
+              style={{ flex: 1, minHeight: '38px', borderRadius: '8px', resize: 'none', background: '#000', border: '1px solid #333', padding: '8px 12px', color: 'var(--text)' }}
+            ></textarea>
+            <button onClick={handleSendComment} className="send-btn" style={{ padding: '8px 12px', borderRadius: '8px', background: 'var(--primary)', border: 'none', color: '#fff', cursor: 'pointer', fontWeight: 'bold' }}>{">"}</button>
+          </div>
         </div>
       </div>
     </>
