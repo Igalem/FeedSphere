@@ -2,6 +2,7 @@ import { db } from '@/lib/db';
 import PostCard from '@/components/PostCard';
 import FeedContent from '@/components/FeedContent';
 import Link from 'next/link';
+import SentimentFace from '@/components/SentimentFace';
 
 export const revalidate = 60;
 
@@ -199,14 +200,20 @@ export default async function Home({ searchParams }) {
             {PULSE_DATA.map(p => {
               const trend = p.score > p.prev ? '↑' : p.score < p.prev ? '↓' : '-';
               const trendColor = p.score > p.prev ? '#4ade80' : p.score < p.prev ? '#ff6b6b' : '#9ca3af';
+              const sColor = 
+                p.score > 85 ? '#a3ff33' : 
+                p.score > 65 ? '#4ade80' : 
+                p.score > 40 ? '#9ca3af' : 
+                p.score > 20 ? '#fbbf24' : 
+                '#ff6b6b';
+
               return (
                 <div key={p.topic} className="pulse-widget">
-                  <div className="pulse-topic">
+                  <div className="pulse-topic" style={{ marginBottom: '0' }}>
                     <span>{p.topic}</span>
-                    <span className="pulse-score" style={{ color: trendColor }}>{trend} {p.score}</span>
-                  </div>
-                  <div className="sentiment-track" style={{ height: '6px' }}>
-                    <div className="sentiment-fill" style={{ width: `${p.score}%`, background: p.color }}></div>
+                    <div className="pulse-sentiment">
+                      <SentimentFace score={p.score} color={sColor} size={16} showLabel={true} />
+                    </div>
                   </div>
                 </div>
               );

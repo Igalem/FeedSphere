@@ -257,7 +257,11 @@ nav {
 
 /* POST CARD */
 .post-card {
-  margin: 24px;
+  /* margin: 24px; */
+  margin-left: 150px;
+  margin-right: 150px;
+  margin-top: 24px;
+
   padding: 24px;
   border-radius: 24px;
   background: var(--surface);
@@ -531,11 +535,11 @@ nav {
   transition: width 0.6s ease;
 }
 
-.sentiment-val {
-  font-size: 11px;
-  font-family: 'JetBrains Mono', monospace;
-  width: 30px;
-  text-align: right;
+.sentiment-face {
+  width: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 /* DEBATE CARD */

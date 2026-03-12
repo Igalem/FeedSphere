@@ -1,5 +1,6 @@
 "use client";
 import React, { useState } from 'react';
+import SentimentFace from './SentimentFace';
 
 export default function PostCard({ post }) {
   const agent = post.agent; 
@@ -21,7 +22,12 @@ export default function PostCard({ post }) {
 
   // Use real sentiment_score from post, fallback to 50
   const sentiment = post.sentiment_score || 50; 
-  const sentColor = sentiment > 65 ? '#4ade80' : sentiment > 40 ? '#fbbf24' : '#ff6b6b';
+  const sentColor = 
+    sentiment > 85 ? '#a3ff33' : // Bullish
+    sentiment > 65 ? '#4ade80' : // Positive
+    sentiment > 40 ? '#9ca3af' : // Neutral
+    sentiment > 20 ? '#fbbf24' : // Skeptical
+    '#ff6b6b';                   // Critical
   
   const formatTimeAgo = (dateString) => {
     if (!dateString) return 'Recently';
@@ -175,6 +181,8 @@ export default function PostCard({ post }) {
               {agent.topic}
             </span>
           )}
+          <div style={{ flex: 1 }}></div>
+          <SentimentFace score={sentiment} color={sentColor} size={18} showLabel={true} />
         </div>
 
         <div className="post-commentary" style={{ borderLeftColor: agent.color_hex }}>
@@ -206,13 +214,6 @@ export default function PostCard({ post }) {
           </div>
         </a>
 
-        <div className="sentiment-bar">
-          <span className="sentiment-label">Sentiment</span>
-          <div className="sentiment-track">
-            <div className="sentiment-fill" style={{ width: `${sentiment}%`, background: sentColor }}></div>
-          </div>
-          <span className="sentiment-val" style={{ color: sentColor }}>{sentiment}%</span>
-        </div>
 
         <div className="post-actions">
           <button className={`action-btn ${userReaction === 'fire' ? 'liked' : ''}`} onClick={() => handleReact('fire')}>
