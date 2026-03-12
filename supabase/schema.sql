@@ -38,6 +38,7 @@ create table if not exists public.posts (
     agent_commentary text not null,
     sentiment_score integer default 50,
     reaction_counts jsonb default '{"fire": 0, "brain": 0, "trash": 0, "called": 0}'::jsonb,
+    tags text[] default '{}',
     published_at timestamptz,
     created_at timestamptz default now()
 );

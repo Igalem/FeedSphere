@@ -5,13 +5,15 @@ export default function PostCard({ post }) {
   const agent = post.agent; 
   if (!agent) return null;
 
-  const [liked, setLiked] = useState(false);
+  const [reactions, setReactions] = useState(post.reaction_counts || { fire: 0, brain: 0, trash: 0, called: 0 });
+  const [userReactions, setUserReactions] = useState({}); // Track which reactions the user has clicked
   const [bookmarked, setBookmarked] = useState(false);
   const [commentsOpen, setCommentsOpen] = useState(false);
 
-  // Compute mock sentiment/likes until Phase 4 implements it
-  const sentiment = 40 + ((post.id || 0).toString().length * 7 || 50) % 60; // Random deterministic
+  // Use real sentiment_score from post, fallback to 50
+  const sentiment = post.sentiment_score || 50; 
   const sentColor = sentiment > 65 ? '#4ade80' : sentiment > 40 ? '#fbbf24' : '#ff6b6b';
+  
   const formatTimeAgo = (dateString) => {
     if (!dateString) return 'Recently';
     const pubDate = new Date(dateString);
@@ -28,6 +30,26 @@ export default function PostCard({ post }) {
   };
   const timeStr = formatTimeAgo(post.published_at);
   const followers = "42.1K"; // Mock
+
+  const handleReact = async (type) => {
+    // Optimistic update
+    setReactions(prev => ({ ...prev, [type]: (prev[type] || 0) + 1 }));
+    setUserReactions(prev => ({ ...prev, [type]: true }));
+
+    try {
+      const res = await fetch('/api/posts/react', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ postId: post.id, reactionType: type })
+      });
+      if (!res.ok) {
+        // Rollback on error if needed
+        console.error('Failed to react');
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   return (
     <>
@@ -49,9 +71,17 @@ export default function PostCard({ post }) {
 
         <div className="post-source">
           <span className="source-pill">📰 {post.source_name || 'RSS Feed'}</span>
-          <span className="agent-tag" style={{ background: '#ffffff0a', color: 'var(--muted)', fontSize: '10px', padding: '2px 8px', borderRadius: '20px' }}>
-            {agent.topic}
-          </span>
+          {post.tags && post.tags.length > 0 ? (
+            post.tags.map((tag, i) => (
+              <span key={i} className="agent-tag" style={{ background: '#ffffff0a', color: 'var(--muted)', fontSize: '10px', padding: '2px 8px', borderRadius: '20px', marginLeft: '4px' }}>
+                #{tag}
+              </span>
+            ))
+          ) : (
+            <span className="agent-tag" style={{ background: '#ffffff0a', color: 'var(--muted)', fontSize: '10px', padding: '2px 8px', borderRadius: '20px' }}>
+              {agent.topic}
+            </span>
+          )}
         </div>
 
         <div className="post-commentary">{post.agent_commentary.replace(/—|--|-/g, ' ')}</div>
@@ -87,18 +117,28 @@ export default function PostCard({ post }) {
         </div>
 
         <div className="post-actions">
-          <button className={`action-btn ${liked ? 'liked' : ''}`} onClick={() => setLiked(!liked)}>
-            ❤️ {liked ? 848 : 847}
+          <button className={`action-btn ${userReactions.fire ? 'liked' : ''}`} onClick={() => handleReact('fire')}>
+            🔥 {reactions.fire || 0}
           </button>
-          <button className="action-btn" onClick={() => setCommentsOpen(!commentsOpen)}>
-            💬 124
+          <button className={`action-btn ${userReactions.brain ? 'liked' : ''}`} onClick={() => handleReact('brain')}>
+            🧠 {reactions.brain || 0}
           </button>
-          <button className="action-btn">🔄 203</button>
+          <button className={`action-btn ${userReactions.trash ? 'liked' : ''}`} onClick={() => handleReact('trash')}>
+            🗑️ {reactions.trash || 0}
+          </button>
+          <button className={`action-btn ${userReactions.called ? 'liked' : ''}`} onClick={() => handleReact('called')}>
+            ⚖️ {reactions.called || 0}
+          </button>
+          
           <div className="action-sep"></div>
+          
+          <button className="action-btn" onClick={() => setCommentsOpen(!commentsOpen)}>
+            💬 12
+          </button>
           <button className={`action-btn ${bookmarked ? 'bookmarked' : ''}`} onClick={() => setBookmarked(!bookmarked)}>
             🔖
           </button>
-          <button className="action-btn">↗️ Share</button>
+          <button className="action-btn">↗️</button>
         </div>
       </div>
       

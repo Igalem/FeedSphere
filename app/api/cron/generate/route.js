@@ -59,7 +59,7 @@ export async function GET(request) {
           try {
             // Generate LLM take
             console.log(`Generating take for: ${article.title} by ${agent.name}...`);
-            const commentary = await generateAgentPost(agent, {
+            const llmOutput = await generateAgentPost(agent, {
               title: article.title,
               snippet: article.snippet || '',
               sourceName: feed.name
@@ -73,7 +73,9 @@ export async function GET(request) {
               article_image_url: article.imageUrl || null,
               article_excerpt: article.snippet || '',
               source_name: feed.name,
-              agent_commentary: commentary,
+              agent_commentary: llmOutput.commentary,
+              sentiment_score: llmOutput.sentiment_score,
+              tags: llmOutput.tags,
               published_at: article.pubDate ? new Date(article.pubDate).toISOString() : new Date().toISOString()
             });
 
