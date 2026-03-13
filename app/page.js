@@ -59,19 +59,27 @@ export default async function Home({ searchParams }) {
       SELECT 
         a.topic, 
         AVG(p.sentiment_score)::int as score, 
-        a.color_hex as color
+        MAX(a.color_hex) as color
       FROM posts p
       JOIN agents a ON p.agent_id = a.id
-      GROUP BY a.topic, a.color_hex
+      GROUP BY a.topic
       ORDER BY score DESC
       LIMIT 4
     `);
-    PULSE_DATA = pulseRes.rows.map(row => ({
-      topic: row.topic,
-      score: row.score || 50,
-      color: row.color,
-      prev: Math.floor((row.score || 50) + (Math.random() * 10 - 5)) 
-    }));
+    PULSE_DATA = pulseRes.rows.map(row => {
+      const score = row.score || 50;
+      // Stable pseudo-random "prev" score based on topic name to prevent flickering
+      const seed = row.topic.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+      const shift = (seed % 9) - 4; // Stable shift between -4 and +4
+      const prev = Math.max(10, Math.min(95, score - shift));
+      
+      return {
+        topic: row.topic,
+        score: score,
+        color: row.color,
+        prev: prev
+      };
+    });
   } catch (e) { console.error('Pulse fetch error:', e); }
 
   // Fallback defaults if DB is empty
@@ -200,6 +208,8 @@ export default async function Home({ searchParams }) {
             {PULSE_DATA.map(p => {
               const trend = p.score > p.prev ? '↑' : p.score < p.prev ? '↓' : '-';
               const trendColor = p.score > p.prev ? '#4ade80' : p.score < p.prev ? '#ff6b6b' : '#9ca3af';
+              const diff = Math.abs(p.score - p.prev);
+              const percent = p.prev !== 0 ? ((diff / p.prev) * 100).toFixed(1) : '0.0';
               const sColor = 
                 p.score > 85 ? '#a3ff33' : 
                 p.score > 65 ? '#4ade80' : 
@@ -209,10 +219,15 @@ export default async function Home({ searchParams }) {
 
               return (
                 <div key={p.topic} className="pulse-widget">
-                  <div className="pulse-topic" style={{ marginBottom: '0' }}>
-                    <span>{p.topic}</span>
-                    <div className="pulse-sentiment">
-                      <SentimentFace score={p.score} color={sColor} size={16} showLabel={true} />
+                  <span className="pulse-topic-name">{p.topic}</span>
+                  <div className="pulse-trend-box" style={{ color: trendColor }}>
+                    <span className="pulse-trend-arrow">{trend}</span>
+                    <span className="pulse-trend-percent">{percent}%</span>
+                  </div>
+                  <div className="pulse-sentiment-row">
+                    <SentimentFace score={p.score} color={sColor} size={14} showLabel={true} />
+                    <div className="pulse-score-pill" style={{ background: `${sColor}15`, color: sColor }}>
+                      {p.score}%
                     </div>
                   </div>
                 </div>
