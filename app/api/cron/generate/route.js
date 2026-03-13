@@ -14,14 +14,14 @@ export async function GET(request) {
   }
 
   try {
-    const results = { posted: 0, errors: 0, details: [] };
+    const results = { posted: 0, skips: 0, errors: 0, details: [] };
 
     // 1. Seed or update agents in database
     console.log('Starting agent upsert...');
     const agentIds = {};
     for (const config of agents) {
       console.log(`Upserting agent: ${config.slug}`);
-      const { data, error } = await db.from('agents').upsert({
+      const { data, error: upsertError } = await db.from('agents').upsert({
         slug: config.slug,
         name: config.name,
         emoji: config.emoji,
@@ -31,19 +31,33 @@ export async function GET(request) {
         color_hex: config.colorHex
       }, 'slug');
 
-      if (error) throw error;
+      if (upsertError) {
+        console.error(`Error upserting agent ${config.slug}:`, upsertError);
+        results.errors++;
+        results.details.push(`Error upserting agent ${config.slug}: ${upsertError.message}`);
+        continue;
+      }
       agentIds[config.slug] = data.id;
     }
 
     // 2. Iterate each agent to fetch feeds and generate posts
     for (const agent of agents) {
       const agentId = agentIds[agent.slug];
+      if (!agentId) continue;
 
       for (const feed of agent.rssFeeds) {
         // Fetch up to 3 most recent articles per feed to keep processing light
         console.log(`Fetching feed: ${feed.name} (${feed.url})`);
-        const articles = await fetchFeedItems(feed.url, 3);
-        console.log(`Found ${articles.length} articles`);
+        let articles = [];
+        try {
+          articles = await fetchFeedItems(feed.url, 3);
+          console.log(`Found ${articles.length} articles`);
+        } catch (fetchError) {
+          console.error(`Error fetching feed ${feed.url}:`, fetchError);
+          results.errors++;
+          results.details.push(`Error fetching feed ${feed.name}: ${fetchError.message}`);
+          continue;
+        }
         
         for (const article of articles) {
           if (!article.link) continue;
@@ -51,6 +65,8 @@ export async function GET(request) {
           // Skip if no media
           if (!article.imageUrl) {
             console.log(`Skipping article (no media): ${article.title}`);
+            results.skips++;
+            results.details.push(`[SKIP] No media for: ${article.title}`);
             continue;
           }
 
@@ -59,7 +75,7 @@ export async function GET(request) {
           const existingPost = posts?.[0];
 
           if (existingPost) {
-            continue; // Skip, already posted
+            continue; // Skip, already posted (not counted as a "media skip")
           }
 
           try {
@@ -88,14 +104,16 @@ export async function GET(request) {
             if (insertError) throw insertError;
 
             results.posted++;
-            results.details.push(`[${agent.name}] Posted about: ${article.title}`);
+            results.details.push(`[${agent.name}] Posted: ${article.title}`);
 
-            // API limits backoff
-            await new Promise(r => setTimeout(r, 2000));
+            // API limits backoff with jitter
+            const jitter = Math.floor(Math.random() * 1000);
+            await new Promise(r => setTimeout(r, 2000 + jitter));
 
           } catch (agentError) {
             console.error(`Error processing article for ${agent.name}:`, agentError);
             results.errors++;
+            results.details.push(`[ERROR] ${agent.name} failed on ${article.title}: ${agentError.message}`);
           }
         }
       }
@@ -104,6 +122,6 @@ export async function GET(request) {
     return NextResponse.json({ success: true, ...results });
   } catch (error) {
     console.error('Cron job error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: error.message, success: false }, { status: 500 });
   }
 }

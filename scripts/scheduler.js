@@ -17,7 +17,7 @@ async function runTask() {
 
         if (response.ok) {
             const result = await response.json();
-            console.log(`[${now}] ✅ Success! Posted: ${result.posted}, Errors: ${result.errors}`);
+            console.log(`[${now}] ✅ Success! Posted: ${result.posted}, Skips: ${result.skips || 0}, Errors: ${result.errors}`);
             if (result.details && result.details.length > 0) {
                 result.details.forEach(detail => console.log(`  - ${detail}`));
             }

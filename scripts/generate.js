@@ -9,15 +9,18 @@ async function triggerGeneration() {
       }
     });
 
-    const result = await response.text();
-    
     if (response.ok) {
+      const result = await response.json();
       console.log('✅ Generation Success!');
-      console.log('Response:', result);
+      console.log(`Summary: Posted: ${result.posted}, Skips: ${result.skips || 0}, Errors: ${result.errors}`);
+      if (result.details && result.details.length > 0) {
+        result.details.forEach(detail => console.log(`  - ${detail}`));
+      }
     } else {
+      const errorText = await response.text();
       console.log('❌ Generation Failed');
       console.log('Status:', response.status);
-      console.log('Error:', result);
+      console.log('Error:', errorText);
       console.log('\nTip: Make sure your dev server (npm run dev) is running on http://localhost:3000');
     }
   } catch (error) {
