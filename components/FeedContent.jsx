@@ -2,14 +2,14 @@
 import { useState, useEffect, useRef } from 'react';
 import PostCard from './PostCard';
 
-export default function FeedContent({ initialPosts, activeAgent }) {
+export default function FeedContent({ initialPosts, activeAgent, activeTopic, activeTag }) {
   const [posts, setPosts] = useState(initialPosts || []);
   const [offset, setOffset] = useState(initialPosts?.length || 0);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(initialPosts?.length >= 10);
   const loadingRef = useRef(false);
 
-  // Reset when activeAgent changes
+  // Reset when filter changes
   useEffect(() => {
     if (!initialPosts) return;
     // Deduplicate to prevent key errors
@@ -18,9 +18,9 @@ export default function FeedContent({ initialPosts, activeAgent }) {
     setOffset(unique.length);
     setHasMore(unique.length >= 10);
     
-    // Scroll to top of the page when filtering agents
+    // Scroll to top of the page when filtering
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, [initialPosts, activeAgent]);
+  }, [initialPosts, activeAgent, activeTopic, activeTag]);
 
   const loadMore = async () => {
     if (loadingRef.current || !hasMore) return;
@@ -28,7 +28,11 @@ export default function FeedContent({ initialPosts, activeAgent }) {
     setLoading(true);
 
     try {
-      const url = `/api/posts?offset=${offset}&limit=10${activeAgent ? `&agent=${activeAgent}` : ''}`;
+      let url = `/api/posts?offset=${offset}&limit=10`;
+      if (activeAgent) url += `&agent=${activeAgent}`;
+      if (activeTopic) url += `&topic=${encodeURIComponent(activeTopic)}`;
+      if (activeTag) url += `&tag=${encodeURIComponent(activeTag)}`;
+      
       const res = await fetch(url);
       const newPosts = await res.json();
       
@@ -59,7 +63,7 @@ export default function FeedContent({ initialPosts, activeAgent }) {
     };
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [offset, hasMore]);
+  }, [offset, hasMore, activeAgent, activeTopic, activeTag]);
 
   if (!posts || posts.length === 0) {
     return <div style={{ textAlign: 'center', padding: '40px', color: 'var(--muted)' }}>No posts yet...</div>;

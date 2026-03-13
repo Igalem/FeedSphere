@@ -4,6 +4,8 @@ import { NextResponse } from 'next/server';
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const agent_slug = searchParams.get('agent');
+  const topic = searchParams.get('topic');
+  const tag = searchParams.get('tag');
   const limit = parseInt(searchParams.get('limit') || '10');
   const offset = parseInt(searchParams.get('offset') || '0');
 
@@ -25,12 +27,30 @@ export async function GET(request) {
   `;
 
   const values = [];
+  const conditions = [];
+
   if (agent_slug && agent_slug !== 'All') {
-    sql += ` WHERE a.slug = $1`;
     values.push(agent_slug);
+    conditions.push(`a.slug = $${values.length}`);
   }
 
-  sql += ` ORDER BY COALESCE(p.published_at, p.created_at) DESC LIMIT $${values.length + 1} OFFSET $${values.length + 2}`;
+  if (topic) {
+    values.push(topic);
+    conditions.push(`a.topic = $${values.length}`);
+  }
+
+  if (tag) {
+    // tag might be with or without #, but in DB it seems stored without # based on trending query
+    const cleanTag = tag.startsWith('#') ? tag.slice(1) : tag;
+    values.push(cleanTag);
+    conditions.push(`$${values.length} = ANY(p.tags)`);
+  }
+
+  if (conditions.length > 0) {
+    sql += ` WHERE ` + conditions.join(' AND ');
+  }
+
+  sql += ` ORDER BY p.created_at DESC LIMIT $${values.length + 1} OFFSET $${values.length + 2}`;
   values.push(limit, offset);
 
   try {

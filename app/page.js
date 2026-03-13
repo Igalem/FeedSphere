@@ -7,13 +7,21 @@ import SentimentFace from '@/components/SentimentFace';
 export const revalidate = 60;
 
 export default async function Home({ searchParams }) {
-  const { agent: agentSlug } = await searchParams; 
+  const { agent: agentSlug, topic, tag } = await searchParams; 
   const activeAgentSlug = agentSlug || 'All';
+  const activeTopic = topic || null;
+  const activeTag = tag || null;
 
   // Fetch all agents for the filters and sidebar
   let agents = [];
   try {
-    const res = await db.query('SELECT * FROM agents ORDER BY name ASC');
+    const res = await db.query(`
+      SELECT a.*, MAX(p.created_at) as last_activity
+      FROM agents a
+      LEFT JOIN posts p ON a.id = p.agent_id
+      GROUP BY a.id
+      ORDER BY last_activity DESC NULLS LAST
+    `);
     agents = res.rows;
   } catch (e) { console.error(e); }
 
@@ -35,12 +43,25 @@ export default async function Home({ searchParams }) {
   `;
   
   const values = [];
+  const conditions = [];
   if (activeAgentSlug !== 'All') {
-    sql += ` WHERE a.slug = $1`;
     values.push(activeAgentSlug);
+    conditions.push(`a.slug = $${values.length}`);
+  }
+  if (activeTopic) {
+    values.push(activeTopic);
+    conditions.push(`a.topic = $${values.length}`);
+  }
+  if (activeTag) {
+    values.push(activeTag);
+    conditions.push(`$${values.length} = ANY(p.tags)`);
+  }
+
+  if (conditions.length > 0) {
+    sql += ` WHERE ` + conditions.join(' AND ');
   }
   
-  sql += ` ORDER BY COALESCE(p.published_at, p.created_at) DESC LIMIT 10`;
+  sql += ` ORDER BY p.created_at DESC LIMIT 10`;
 
   let initialPosts = [];
   try {
@@ -129,7 +150,7 @@ export default async function Home({ searchParams }) {
 
         <nav>
           <div className="nav-label">Navigate</div>
-          <Link href="/" className={`nav-item ${activeAgentSlug === 'All' ? 'active' : ''}`} style={{ textDecoration: 'none' }}>
+          <Link href="/" className={`nav-item ${activeAgentSlug === 'All' && !activeTopic && !activeTag ? 'active' : ''}`} style={{ textDecoration: 'none' }}>
             <span className="nav-icon">🏠</span> Home Feed
           </Link>
           <div className="nav-item">
@@ -175,13 +196,12 @@ export default async function Home({ searchParams }) {
       {/* MAIN FEED */}
       <main className="feed">
         <div className="feed-header">
-          <div className="feed-title">Your Feed</div>
           <div className="feed-filters">
             <Link
               href="/"
-              className={`filter-btn ${activeAgentSlug === 'All' ? 'active' : ''}`}
+              className={`filter-btn ${activeAgentSlug === 'All' && !activeTopic && !activeTag ? 'active' : ''}`}
             >
-              All
+              Your Feed
             </Link>
             {agents.map(agent => (
               <Link
@@ -196,7 +216,7 @@ export default async function Home({ searchParams }) {
         </div>
 
         <div id="feedContent">
-          <FeedContent initialPosts={initialPosts} activeAgent={agentSlug} />
+          <FeedContent initialPosts={initialPosts} activeAgent={agentSlug} activeTopic={activeTopic} activeTag={activeTag} />
         </div>
       </main>
 
@@ -218,7 +238,7 @@ export default async function Home({ searchParams }) {
                 '#ff6b6b';
 
               return (
-                <div key={p.topic} className="pulse-widget">
+                <Link href={`/?topic=${p.topic}`} key={p.topic} className="pulse-widget" style={{ textDecoration: 'none' }}>
                   <span className="pulse-topic-name">{p.topic}</span>
                   <div className="pulse-trend-box" style={{ color: trendColor }}>
                     <span className="pulse-trend-arrow">{trend}</span>
@@ -230,7 +250,7 @@ export default async function Home({ searchParams }) {
                       {p.score}%
                     </div>
                   </div>
-                </div>
+                </Link>
               );
             })}
           </div>
@@ -240,13 +260,13 @@ export default async function Home({ searchParams }) {
           <div className="panel-title">🔥 Trending Topics</div>
           <div>
             {TRENDING.map(t => (
-              <div key={t.name} className="topic-item">
+              <Link href={`/?tag=${t.name.startsWith('#') ? t.name.slice(1) : t.name}`} key={t.name} className="topic-item" style={{ textDecoration: 'none' }}>
                 <div>
                   <div className="topic-name">{t.name}</div>
                   <div className="topic-count">{t.count} · Last 24h</div>
                 </div>
                 <span className="topic-arrow">→</span>
-              </div>
+              </Link>
             ))}
           </div>
         </div>

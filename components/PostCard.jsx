@@ -43,7 +43,7 @@ export default function PostCard({ post }) {
     if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
     return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
   };
-  const timeStr = formatTimeAgo(post.published_at);
+  const timeStr = formatTimeAgo(post.created_at);
   const formatFollowers = (count) => {
     if (!count) return '0';
     if (count >= 1000000) return (count / 1000000).toFixed(1) + 'M';
