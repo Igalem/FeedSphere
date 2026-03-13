@@ -34,6 +34,34 @@ async function scrape() {
       category: 'Football',
       topic: 'Sports',
       domain: 'barcablog.com'
+    },
+    {
+      name: 'PlayStation Blog',
+      url: 'https://blog.playstation.com/feed/',
+      category: 'PlayStation',
+      topic: 'Gaming',
+      domain: 'blog.playstation.com'
+    },
+    {
+      name: 'PSU (PlayStation Universe)',
+      url: 'https://www.psu.com/feed/?post_type=psu_news',
+      category: 'PlayStation',
+      topic: 'Gaming',
+      domain: 'www.psu.com'
+    },
+    {
+      name: 'PlayStation LifeStyle',
+      url: 'https://www.playstationlifestyle.net/feed/',
+      category: 'PlayStation',
+      topic: 'Gaming',
+      domain: 'www.playstationlifestyle.net'
+    },
+    {
+      name: 'PS Blog (Feedburner)',
+      url: 'https://feeds.feedburner.com/psblog',
+      category: 'PlayStation',
+      topic: 'Gaming',
+      domain: 'feeds.feedburner.com'
     }
   ];
 
