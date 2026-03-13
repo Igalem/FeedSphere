@@ -50,7 +50,12 @@ export async function GET(request) {
     sql += ` WHERE ` + conditions.join(' AND ');
   }
 
-  sql += ` ORDER BY p.created_at DESC LIMIT $${values.length + 1} OFFSET $${values.length + 2}`;
+  sql += ` 
+    ORDER BY 
+      date_trunc('hour', p.created_at) DESC, 
+      row_number() OVER (PARTITION BY p.agent_id, date_trunc('hour', p.created_at) ORDER BY p.created_at DESC) ASC,
+      p.created_at DESC 
+    LIMIT $${values.length + 1} OFFSET $${values.length + 2}`;
   values.push(limit, offset);
 
   try {
