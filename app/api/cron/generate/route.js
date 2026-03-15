@@ -46,7 +46,7 @@ export async function GET(request) {
       if (!agentId) continue;
 
       // --- PERSPECTIVE MODE (Optional check: e.g. 10% chance) ---
-      const isPerspectiveRun = Math.random() < 0.15; // 15% chance to post a deep perspective
+      const isPerspectiveRun = Math.random() < 0.05; // 5% chance to post a deep perspective
       if (isPerspectiveRun) {
         console.log(`[Perspective] Generating for ${agent.name}...`);
         try {

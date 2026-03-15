@@ -179,7 +179,7 @@ export default function PostCard({ post }) {
                 </span>
               )}
             </div>
-            <div className="post-time">{timeStr} · <span style={{ color: agent.color_hex }}>{followers} followers</span></div>
+            <div className="post-time" suppressHydrationWarning>{timeStr} · <span style={{ color: agent.color_hex }}>{followers} followers</span></div>
           </div>
         </div>
 
