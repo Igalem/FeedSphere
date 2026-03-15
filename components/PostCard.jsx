@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import SentimentFace from './SentimentFace';
 
 export default function PostCard({ post }) {
-  const agent = post.agent; 
+  const agent = post.agent;
   if (!agent) return null;
 
   const [reactions, setReactions] = useState(post.reaction_counts || { fire: 0, brain: 0, cold: 0, spot_on: 0 });
@@ -21,14 +21,14 @@ export default function PostCard({ post }) {
   }, [post.comments_count]);
 
   // Use real sentiment_score from post, fallback to 50
-  const sentiment = post.sentiment_score || 50; 
-  const sentColor = 
+  const sentiment = post.sentiment_score || 50;
+  const sentColor =
     sentiment > 85 ? '#a3ff33' : // Bullish
-    sentiment > 65 ? '#4ade80' : // Positive
-    sentiment > 40 ? '#9ca3af' : // Neutral
-    sentiment > 20 ? '#fbbf24' : // Skeptical
-    '#ff6b6b';                   // Critical
-  
+      sentiment > 65 ? '#4ade80' : // Positive
+        sentiment > 40 ? '#9ca3af' : // Neutral
+          sentiment > 20 ? '#fbbf24' : // Skeptical
+            '#ff6b6b';                   // Critical
+
   const formatTimeAgo = (dateString) => {
     if (!dateString) return 'Recently';
     const pubDate = new Date(dateString);
@@ -70,10 +70,10 @@ export default function PostCard({ post }) {
       const res = await fetch('/api/posts/react', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          postId: post.id, 
-          reactionType: newReaction, 
-          oldReactionType: oldReaction 
+        body: JSON.stringify({
+          postId: post.id,
+          reactionType: newReaction,
+          oldReactionType: oldReaction
         })
       });
       if (!res.ok) {
@@ -145,16 +145,16 @@ export default function PostCard({ post }) {
   };
 
   return (
-    <div 
+    <div
       className="post-card"
-      style={{ 
+      style={{
         borderColor: `${agent.color_hex}44`,
-        background: `linear-gradient(to bottom right, ${agent.color_hex}0d, var(--surface) 60%)` 
+        background: `linear-gradient(to bottom right, ${agent.color_hex}0d, var(--surface) 60%)`
       }}
     >
       <div className="post-header">
         <div className="agent-avatar" style={{ background: `${agent.color_hex}22`, borderColor: `${agent.color_hex}33` }}>
-          {agent.emoji}
+          {[...(agent.emoji || '')].slice(0, 3).join('')}
         </div>
         <div className="post-meta">
           <div className="post-agent-name">
@@ -170,9 +170,9 @@ export default function PostCard({ post }) {
         </div>
       </div>
 
-      <div 
-        className="post-commentary" 
-        style={{ 
+      <div
+        className="post-commentary"
+        style={{
           fontSize: post.type === 'perspective' ? '15px' : '14px',
           lineHeight: post.type === 'perspective' ? '1.5' : '1.4',
           fontWeight: 'normal',
@@ -182,7 +182,7 @@ export default function PostCard({ post }) {
       >
         {post.type === 'perspective' && (
           <svg className="quote-icon" style={{ fill: agent.color_hex }} viewBox="0 0 24 24">
-            <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z"/>
+            <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z" />
           </svg>
         )}
         {post.agent_commentary}
@@ -208,27 +208,27 @@ export default function PostCard({ post }) {
       {post.type === 'perspective' ? (
         post.article_image_url && (
           <div className="perspective-image-wrapper" style={{ marginTop: '16px', borderRadius: '12px', overflow: 'hidden', border: '1px solid #ffffff10' }}>
-            <img 
-              src={post.article_image_url} 
-              alt="Perspective Visual" 
+            <img
+              src={post.article_image_url}
+              alt="Perspective Visual"
               className="perspective-image"
-              style={{ width: '100%', maxHeight: '400px', objectFit: 'cover', display: 'block' }} 
+              style={{ width: '100%', maxHeight: '400px', objectFit: 'cover', display: 'block' }}
             />
           </div>
         )
       ) : (
-        <a 
-          href={post.article_url} 
-          target="_blank" 
-          rel="noopener noreferrer" 
+        <a
+          href={post.article_url}
+          target="_blank"
+          rel="noopener noreferrer"
           className={`post-article ${post.article_image_url ? 'has-image' : 'no-image'}`}
         >
           {post.article_image_url && (
             <div className="article-image-wrapper">
-              <img 
-                src={post.article_image_url} 
-                alt="Article" 
-                className="article-image" 
+              <img
+                src={post.article_image_url}
+                alt="Article"
+                className="article-image"
               />
             </div>
           )}
@@ -256,11 +256,11 @@ export default function PostCard({ post }) {
         <button className={`action-btn ${userReaction === 'spot_on' ? 'liked' : ''}`} onClick={() => handleReact('spot_on')}>
           🎯 Spot On {reactions.spot_on || 0}
         </button>
-        
+
         <div className="action-sep"></div>
-        
-        <button 
-          className="action-btn" 
+
+        <button
+          className="action-btn"
           onClick={toggleComments}
           style={{ color: totalComments > 0 ? '#e8ff47' : 'inherit' }}
         >
@@ -289,9 +289,9 @@ export default function PostCard({ post }) {
         </div>
         <div className="comment-input-row" style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
           <div className="user-avatar">You</div>
-          <textarea 
-            className="comment-input" 
-            placeholder="Share your take..." 
+          <textarea
+            className="comment-input"
+            placeholder="Share your take..."
             value={newCommentStr}
             onChange={e => setNewCommentStr(e.target.value)}
             onKeyDown={handleKeyDown}

@@ -21,7 +21,7 @@ function useCountdown(endsAt) {
       const h = Math.floor(diff / 3600000);
       const m = Math.floor((diff % 3600000) / 60000);
       const s = Math.floor((diff % 60000) / 1000);
-      setRemaining(`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`);
+      setRemaining(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`);
     };
     tick();
     const id = setInterval(tick, 1000);
@@ -94,8 +94,8 @@ export default function DebateCard({ debate }) {
   const voted = !!votedFor;
 
   return (
-    <div className="debate-card-root" style={{ 
-      '--col-a': colA, 
+    <div className="debate-card-root" style={{
+      '--col-a': colA,
       '--col-b': colB,
       '--col-a-transparent': `${colA}55`,
       '--col-b-transparent': `${colB}55`,
@@ -259,11 +259,14 @@ export default function DebateCard({ debate }) {
         .debate-agent-col.right .agent-header { flex-direction: row-reverse; }
 
         .debate-avatar {
-          width: 36px;
+          width: auto;
+          min-width: 36px;
           height: 36px;
-          border-radius: 50%;
-          display: grid;
-          place-items: center;
+          padding: 0 6px;
+          border-radius: 18px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
           font-size: 18px;
           flex-shrink: 0;
           border: 2px solid currentColor;
@@ -466,7 +469,7 @@ export default function DebateCard({ debate }) {
             <span className="debate-watermark" style={{ color: 'var(--col-a)' }}>&ldquo;</span>
             <div className="agent-header">
               <div className="debate-avatar" style={{ background: 'var(--col-a-very-transparent)', borderColor: 'var(--col-a-transparent)', color: 'var(--col-a)' }}>
-                {agentA.emoji}
+                {[...(agentA.emoji || '')].slice(0, 3).join('')}
               </div>
               <div>
                 <div className="debate-agent-name">{agentA.name}</div>
@@ -510,7 +513,7 @@ export default function DebateCard({ debate }) {
             <span className="debate-watermark" style={{ color: 'var(--col-b)', right: 'auto', left: '-10px' }}>&rdquo;</span>
             <div className="agent-header">
               <div className="debate-avatar" style={{ background: 'var(--col-b-very-transparent)', borderColor: 'var(--col-b-transparent)', color: 'var(--col-b)' }}>
-                {agentB.emoji}
+                {[...(agentB.emoji || '')].slice(0, 3).join('')}
               </div>
               <div style={{ textAlign: 'right' }}>
                 <div className="debate-agent-name">{agentB.name}</div>
