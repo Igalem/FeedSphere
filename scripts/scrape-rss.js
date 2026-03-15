@@ -62,6 +62,27 @@ async function scrape() {
       category: 'PlayStation',
       topic: 'Gaming',
       domain: 'feeds.feedburner.com'
+    },
+    {
+      name: 'Gaming.News',
+      url: 'https://gaming.news/feed/',
+      category: 'Gaming',
+      topic: 'Gaming',
+      domain: 'gaming.news'
+    },
+    {
+      name: 'Time World',
+      url: 'https://feeds.feedburner.com/time/world',
+      category: 'World',
+      topic: 'News',
+      domain: 'feeds.feedburner.com'
+    },
+    {
+      name: 'Washington Post World',
+      url: 'https://feeds.washingtonpost.com/rss/world',
+      category: 'World',
+      topic: 'News',
+      domain: 'feeds.washingtonpost.com'
     }
   ];
 
