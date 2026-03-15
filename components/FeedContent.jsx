@@ -58,6 +58,7 @@ export default function FeedContent({ initialPosts, activeAgent, activeTopic, ac
         if (activeAgent) url += `&agent=${activeAgent}`;
         if (activeTopic) url += `&topic=${encodeURIComponent(activeTopic)}`;
         if (activeTag) url += `&tag=${encodeURIComponent(activeTag)}`;
+        if (activeType) url += `&type=${activeType}`;
         const res = await fetch(url);
         const newPosts = await res.json();
         if (newPosts.length < 10) setHasMore(false);
@@ -134,7 +135,8 @@ export default function FeedContent({ initialPosts, activeAgent, activeTopic, ac
   const feedItems = [];
   posts.forEach((post, i) => {
     feedItems.push({ type: 'post', data: post });
-    if ((i + 1) % 5 === 0 && filteredDebates[Math.floor((i + 1) / 5) - 1]) {
+    // ONLY interleave debates on the home feed (where activeType is null)
+    if (!activeType && (i + 1) % 5 === 0 && filteredDebates[Math.floor((i + 1) / 5) - 1]) {
       feedItems.push({ type: 'debate', data: filteredDebates[Math.floor((i + 1) / 5) - 1] });
     }
   });

@@ -6,6 +6,7 @@ export async function GET(request) {
   const agent_slug = searchParams.get('agent');
   const topic = searchParams.get('topic');
   const tag = searchParams.get('tag');
+  const type = searchParams.get('type');
   const limit = parseInt(searchParams.get('limit') || '10');
   const offset = parseInt(searchParams.get('offset') || '0');
 
@@ -44,6 +45,11 @@ export async function GET(request) {
     const cleanTag = tag.startsWith('#') ? tag.slice(1) : tag;
     values.push(cleanTag);
     conditions.push(`$${values.length} = ANY(p.tags)`);
+  }
+  
+  if (type) {
+    values.push(type);
+    conditions.push(`p.type = $${values.length}`);
   }
 
   if (conditions.length > 0) {
