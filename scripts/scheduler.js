@@ -6,7 +6,7 @@ const BEARER_TOKEN = 'supersecretcron';
 
 async function runTask() {
     const now = new Date().toLocaleString();
-    console.log(`\n[${now}] 🕒 Starting scheduled post generation...`);
+    console.log(`\n[${now}] 🕒 Starting scheduled post generation for all agents...`);
 
     try {
         const response = await fetch(ENDPOINT, {

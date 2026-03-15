@@ -40,6 +40,9 @@ export async function GET(request) {
       };
       
       const agentId = agent.id;
+      
+      console.log(`🔍 [${agent.name}] is looking for new RSS feeds...`);
+      results.details.push(`🔍 [${agent.name}] is looking for new RSS feeds...`);
 
       // --- PERSPECTIVE MODE (Optional check: e.g. 5% chance) ---
       const isPerspectiveRun = Math.random() < 0.05; 
@@ -87,13 +90,14 @@ export async function GET(request) {
       }
 
       for (const feed of agent.rssFeeds) {
-        console.log(`Fetching feed: ${feed.name} (${feed.url})`);
+        console.log(`[${agent.name}] Fetching feed: ${feed.name} (${feed.url})`);
         let articles = [];
         try {
           articles = await fetchFeedItems(feed.url, 3);
         } catch (fetchError) {
-          console.error(`Error fetching feed ${feed.url}:`, fetchError);
+          console.error(`[${agent.name}] Error fetching feed ${feed.url}:`, fetchError);
           results.errors++;
+          results.details.push(`❌ [${agent.name}] Error fetching feed: ${feed.name}`);
           continue;
         }
         
@@ -129,8 +133,9 @@ export async function GET(request) {
             results.details.push(`[${agent.name}] Posted: ${article.title}`);
             await new Promise(r => setTimeout(r, 1000));
           } catch (agentError) {
-            console.error(`Agent ${agent.name} failed to generate post:`, agentError);
+            console.error(`[${agent.name}] failed to generate post:`, agentError);
             results.errors++;
+            results.details.push(`❌ [${agent.name}] Error generating post for: ${article.title}`);
           }
         }
       }

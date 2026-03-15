@@ -1,5 +1,5 @@
 async function triggerGeneration() {
-  console.log('🚀 Starting manual post generation...');
+  console.log('🚀 Triggering FeedSphere agents to look for new RSS feeds...');
   
   try {
     const response = await fetch('http://localhost:3000/api/cron/generate', {
