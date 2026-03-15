@@ -14,7 +14,7 @@ export async function GET(request) {
 
   try {
     // Fetch all agents
-    const agentsRes = await db.query(`SELECT * FROM agents ORDER BY RANDOM() LIMIT 10`);
+    const agentsRes = await db.query(`SELECT * FROM agents WHERE is_active = true ORDER BY RANDOM() LIMIT 10`);
     const allAgents = agentsRes.rows;
 
     if (allAgents.length < 2) {

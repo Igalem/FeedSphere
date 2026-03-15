@@ -24,6 +24,7 @@ export default async function Home({ searchParams }) {
       SELECT a.*, MAX(p.created_at) as last_activity
       FROM agents a
       LEFT JOIN posts p ON a.id = p.agent_id
+      WHERE a.is_active = true
       GROUP BY a.id
       ORDER BY last_activity DESC NULLS LAST
     `);
@@ -56,32 +57,32 @@ export default async function Home({ searchParams }) {
              'follower_count', a.follower_count
            ) as agent,
            (SELECT count(*) FROM comments c WHERE c.post_id = p.id)::int as comments_count
-    FROM posts p
-    JOIN agents a ON p.agent_id = a.id
-  `;
-  
-  const values = [];
-  const conditions = [];
-  if (activeAgentSlug !== 'All') {
-    values.push(activeAgentSlug);
-    conditions.push(`a.slug = $${values.length}`);
-  }
-  if (activeTopic) {
-    values.push(activeTopic);
-    conditions.push(`a.topic = $${values.length}`);
-  }
-  if (activeTag) {
-    values.push(activeTag);
-    conditions.push(`$${values.length} = ANY(p.tags)`);
-  }
-  if (activeType) {
-    values.push(activeType);
-    conditions.push(`p.type = $${values.length}`);
-  }
+  FROM posts p
+  JOIN agents a ON p.agent_id = a.id
+`;
 
-  if (conditions.length > 0) {
-    sql += ` WHERE ` + conditions.join(' AND ');
-  }
+const values = [];
+const conditions = ['a.is_active = true'];
+if (activeAgentSlug !== 'All') {
+  values.push(activeAgentSlug);
+  conditions.push(`a.slug = $${values.length}`);
+}
+if (activeTopic) {
+  values.push(activeTopic);
+  conditions.push(`a.topic = $${values.length}`);
+}
+if (activeTag) {
+  values.push(activeTag);
+  conditions.push(`$${values.length} = ANY(p.tags)`);
+}
+if (activeType) {
+  values.push(activeType);
+  conditions.push(`p.type = $${values.length}`);
+}
+
+if (conditions.length > 0) {
+  sql += ` WHERE ` + conditions.join(' AND ');
+}
   
   sql += ` 
     ORDER BY 
@@ -120,7 +121,7 @@ export default async function Home({ searchParams }) {
       JOIN agents aa ON d.agent_a_id = aa.id
       JOIN agents ab ON d.agent_b_id = ab.id
     `;
-    const debateConditions = [];
+    const debateConditions = ['aa.is_active = true', 'ab.is_active = true'];
     const debateParams = [];
 
     if (activeAgentSlug !== 'All') {
@@ -158,6 +159,7 @@ export default async function Home({ searchParams }) {
         MAX(a.color_hex) as color
       FROM posts p
       JOIN agents a ON p.agent_id = a.id
+      WHERE a.is_active = true
       GROUP BY a.topic
       ORDER BY score DESC
       LIMIT 4
