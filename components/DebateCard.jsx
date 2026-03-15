@@ -15,6 +15,7 @@ function useCountdown(endsAt) {
   const [remaining, setRemaining] = useState('');
   useEffect(() => {
     const tick = () => {
+      if (!endsAt) return;
       const diff = new Date(endsAt) - Date.now();
       if (diff <= 0) { setRemaining('ENDED'); return; }
       const h = Math.floor(diff / 3600000);
@@ -38,8 +39,16 @@ export default function DebateCard({ debate }) {
   const [votedFor, setVotedFor] = useState(null);
   const [voting, setVoting] = useState(false);
 
-  const endsAt = debate.ends_at || new Date(Date.now() + 86400000).toISOString();
+  const [endsAt, setEndsAt] = useState(debate.ends_at);
   const countdown = useCountdown(endsAt);
+
+  useEffect(() => {
+    if (!debate.ends_at) {
+      // Create a stable local end time if none provided
+      const fallback = new Date(Date.now() + 86400000).toISOString();
+      setEndsAt(fallback);
+    }
+  }, [debate.ends_at]);
 
   useEffect(() => {
     const stored = localStorage.getItem(`debate_vote_${debate.id}`);
@@ -85,7 +94,16 @@ export default function DebateCard({ debate }) {
   const voted = !!votedFor;
 
   return (
-    <>
+    <div className="debate-card-root" style={{ 
+      '--col-a': colA, 
+      '--col-b': colB,
+      '--col-a-transparent': `${colA}55`,
+      '--col-b-transparent': `${colB}55`,
+      '--col-a-very-transparent': `${colA}18`,
+      '--col-b-very-transparent': `${colB}18`,
+      '--col-a-border': `${colA}66`,
+      '--col-b-border': `${colB}66`
+    }}>
       <style>{`
         .debate-card-wrapper {
           margin: 28px auto;
@@ -104,7 +122,7 @@ export default function DebateCard({ debate }) {
           inset: 0;
           border-radius: 20px;
           padding: 1px;
-          background: linear-gradient(135deg, ${colA}55, transparent 40%, transparent 60%, ${colB}55);
+          background: linear-gradient(135deg, var(--col-a-transparent), transparent 40%, transparent 60%, var(--col-b-transparent));
           -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
           -webkit-mask-composite: destination-out;
           mask-composite: exclude;
@@ -223,7 +241,6 @@ export default function DebateCard({ debate }) {
           position: absolute;
           font-size: 120px;
           font-weight: 900;
-          color: currentColor;
           opacity: 0.04;
           line-height: 1;
           pointer-events: none;
@@ -443,17 +460,17 @@ export default function DebateCard({ debate }) {
           {/* Agent A */}
           <div
             className={`debate-agent-col left ${voted && votedFor !== 'a' ? 'loser' : ''} ${voted && votedFor === 'a' ? 'voted-col' : ''}`}
-            style={{ color: colA }}
+            style={{ color: 'var(--col-a)' }}
             onClick={() => !voted && handleVote('a')}
           >
-            <span className="debate-watermark" style={{ color: colA }}>&ldquo;</span>
+            <span className="debate-watermark" style={{ color: 'var(--col-a)' }}>&ldquo;</span>
             <div className="agent-header">
-              <div className="debate-avatar" style={{ background: `${colA}18`, borderColor: `${colA}55`, color: colA }}>
+              <div className="debate-avatar" style={{ background: 'var(--col-a-very-transparent)', borderColor: 'var(--col-a-transparent)', color: 'var(--col-a)' }}>
                 {agentA.emoji}
               </div>
               <div>
                 <div className="debate-agent-name">{agentA.name}</div>
-                <div className="debate-agent-topic" style={{ color: colA }}>{agentA.topic}</div>
+                <div className="debate-agent-topic" style={{ color: 'var(--col-a)' }}>{agentA.topic}</div>
               </div>
             </div>
             <p className="agent-quote">{debate.argument_a}</p>
@@ -461,9 +478,9 @@ export default function DebateCard({ debate }) {
               <button
                 className="debate-vote-btn"
                 style={{
-                  color: votedFor === 'a' ? '#fff' : colA,
-                  borderColor: `${colA}66`,
-                  background: votedFor === 'a' ? `${colA}33` : 'transparent',
+                  color: votedFor === 'a' ? '#fff' : 'var(--col-a)',
+                  borderColor: 'var(--col-a-border)',
+                  background: votedFor === 'a' ? 'var(--col-a-transparent)' : 'transparent',
                 }}
                 onClick={(e) => { e.stopPropagation(); handleVote('a'); }}
                 disabled={voted}
@@ -487,17 +504,17 @@ export default function DebateCard({ debate }) {
           {/* Agent B */}
           <div
             className={`debate-agent-col right ${voted && votedFor !== 'b' ? 'loser' : ''} ${voted && votedFor === 'b' ? 'voted-col' : ''}`}
-            style={{ color: colB }}
+            style={{ color: 'var(--col-b)' }}
             onClick={() => !voted && handleVote('b')}
           >
-            <span className="debate-watermark" style={{ color: colB, right: 'auto', left: '-10px' }}>&rdquo;</span>
+            <span className="debate-watermark" style={{ color: 'var(--col-b)', right: 'auto', left: '-10px' }}>&rdquo;</span>
             <div className="agent-header">
-              <div className="debate-avatar" style={{ background: `${colB}18`, borderColor: `${colB}55`, color: colB }}>
+              <div className="debate-avatar" style={{ background: 'var(--col-b-very-transparent)', borderColor: 'var(--col-b-transparent)', color: 'var(--col-b)' }}>
                 {agentB.emoji}
               </div>
               <div style={{ textAlign: 'right' }}>
                 <div className="debate-agent-name">{agentB.name}</div>
-                <div className="debate-agent-topic" style={{ color: colB }}>{agentB.topic}</div>
+                <div className="debate-agent-topic" style={{ color: 'var(--col-b)' }}>{agentB.topic}</div>
               </div>
             </div>
             <p className="agent-quote">{debate.argument_b}</p>
@@ -505,9 +522,9 @@ export default function DebateCard({ debate }) {
               <button
                 className="debate-vote-btn"
                 style={{
-                  color: votedFor === 'b' ? '#fff' : colB,
-                  borderColor: `${colB}66`,
-                  background: votedFor === 'b' ? `${colB}33` : 'transparent',
+                  color: votedFor === 'b' ? '#fff' : 'var(--col-b)',
+                  borderColor: 'var(--col-b-border)',
+                  background: votedFor === 'b' ? 'var(--col-b-transparent)' : 'transparent',
                 }}
                 onClick={(e) => { e.stopPropagation(); handleVote('b'); }}
                 disabled={voted}
@@ -521,23 +538,23 @@ export default function DebateCard({ debate }) {
         {/* === VOTE BAR === */}
         <div className="debate-footer">
           <div className="vote-bar-labels">
-            <span className="vote-bar-pct" style={{ color: colA }}>{agentA.name.split(' ')[0]} ({pctA}%)</span>
+            <span className="vote-bar-pct" style={{ color: 'var(--col-a)' }}>{agentA.name.split(' ')[0]} ({pctA}%)</span>
             <span className="vote-bar-center-label">Current Standing</span>
-            <span className="vote-bar-pct right-label" style={{ color: colB }}>({pctB}%) {agentB.name.split(' ')[0]}</span>
+            <span className="vote-bar-pct right-label" style={{ color: 'var(--col-b)' }}>({pctB}%) {agentB.name.split(' ')[0]}</span>
           </div>
           <div className="debate-vote-bar-track">
             <div
               className="debate-vote-bar-a"
               style={{
                 width: `${pctA}%`,
-                background: `linear-gradient(90deg, ${colA}, ${colA}cc)`,
+                background: `linear-gradient(90deg, var(--col-a), var(--col-a-transparent))`,
               }}
             />
             <div
               className="debate-vote-bar-b"
               style={{
                 width: `${pctB}%`,
-                background: `linear-gradient(90deg, ${colB}cc, ${colB})`,
+                background: `linear-gradient(90deg, var(--col-b-transparent), var(--col-b))`,
               }}
             />
           </div>
@@ -547,6 +564,6 @@ export default function DebateCard({ debate }) {
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 }

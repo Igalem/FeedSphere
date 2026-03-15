@@ -145,181 +145,179 @@ export default function PostCard({ post }) {
   };
 
   return (
-    <>
-      <div 
-        className="post-card"
-        style={{ 
-          borderColor: `${agent.color_hex}44`,
-          background: `linear-gradient(to bottom right, ${agent.color_hex}0d, var(--surface) 60%)` 
-        }}
-      >
-        <div className="post-header">
-          <div className="agent-avatar" style={{ background: `${agent.color_hex}22`, borderColor: `${agent.color_hex}33` }}>
-            {agent.emoji}
-          </div>
-          <div className="post-meta">
-            <div className="post-agent-name">
-              {agent.name}
-              <span className="agent-tag" style={{ background: `${agent.color_hex}22`, color: agent.color_hex }}>
-                {agent.topic}
-              </span>
-              {post.type === 'perspective' && (
-                <span 
-                  className="source-pill" 
-                  style={{ 
-                    background: 'var(--accent)',
-                    color: '#000',
-                    borderColor: 'var(--accent)',
-                    fontWeight: '700',
-                    fontSize: '10px',
-                    marginLeft: '4px'
-                  }}
-                >
-                  ✨ Perspective
-                </span>
-              )}
-            </div>
-            <div className="post-time" suppressHydrationWarning style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-              <span>{timeStr} · <span style={{ color: agent.color_hex }}>{followers} followers</span></span>
-              <SentimentFace score={sentiment} color={sentColor} size={14} showLabel={true} />
-            </div>
-          </div>
+    <div 
+      className="post-card"
+      style={{ 
+        borderColor: `${agent.color_hex}44`,
+        background: `linear-gradient(to bottom right, ${agent.color_hex}0d, var(--surface) 60%)` 
+      }}
+    >
+      <div className="post-header">
+        <div className="agent-avatar" style={{ background: `${agent.color_hex}22`, borderColor: `${agent.color_hex}33` }}>
+          {agent.emoji}
         </div>
-
-        <div className="post-source">
-          {post.type !== 'perspective' && (
-            <span className="source-pill">
-              📰 {post.source_name || 'RSS Feed'}
-            </span>
-          )}
-          {post.tags && post.tags.length > 0 && (
-            post.tags
-              .filter(tag => !(post.type === 'perspective' && tag.toLowerCase() === 'perspective'))
-              .map((tag, i) => (
-                <span key={i} className="agent-tag" style={{ background: '#ffffff0a', color: 'var(--muted)', fontSize: '10px', padding: '2px 8px', borderRadius: '20px' }}>
-                  #{tag}
-                </span>
-              ))
-          )}
-          {(!post.tags || post.tags.length === 0) && post.type !== 'perspective' && (
-            <span className="agent-tag" style={{ background: '#ffffff0a', color: 'var(--muted)', fontSize: '10px', padding: '2px 8px', borderRadius: '20px' }}>
+        <div className="post-meta">
+          <div className="post-agent-name">
+            {agent.name}
+            <span className="agent-tag" style={{ background: `${agent.color_hex}22`, color: agent.color_hex }}>
               {agent.topic}
             </span>
-          )}
-        </div>
-
-        <div 
-          className="post-commentary" 
-          style={{ 
-            fontSize: post.type === 'perspective' ? '15px' : '14px',
-            lineHeight: post.type === 'perspective' ? '1.5' : '1.4',
-            fontWeight: 'normal',
-            whiteSpace: 'pre-wrap',
-            marginTop: post.type === 'perspective' ? '4px' : '0'
-          }}
-        >
-          {post.type === 'perspective' && (
-            <svg className="quote-icon" style={{ fill: agent.color_hex }} viewBox="0 0 24 24">
-              <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z"/>
-            </svg>
-          )}
-          {post.agent_commentary}
-        </div>
-
-        {post.type === 'perspective' ? (
-          post.article_image_url && (
-            <div className="perspective-image-wrapper" style={{ marginTop: '16px', borderRadius: '12px', overflow: 'hidden', border: '1px solid #ffffff10' }}>
-              <img 
-                src={post.article_image_url} 
-                alt="Perspective Visual" 
-                className="perspective-image"
-                style={{ width: '100%', maxHeight: '400px', objectFit: 'cover', display: 'block' }} 
-              />
-            </div>
-          )
-        ) : (
-          <a 
-            href={post.article_url} 
-            target="_blank" 
-            rel="noopener noreferrer" 
-            className={`post-article ${post.article_image_url ? 'has-image' : 'no-image'}`}
-          >
-            {post.article_image_url && (
-              <div className="article-image-wrapper">
-                <img 
-                  src={post.article_image_url} 
-                  alt="Article" 
-                  className="article-image" 
-                />
-              </div>
+            {post.type === 'perspective' && (
+              <span 
+                className="source-pill" 
+                style={{ 
+                  background: 'var(--accent)',
+                  color: '#000',
+                  borderColor: 'var(--accent)',
+                  fontWeight: '700',
+                  fontSize: '10px',
+                  marginLeft: '4px'
+                }}
+              >
+                ✨ Perspective
+              </span>
             )}
-            <div className="article-content">
-              <div className="article-category" style={{ color: agent.color_hex }}>{agent.topic}</div>
-              <div className="article-title">{post.article_title}</div>
-              <div className="article-excerpt">{post.article_excerpt}</div>
-            </div>
-          </a>
-        )}
-
-
-        <div className="post-actions">
-          <button className={`action-btn ${userReaction === 'fire' ? 'liked' : ''}`} onClick={() => handleReact('fire')}>
-            🔥 Fire {reactions.fire || 0}
-          </button>
-          <button className={`action-btn ${userReaction === 'brain' ? 'liked' : ''}`} onClick={() => handleReact('brain')}>
-            🧠 Brain {reactions.brain || 0}
-          </button>
-          <button className={`action-btn ${userReaction === 'cold' ? 'liked' : ''}`} onClick={() => handleReact('cold')}>
-            🧊 Cold {reactions.cold || 0}
-          </button>
-          <button className={`action-btn ${userReaction === 'spot_on' ? 'liked' : ''}`} onClick={() => handleReact('spot_on')}>
-            🎯 Spot On {reactions.spot_on || 0}
-          </button>
-          
-          <div className="action-sep"></div>
-          
-          <button 
-            className="action-btn" 
-            onClick={toggleComments}
-            style={{ color: totalComments > 0 ? '#e8ff47' : 'inherit' }}
-          >
-            💬 Comment {totalComments}
-          </button>
-          <button className={`action-btn ${bookmarked ? 'bookmarked' : ''}`} onClick={() => setBookmarked(!bookmarked)}>
-            🔖 Book
-          </button>
-          <button className="action-btn">↗️</button>
-        </div>
-
-        <div className={`comments-section ${commentsOpen ? 'open' : ''}`} style={{ marginTop: '16px', borderTop: '1px solid #ffffff10', paddingTop: '16px' }}>
-          <div className="comments-list" style={{ marginBottom: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {loadingComments && <div style={{ fontSize: '13px', color: 'var(--muted)' }}>Loading comments...</div>}
-            {!loadingComments && comments.map((c) => (
-              <div key={c.id} className="comment-item" style={{ fontSize: '13px', padding: '8px', background: '#ffffff0a', borderRadius: '8px' }}>
-                <div style={{ fontSize: '12px', color: '#fff', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span style={{ fontWeight: '600', color: c.agent_color ? c.agent_color : '#fff' }}>
-                    {c.agent_name ? `${c.agent_emoji} ${c.agent_name}` : c.username}
-                  </span>
-                  <span style={{ fontSize: '11px', color: 'var(--muted)' }}>· {formatTimeAgo(c.created_at)}</span>
-                </div>
-                <div style={{ color: '#ccc', fontSize: '13px' }}>{c.content}</div>
-              </div>
-            ))}
           </div>
-          <div className="comment-input-row" style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
-            <div className="user-avatar">You</div>
-            <textarea 
-              className="comment-input" 
-              placeholder="Share your take..." 
-              value={newCommentStr}
-              onChange={e => setNewCommentStr(e.target.value)}
-              onKeyDown={handleKeyDown}
-              style={{ flex: 1, minHeight: '38px', borderRadius: '8px', resize: 'none', background: '#000', border: '1px solid #333', padding: '8px 12px', color: 'var(--text)' }}
-            ></textarea>
-            <button onClick={handleSendComment} className="send-btn" style={{ padding: '8px 12px', borderRadius: '8px', background: 'var(--primary)', border: 'none', color: '#fff', cursor: 'pointer', fontWeight: 'bold' }}>{">"}</button>
+          <div className="post-time" suppressHydrationWarning style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+            <span>{timeStr} · <span style={{ color: agent.color_hex }}>{followers} followers</span></span>
+            <SentimentFace score={sentiment} color={sentColor} size={14} showLabel={true} />
           </div>
         </div>
       </div>
-    </>
+
+      <div className="post-source">
+        {post.type !== 'perspective' && (
+          <span className="source-pill">
+            📰 {post.source_name || 'RSS Feed'}
+          </span>
+        )}
+        {post.tags && post.tags.length > 0 && (
+          post.tags
+            .filter(tag => !(post.type === 'perspective' && tag.toLowerCase() === 'perspective'))
+            .map((tag, i) => (
+              <span key={i} className="agent-tag" style={{ background: '#ffffff0a', color: 'var(--muted)', fontSize: '10px', padding: '2px 8px', borderRadius: '20px' }}>
+                #{tag}
+              </span>
+            ))
+        )}
+        {(!post.tags || post.tags.length === 0) && post.type !== 'perspective' && (
+          <span className="agent-tag" style={{ background: '#ffffff0a', color: 'var(--muted)', fontSize: '10px', padding: '2px 8px', borderRadius: '20px' }}>
+            {agent.topic}
+          </span>
+        )}
+      </div>
+
+      <div 
+        className="post-commentary" 
+        style={{ 
+          fontSize: post.type === 'perspective' ? '15px' : '14px',
+          lineHeight: post.type === 'perspective' ? '1.5' : '1.4',
+          fontWeight: 'normal',
+          whiteSpace: 'pre-wrap',
+          marginTop: post.type === 'perspective' ? '4px' : '0'
+        }}
+      >
+        {post.type === 'perspective' && (
+          <svg className="quote-icon" style={{ fill: agent.color_hex }} viewBox="0 0 24 24">
+            <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z"/>
+          </svg>
+        )}
+        {post.agent_commentary}
+      </div>
+
+      {post.type === 'perspective' ? (
+        post.article_image_url && (
+          <div className="perspective-image-wrapper" style={{ marginTop: '16px', borderRadius: '12px', overflow: 'hidden', border: '1px solid #ffffff10' }}>
+            <img 
+              src={post.article_image_url} 
+              alt="Perspective Visual" 
+              className="perspective-image"
+              style={{ width: '100%', maxHeight: '400px', objectFit: 'cover', display: 'block' }} 
+            />
+          </div>
+        )
+      ) : (
+        <a 
+          href={post.article_url} 
+          target="_blank" 
+          rel="noopener noreferrer" 
+          className={`post-article ${post.article_image_url ? 'has-image' : 'no-image'}`}
+        >
+          {post.article_image_url && (
+            <div className="article-image-wrapper">
+              <img 
+                src={post.article_image_url} 
+                alt="Article" 
+                className="article-image" 
+              />
+            </div>
+          )}
+          <div className="article-content">
+            <div className="article-category" style={{ color: agent.color_hex }}>{agent.topic}</div>
+            <div className="article-title">{post.article_title}</div>
+            <div className="article-excerpt">{post.article_excerpt}</div>
+          </div>
+        </a>
+      )}
+
+
+      <div className="post-actions">
+        <button className={`action-btn ${userReaction === 'fire' ? 'liked' : ''}`} onClick={() => handleReact('fire')}>
+          🔥 Fire {reactions.fire || 0}
+        </button>
+        <button className={`action-btn ${userReaction === 'brain' ? 'liked' : ''}`} onClick={() => handleReact('brain')}>
+          🧠 Brain {reactions.brain || 0}
+        </button>
+        <button className={`action-btn ${userReaction === 'cold' ? 'liked' : ''}`} onClick={() => handleReact('cold')}>
+          🧊 Cold {reactions.cold || 0}
+        </button>
+        <button className={`action-btn ${userReaction === 'spot_on' ? 'liked' : ''}`} onClick={() => handleReact('spot_on')}>
+          🎯 Spot On {reactions.spot_on || 0}
+        </button>
+        
+        <div className="action-sep"></div>
+        
+        <button 
+          className="action-btn" 
+          onClick={toggleComments}
+          style={{ color: totalComments > 0 ? '#e8ff47' : 'inherit' }}
+        >
+          💬 Comment {totalComments}
+        </button>
+        <button className={`action-btn ${bookmarked ? 'bookmarked' : ''}`} onClick={() => setBookmarked(!bookmarked)}>
+          🔖 Book
+        </button>
+        <button className="action-btn">↗️</button>
+      </div>
+
+      <div className={`comments-section ${commentsOpen ? 'open' : ''}`} style={{ marginTop: '16px', borderTop: '1px solid #ffffff10', paddingTop: '16px' }}>
+        <div className="comments-list" style={{ marginBottom: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          {loadingComments && <div style={{ fontSize: '13px', color: 'var(--muted)' }}>Loading comments...</div>}
+          {!loadingComments && comments.map((c) => (
+            <div key={c.id} className="comment-item" style={{ fontSize: '13px', padding: '8px', background: '#ffffff0a', borderRadius: '8px' }}>
+              <div style={{ fontSize: '12px', color: '#fff', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontWeight: '600', color: c.agent_color ? c.agent_color : '#fff' }}>
+                  {c.agent_name ? `${c.agent_emoji} ${c.agent_name}` : c.username}
+                </span>
+                <span style={{ fontSize: '11px', color: 'var(--muted)' }}>· {formatTimeAgo(c.created_at)}</span>
+              </div>
+              <div style={{ color: '#ccc', fontSize: '13px' }}>{c.content}</div>
+            </div>
+          ))}
+        </div>
+        <div className="comment-input-row" style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
+          <div className="user-avatar">You</div>
+          <textarea 
+            className="comment-input" 
+            placeholder="Share your take..." 
+            value={newCommentStr}
+            onChange={e => setNewCommentStr(e.target.value)}
+            onKeyDown={handleKeyDown}
+            style={{ flex: 1, minHeight: '38px', borderRadius: '8px', resize: 'none', background: '#000', border: '1px solid #333', padding: '8px 12px', color: 'var(--text)' }}
+          ></textarea>
+          <button onClick={handleSendComment} className="send-btn" style={{ padding: '8px 12px', borderRadius: '8px', background: 'var(--primary)', border: 'none', color: '#fff', cursor: 'pointer', fontWeight: 'bold' }}>{">"}</button>
+        </div>
+      </div>
+    </div>
   );
 }

@@ -105,13 +105,15 @@ export default function FeedContent({ initialPosts, activeAgent, activeTopic, ac
     return (
       <div className="feed-container">
         {displayDebates.map(debate => (
-          <DebateCard key={debate.id} debate={debate} />
+          <DebateCard key={`debate-${debate.id}`} debate={debate} />
         ))}
-        {loading && (
-          <div className="loading-indicator" style={{ textAlign: 'center', padding: '20px', color: 'var(--accent)' }}>
-            Loading more debates...
-          </div>
-        )}
+        <div className="loading-status-area" style={{ minHeight: '60px' }}>
+          {loading && (
+            <div className="loading-indicator" style={{ textAlign: 'center', padding: '20px', color: 'var(--accent)' }}>
+              Loading more debates...
+            </div>
+          )}
+        </div>
       </div>
     );
   }
@@ -142,14 +144,16 @@ export default function FeedContent({ initialPosts, activeAgent, activeTopic, ac
       {feedItems.map((item) =>
         item.type === 'debate'
           ? <DebateCard key={`debate-${item.data.id}`} debate={item.data} />
-          : <PostCard key={item.data.id} post={item.data} />
+          : <PostCard key={`post-${item.data.id}`} post={item.data} />
       )}
-      {loading && (
-        <div className="loading-indicator" style={{ textAlign: 'center', padding: '20px', color: 'var(--accent)' }}>
-          <div className="pulse-dot" style={{ display: 'inline-block', marginRight: '8px' }}></div>
-          Loading more takes...
-        </div>
-      )}
+      <div className="loading-status-area" style={{ minHeight: '60px' }}>
+        {loading && (
+          <div className="loading-indicator" style={{ textAlign: 'center', padding: '20px', color: 'var(--accent)' }}>
+            <div className="pulse-dot" style={{ display: 'inline-block', marginRight: '8px' }}></div>
+            Loading more takes...
+          </div>
+        )}
+      </div>
     </div>
   );
 }

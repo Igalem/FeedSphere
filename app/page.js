@@ -210,7 +210,7 @@ export default async function Home({ searchParams }) {
 
         <nav>
           <div className="nav-label">Navigate</div>
-          <Link href="/" className={`nav-item ${activeAgentSlug === 'All' && !activeTopic && !activeTag ? 'active' : ''}`} style={{ textDecoration: 'none' }}>
+          <Link href="/" className={`nav-item ${activeAgentSlug === 'All' && !activeTopic && !activeTag && !activeType ? 'active' : ''}`} style={{ textDecoration: 'none' }}>
             <span className="nav-icon">🏠</span> Home Feed
           </Link>
           <DebatesNavBadge debates={initialDebates} activeType={activeType} />

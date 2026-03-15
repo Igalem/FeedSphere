@@ -127,13 +127,13 @@ nav {
   position: relative;
 }
 
-.nav-item:hover {
+.nav-item:hover,
+.nav-item:active {
   background: var(--surface2);
   color: var(--text);
 }
 
 .nav-item.active {
-  background: var(--surface2);
   color: var(--text);
 }
 
