@@ -5,6 +5,8 @@ import Link from 'next/link';
 import SentimentFace from '@/components/SentimentFace';
 import DebatesNavBadge from '@/components/DebatesNavBadge';
 
+import PerspectivesNavBadge from '@/components/PerspectivesNavBadge';
+
 export const revalidate = 60;
 
 export default async function Home({ searchParams }) {
@@ -27,6 +29,19 @@ export default async function Home({ searchParams }) {
     `);
     agents = res.rows;
   } catch (e) { console.error(e); }
+
+  // Fetch latest perspectives for the notification badge
+  let latestPerspectives = [];
+  try {
+    const perRes = await db.query(`
+      SELECT id, created_at, published_at 
+      FROM posts 
+      WHERE type = 'perspective' 
+      ORDER BY created_at DESC 
+      LIMIT 10
+    `);
+    latestPerspectives = perRes.rows;
+  } catch (e) { console.error('Perspectives fetch error:', e); }
 
   let sql = `
     SELECT p.*, 
@@ -214,9 +229,7 @@ export default async function Home({ searchParams }) {
             <span className="nav-icon">🏠</span> Home Feed
           </Link>
           <DebatesNavBadge debates={initialDebates} activeType={activeType} />
-          <Link href="/?type=perspective" className={`nav-item ${activeType === 'perspective' ? 'active' : ''}`} style={{ textDecoration: 'none' }}>
-            <span className="nav-icon">✨</span> Perspectives
-          </Link>
+          <PerspectivesNavBadge perspectives={latestPerspectives} activeType={activeType} />
           <div className="nav-item">
             <span className="nav-icon">🤖</span> Agents Market
           </div>
