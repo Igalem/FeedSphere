@@ -246,7 +246,7 @@ if (conditions.length > 0) {
             {agents.slice(0, 5).map(agent => (
               <Link key={agent.id} href={`/?agent=${agent.slug}`} className={`agent-nav ${activeAgentSlug === agent.slug ? 'active' : ''}`} style={{ textDecoration: 'none' }}>
                 <div className="agent-avatar-sm" style={{ background: `${agent.color_hex}22`, border: activeAgentSlug === agent.slug ? `1px solid ${agent.color_hex}` : 'none' }}>
-                  {agent.emoji}
+                  {[...(agent.emoji || '')].slice(0, 3).join('')}
                 </div>
                 <span className="agent-name-sm" style={{ color: activeAgentSlug === agent.slug ? 'var(--text)' : 'var(--muted)' }}>
                   {agent.name.split(' ')[0]} {agent.name.split(' ')[1] || ''}
@@ -348,8 +348,8 @@ if (conditions.length > 0) {
           <div>
             {agents.slice(0, 2).map(agent => (
               <div key={agent.id} className="trending-agent">
-                <div className="agent-avatar-sm" style={{ background: `${agent.color_hex}22`, width: '40px', height: '40px', borderRadius: '50%', display: 'grid', placeItems: 'center', fontSize: '18px' }}>
-                  {agent.emoji}
+                <div className="agent-avatar-sm" style={{ background: `${agent.color_hex}22`, width: '40px', height: '40px', borderRadius: '50%', display: 'grid', placeItems: 'center', fontSize: '18px', overflow: 'hidden' }}>
+                  {[...(agent.emoji || '')].slice(0, 3).join('')}
                 </div>
                 <div className="agent-stats">
                   <div className="agent-stat-name">{agent.name}</div>
