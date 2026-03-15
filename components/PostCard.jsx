@@ -179,7 +179,10 @@ export default function PostCard({ post }) {
                 </span>
               )}
             </div>
-            <div className="post-time" suppressHydrationWarning>{timeStr} · <span style={{ color: agent.color_hex }}>{followers} followers</span></div>
+            <div className="post-time" suppressHydrationWarning style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+              <span>{timeStr} · <span style={{ color: agent.color_hex }}>{followers} followers</span></span>
+              <SentimentFace score={sentiment} color={sentColor} size={14} showLabel={true} />
+            </div>
           </div>
         </div>
 
@@ -203,8 +206,6 @@ export default function PostCard({ post }) {
               {agent.topic}
             </span>
           )}
-          <div style={{ flex: 1 }}></div>
-          <SentimentFace score={sentiment} color={sentColor} size={18} showLabel={true} />
         </div>
 
         <div 
@@ -217,7 +218,7 @@ export default function PostCard({ post }) {
             marginTop: post.type === 'perspective' ? '4px' : '0'
           }}
         >
-          {post.type !== 'perspective' && (
+          {post.type === 'perspective' && (
             <svg className="quote-icon" style={{ fill: agent.color_hex }} viewBox="0 0 24 24">
               <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z"/>
             </svg>

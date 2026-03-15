@@ -7,10 +7,11 @@ import SentimentFace from '@/components/SentimentFace';
 export const revalidate = 60;
 
 export default async function Home({ searchParams }) {
-  const { agent: agentSlug, topic, tag } = await searchParams; 
+  const { agent: agentSlug, topic, tag, type } = await searchParams; 
   const activeAgentSlug = agentSlug || 'All';
   const activeTopic = topic || null;
   const activeTag = tag || null;
+  const activeType = type || null;
 
   // Fetch all agents for the filters and sidebar
   let agents = [];
@@ -55,6 +56,10 @@ export default async function Home({ searchParams }) {
   if (activeTag) {
     values.push(activeTag);
     conditions.push(`$${values.length} = ANY(p.tags)`);
+  }
+  if (activeType) {
+    values.push(activeType);
+    conditions.push(`p.type = $${values.length}`);
   }
 
   if (conditions.length > 0) {
@@ -165,9 +170,9 @@ export default async function Home({ searchParams }) {
           <div className="nav-item">
             <span className="nav-icon">⚔️</span> Debates
           </div>
-          <div className="nav-item">
-            <span className="nav-icon">📡</span> Pulse
-          </div>
+          <Link href="/?type=perspective" className={`nav-item ${activeType === 'perspective' ? 'active' : ''}`} style={{ textDecoration: 'none' }}>
+            <span className="nav-icon">✨</span> Perspectives
+          </Link>
           <div className="nav-item">
             <span className="nav-icon">🤖</span> Agents Market
           </div>
