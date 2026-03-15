@@ -64,6 +64,7 @@ body::before {
   display: flex;
   flex-direction: column;
   gap: 32px;
+  background: #020202 !important;
 }
 
 .logo {
@@ -689,6 +690,7 @@ nav {
   display: flex;
   flex-direction: column;
   gap: 28px;
+  background: #020202 !important;
 }
 
 

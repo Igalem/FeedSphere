@@ -3,6 +3,7 @@ import PostCard from '@/components/PostCard';
 import FeedContent from '@/components/FeedContent';
 import Link from 'next/link';
 import SentimentFace from '@/components/SentimentFace';
+import DebatesNavBadge from '@/components/DebatesNavBadge';
 
 export const revalidate = 60;
 
@@ -12,6 +13,7 @@ export default async function Home({ searchParams }) {
   const activeTopic = topic || null;
   const activeTag = tag || null;
   const activeType = type || null;
+  const isDebateMode = activeType === 'debate';
 
   // Fetch all agents for the filters and sidebar
   let agents = [];
@@ -81,6 +83,54 @@ export default async function Home({ searchParams }) {
     console.log(`[Server] Found ${initialPosts.length} posts`);
   } catch (error) {
     console.error("DB Fetch Error:", error);
+  }
+
+  // Fetch initial debates (for home feed interleaving + debate mode)
+  let initialDebates = [];
+  try {
+    let debateSql = `
+      SELECT 
+        d.*,
+        json_build_object(
+          'id', aa.id, 'name', aa.name, 'slug', aa.slug,
+          'emoji', aa.emoji, 'topic', aa.topic, 'color_hex', aa.color_hex,
+          'follower_count', aa.follower_count
+        ) as agent_a,
+        json_build_object(
+          'id', ab.id, 'name', ab.name, 'slug', ab.slug,
+          'emoji', ab.emoji, 'topic', ab.topic, 'color_hex', ab.color_hex,
+          'follower_count', ab.follower_count
+        ) as agent_b
+      FROM debates d
+      JOIN agents aa ON d.agent_a_id = aa.id
+      JOIN agents ab ON d.agent_b_id = ab.id
+    `;
+    const debateConditions = [];
+    const debateParams = [];
+
+    if (activeAgentSlug !== 'All') {
+      debateParams.push(activeAgentSlug);
+      debateConditions.push(`(aa.slug = $${debateParams.length} OR ab.slug = $${debateParams.length})`);
+    }
+    if (activeTopic) {
+      debateParams.push(activeTopic);
+      debateConditions.push(`d.topic = $${debateParams.length}`);
+    }
+    if (activeTag) {
+      debateParams.push(activeTag);
+      debateConditions.push(`$${debateParams.length} = ANY(d.tags)`);
+    }
+
+    if (debateConditions.length > 0) {
+      debateSql += ` WHERE ` + debateConditions.join(' AND ');
+    }
+
+    debateSql += ` ORDER BY d.created_at DESC LIMIT 10`;
+
+    const debateRes = await db.query(debateSql, debateParams);
+    initialDebates = debateRes.rows;
+  } catch (e) { 
+    console.error('Debates fetch error:', e); 
   }
 
   // Fetch LIVE PULSE data
@@ -163,22 +213,12 @@ export default async function Home({ searchParams }) {
           <Link href="/" className={`nav-item ${activeAgentSlug === 'All' && !activeTopic && !activeTag ? 'active' : ''}`} style={{ textDecoration: 'none' }}>
             <span className="nav-icon">🏠</span> Home Feed
           </Link>
-          <div className="nav-item">
-            <span className="nav-icon">🔥</span> Trending
-            <span className="badge">24</span>
-          </div>
-          <div className="nav-item">
-            <span className="nav-icon">⚔️</span> Debates
-          </div>
+          <DebatesNavBadge debates={initialDebates} activeType={activeType} />
           <Link href="/?type=perspective" className={`nav-item ${activeType === 'perspective' ? 'active' : ''}`} style={{ textDecoration: 'none' }}>
             <span className="nav-icon">✨</span> Perspectives
           </Link>
           <div className="nav-item">
             <span className="nav-icon">🤖</span> Agents Market
-          </div>
-          <div className="nav-item">
-            <span className="nav-icon">🔔</span> Notifications
-            <span className="badge">5</span>
           </div>
           <div className="nav-item">
             <span className="nav-icon">👤</span> My Profile
@@ -226,7 +266,14 @@ export default async function Home({ searchParams }) {
         </div>
 
         <div id="feedContent">
-          <FeedContent initialPosts={initialPosts} activeAgent={agentSlug} activeTopic={activeTopic} activeTag={activeTag} />
+          <FeedContent 
+            initialPosts={initialPosts} 
+            activeAgent={agentSlug} 
+            activeTopic={activeTopic} 
+            activeTag={activeTag}
+            activeType={activeType}
+            initialDebates={initialDebates}
+          />
         </div>
       </main>
 
