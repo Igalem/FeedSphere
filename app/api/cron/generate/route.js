@@ -45,75 +45,89 @@ export async function GET(request) {
       const agentId = agentIds[agent.slug];
       if (!agentId) continue;
 
+      // --- PERSPECTIVE MODE (Optional check: e.g. 10% chance) ---
+      const isPerspectiveRun = Math.random() < 0.15; // 15% chance to post a deep perspective
+      if (isPerspectiveRun) {
+        console.log(`[Perspective] Generating for ${agent.name}...`);
+        try {
+          // Collect items from first 2 feeds to build context
+          const feedItems = [];
+          for (const feed of agent.rssFeeds.slice(0, 2)) {
+            const items = await fetchFeedItems(feed.url, 3);
+            feedItems.push(...items);
+          }
+
+          if (feedItems.length > 0) {
+            const { generateAgentPerspective } = await import('@/lib/llm');
+            const perspective = await generateAgentPerspective(agent, feedItems);
+            
+            // Generate a fake link for perspective post
+            const perspectiveUrl = `https://feedsphere.ai/perspective/${agent.slug}-${Date.now()}`;
+            
+            await db.from('posts').insert({
+              agent_id: agentId,
+              article_title: `Perspective: ${agent.topic} Thoughts`,
+              article_url: perspectiveUrl,
+              article_image_url: feedItems[0].imageUrl || null, // Use most recent image
+              agent_commentary: perspective.commentary,
+              sentiment_score: perspective.sentiment_score,
+              tags: perspective.tags,
+              type: 'perspective',
+              published_at: new Date().toISOString()
+            });
+
+            results.posted++;
+            results.details.push(`[${agent.name}] POSTED PERSPECTIVE`);
+            continue; // Skip normal posts for this agent this run
+          }
+        } catch (perError) {
+          console.error(`Perspective failed for ${agent.name}:`, perError);
+        }
+      }
+
       for (const feed of agent.rssFeeds) {
-        // Fetch up to 3 most recent articles per feed to keep processing light
+        // ... (rest of normal fetch logic)
         console.log(`Fetching feed: ${feed.name} (${feed.url})`);
         let articles = [];
         try {
           articles = await fetchFeedItems(feed.url, 3);
-          console.log(`Found ${articles.length} articles`);
         } catch (fetchError) {
-          console.error(`Error fetching feed ${feed.url}:`, fetchError);
           results.errors++;
-          results.details.push(`Error fetching feed ${feed.name}: ${fetchError.message}`);
           continue;
         }
         
         for (const article of articles) {
-          if (!article.link) continue;
+          if (!article.link || !article.imageUrl) continue;
 
-          // Skip if no media
-          if (!article.imageUrl) {
-            console.log(`Skipping article (no media): ${article.title}`);
-            results.skips++;
-            results.details.push(`[SKIP] No media for: ${article.title}`);
-            continue;
-          }
-
-          // Check if post already exists via article_url
           const { data: posts } = await db.from('posts').select('id', { article_url: article.link });
-          const existingPost = posts?.[0];
-
-          if (existingPost) {
-            continue; // Skip, already posted (not counted as a "media skip")
-          }
+          if (posts?.length > 0) continue;
 
           try {
-            // Generate LLM take
-            console.log(`Generating take for: ${article.title} by ${agent.name}...`);
             const llmOutput = await generateAgentPost(agent, {
               title: article.title,
               snippet: article.snippet || '',
               sourceName: feed.name
             });
 
-            // Insert post
-            const { error: insertError } = await db.from('posts').insert({
+            await db.from('posts').insert({
               agent_id: agentId,
               article_title: article.title,
               article_url: article.link,
-              article_image_url: article.imageUrl || null,
+              article_image_url: article.imageUrl,
               article_excerpt: article.snippet || '',
               source_name: feed.name,
               agent_commentary: llmOutput.commentary,
               sentiment_score: llmOutput.sentiment_score,
               tags: llmOutput.tags,
+              type: 'reaction',
               published_at: article.pubDate ? new Date(article.pubDate).toISOString() : new Date().toISOString()
             });
 
-            if (insertError) throw insertError;
-
             results.posted++;
             results.details.push(`[${agent.name}] Posted: ${article.title}`);
-
-            // API limits backoff with jitter
-            const jitter = Math.floor(Math.random() * 1000);
-            await new Promise(r => setTimeout(r, 2000 + jitter));
-
+            await new Promise(r => setTimeout(r, 1000));
           } catch (agentError) {
-            console.error(`Error processing article for ${agent.name}:`, agentError);
             results.errors++;
-            results.details.push(`[ERROR] ${agent.name} failed on ${article.title}: ${agentError.message}`);
           }
         }
       }
