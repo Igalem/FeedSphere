@@ -162,49 +162,12 @@ export default function PostCard({ post }) {
             <span className="agent-tag" style={{ background: `${agent.color_hex}22`, color: agent.color_hex }}>
               {agent.topic}
             </span>
-            {post.type === 'perspective' && (
-              <span 
-                className="source-pill" 
-                style={{ 
-                  background: 'var(--accent)',
-                  color: '#000',
-                  borderColor: 'var(--accent)',
-                  fontWeight: '700',
-                  fontSize: '10px',
-                  marginLeft: '4px'
-                }}
-              >
-                ✨ Perspective
-              </span>
-            )}
           </div>
           <div className="post-time" suppressHydrationWarning style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
             <span>{timeStr} · <span style={{ color: agent.color_hex }}>{followers} followers</span></span>
             <SentimentFace score={sentiment} color={sentColor} size={14} showLabel={true} />
           </div>
         </div>
-      </div>
-
-      <div className="post-source">
-        {post.type !== 'perspective' && (
-          <span className="source-pill">
-            📰 {post.source_name || 'RSS Feed'}
-          </span>
-        )}
-        {post.tags && post.tags.length > 0 && (
-          post.tags
-            .filter(tag => !(post.type === 'perspective' && tag.toLowerCase() === 'perspective'))
-            .map((tag, i) => (
-              <span key={i} className="agent-tag" style={{ background: '#ffffff0a', color: 'var(--muted)', fontSize: '10px', padding: '2px 8px', borderRadius: '20px' }}>
-                #{tag}
-              </span>
-            ))
-        )}
-        {(!post.tags || post.tags.length === 0) && post.type !== 'perspective' && (
-          <span className="agent-tag" style={{ background: '#ffffff0a', color: 'var(--muted)', fontSize: '10px', padding: '2px 8px', borderRadius: '20px' }}>
-            {agent.topic}
-          </span>
-        )}
       </div>
 
       <div 
@@ -223,6 +186,23 @@ export default function PostCard({ post }) {
           </svg>
         )}
         {post.agent_commentary}
+      </div>
+
+      <div className="post-source">
+        {post.tags && post.tags.length > 0 && (
+          post.tags
+            .filter(tag => !(post.type === 'perspective' && tag.toLowerCase() === 'perspective'))
+            .map((tag, i) => (
+              <span key={i} className="agent-tag" style={{ background: '#ffffff0a', color: 'var(--muted)', fontSize: '10px', padding: '2px 8px', borderRadius: '20px' }}>
+                #{tag}
+              </span>
+            ))
+        )}
+        {(!post.tags || post.tags.length === 0) && post.type !== 'perspective' && (
+          <span className="agent-tag" style={{ background: '#ffffff0a', color: 'var(--muted)', fontSize: '10px', padding: '2px 8px', borderRadius: '20px' }}>
+            {agent.topic}
+          </span>
+        )}
       </div>
 
       {post.type === 'perspective' ? (
@@ -253,7 +233,9 @@ export default function PostCard({ post }) {
             </div>
           )}
           <div className="article-content">
-            <div className="article-category" style={{ color: agent.color_hex }}>{agent.topic}</div>
+            <div className="article-category" style={{ color: agent.color_hex }}>
+              {post.source_name || 'RSS Feed'}
+            </div>
             <div className="article-title">{post.article_title}</div>
             <div className="article-excerpt">{post.article_excerpt}</div>
           </div>

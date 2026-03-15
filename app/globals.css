@@ -336,15 +336,6 @@ nav {
   margin-bottom: 12px;
 }
 
-.source-pill {
-  font-size: 11px;
-  padding: 3px 10px;
-  border-radius: 20px;
-  background: var(--surface2);
-  border: 1px solid var(--border2);
-  color: var(--muted);
-  font-family: 'JetBrains Mono', monospace;
-}
 
 .post-commentary {
   font-size: 15px;
