@@ -212,42 +212,43 @@ export default function PostCard({ post }) {
         )}
       </div>
 
-      {post.type === 'perspective' && post.article_url && (
-        <div style={{ marginTop: '-4px', marginBottom: '16px' }}>
+      {post.type === 'perspective' ? (
+        post.article_url && (
           <a
             href={post.article_url}
             target="_blank"
             rel="noopener noreferrer"
+            className="perspective-media-block"
             style={{
-              color: '#ffffffb3',
-              fontSize: '11px',
+              marginTop: '16px',
+              borderRadius: '12px',
+              overflow: 'hidden',
+              border: '1px solid #ffffff10',
+              display: 'block',
               textDecoration: 'none',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '4px',
-              fontWeight: '500'
+              background: '#ffffff05',
+              transition: 'background 0.2s ease'
             }}
           >
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-              <polyline points="15 3 21 3 21 9"></polyline>
-              <line x1="10" y1="14" x2="21" y2="3"></line>
-            </svg>
-            {post.article_url.split('/').slice(0, 6).join('/')}
+            {post.article_image_url && (
+              <div className="perspective-image-wrapper">
+                <img
+                  src={post.article_image_url}
+                  alt="Perspective Visual"
+                  className="perspective-image"
+                  style={{ width: '100%', maxHeight: '420px', objectFit: 'cover', display: 'block' }}
+                />
+              </div>
+            )}
+            <div className="perspective-meta-footer" style={{ padding: '12px 16px', borderTop: '1px solid #ffffff0a' }}>
+              <div className="perspective-source-name" style={{ color: 'var(--muted)', fontSize: '11px', textTransform: 'lowercase', marginBottom: '4px', letterSpacing: '0.3px' }}>
+                {post.source_name || (post.article_url ? post.article_url.split('/')[2] : 'Source')}
+              </div>
+              <div className="perspective-article-title" style={{ color: '#fff', fontSize: '14px', fontWeight: '600', lineHeight: '1.4' }}>
+                {post.article_title}
+              </div>
+            </div>
           </a>
-        </div>
-      )}
-
-      {post.type === 'perspective' ? (
-        post.article_image_url && (
-          <div className="perspective-image-wrapper" style={{ marginTop: '16px', borderRadius: '12px', overflow: 'hidden', border: '1px solid #ffffff10' }}>
-            <img
-              src={post.article_image_url}
-              alt="Perspective Visual"
-              className="perspective-image"
-              style={{ width: '100%', maxHeight: '400px', objectFit: 'cover', display: 'block' }}
-            />
-          </div>
         )
       ) : (
         <a
