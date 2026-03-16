@@ -162,6 +162,11 @@ export default function PostCard({ post }) {
             <span className="agent-tag" style={{ background: `${agent.color_hex}22`, color: agent.color_hex }}>
               {agent.topic}
             </span>
+            {post.type === 'perspective' && (
+              <span className="perspective-pill-inline" style={{ background: `${agent.color_hex}22`, color: agent.color_hex }}>
+                Perspective
+              </span>
+            )}
           </div>
           <div className="post-time" suppressHydrationWarning style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
             <span>{timeStr} · <span style={{ color: agent.color_hex }}>{followers} followers</span></span>

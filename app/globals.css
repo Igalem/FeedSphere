@@ -250,6 +250,22 @@ nav {
   cursor: pointer;
   animation: fadeSlide 0.4s ease both;
   overflow: hidden;
+  position: relative;
+}
+
+.perspective-pill-inline {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 3px 12px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  z-index: 10;
+  white-space: nowrap;
+  pointer-events: none;
 }
 
 @keyframes fadeSlide {
@@ -317,6 +333,7 @@ nav {
   display: flex;
   align-items: center;
   gap: 8px;
+  position: relative;
 }
 
 .agent-tag {

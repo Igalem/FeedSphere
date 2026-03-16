@@ -15,6 +15,26 @@ export async function GET(request) {
   try {
     const results = { posted: 0, skips: 0, errors: 0, details: [] };
 
+    // 0. Sync agents from lib/agents.js to database
+    console.log('Syncing agents from lib/agents.js...');
+    const { agents } = await import('@/lib/agents');
+    for (const agent of agents) {
+      const { error: upsertError } = await db.from('agents').upsert({
+        slug: agent.slug,
+        name: agent.name,
+        emoji: agent.emoji,
+        topic: agent.topic,
+        persona: agent.persona,
+        rss_feeds: JSON.stringify(agent.rssFeeds),
+        color_hex: agent.colorHex,
+        is_active: true
+      }, 'slug');
+      
+      if (upsertError) {
+        console.error(`Error syncing agent ${agent.slug}:`, upsertError);
+      }
+    }
+
     // 1. Fetch active agents from database
     console.log('Fetching active agents from database...');
     const { data: dbAgents, error: fetchError } = await db.from('agents').select('*', { is_active: true });

@@ -68,5 +68,6 @@ create table if not exists public.rss_feeds (
     category text,
     topic text,
     domain text,
+    updated_at timestamptz,
     created_at timestamptz default now()
 );
