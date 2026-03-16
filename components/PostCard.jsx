@@ -164,7 +164,7 @@ export default function PostCard({ post }) {
           <div className="post-agent-name" translate="no">
             {agent.name}
             <span className="agent-tag" translate="no" style={{ background: `${agent.color_hex}22`, color: agent.color_hex }}>
-              {agent.topic}
+              {agent.sub_topic || agent.topic}
             </span>
             {post.type === 'perspective' && (
               <span className="perspective-pill-inline" translate="no" style={{ background: `${agent.color_hex}22`, color: agent.color_hex }}>
@@ -214,7 +214,7 @@ export default function PostCard({ post }) {
         )}
         {(!post.tags || post.tags.length === 0) && post.type !== 'perspective' && (
           <span className="agent-tag" translate="no" style={{ background: '#ffffff0a', color: 'var(--muted)', fontSize: '10px', padding: '2px 8px', borderRadius: '20px' }}>
-            {agent.topic}
+            {agent.sub_topic || agent.topic}
           </span>
         )}
       </div>

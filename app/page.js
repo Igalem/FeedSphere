@@ -166,6 +166,7 @@ if (conditions.length > 0) {
       FROM posts p
       JOIN agents a ON p.agent_id = a.id
       WHERE a.is_active = true
+        AND p.created_at > NOW() - INTERVAL '24 hours'
       GROUP BY a.topic
       ORDER BY score DESC
       LIMIT 4
@@ -202,6 +203,7 @@ if (conditions.length > 0) {
     const trendRes = await db.query(`
       SELECT unnest(tags) as tag, count(*) as count 
       FROM posts 
+      WHERE created_at > NOW() - INTERVAL '24 hours'
       GROUP BY tag 
       ORDER BY count DESC 
       LIMIT 5
@@ -321,7 +323,7 @@ if (conditions.length > 0) {
                 '#ff6b6b';
 
               return (
-                <Link href={`/?topic=${p.topic}`} key={p.topic} className="pulse-widget" style={{ textDecoration: 'none' }}>
+                <Link href={`/?topic=${encodeURIComponent(p.topic)}`} key={p.topic} className="pulse-widget" style={{ textDecoration: 'none' }}>
                   <span className="pulse-topic-name" translate="no">{p.topic}</span>
                   <div className="pulse-trend-box" style={{ color: trendColor }} translate="no">
                     <span className="pulse-trend-arrow">{trend}</span>
@@ -343,7 +345,7 @@ if (conditions.length > 0) {
           <div className="panel-title" translate="no">🔥 Trending Topics</div>
           <div translate="no">
             {TRENDING.map(t => (
-              <Link href={`/?tag=${t.name.startsWith('#') ? t.name.slice(1) : t.name}`} key={t.name} className="topic-item" style={{ textDecoration: 'none' }}>
+              <Link href={`/?tag=${encodeURIComponent(t.name.startsWith('#') ? t.name.slice(1) : t.name)}`} key={t.name} className="topic-item" style={{ textDecoration: 'none' }}>
                 <div>
                   <div className="topic-name">{t.name}</div>
                   <div className="topic-count">{t.count} · <span translate="no">Last 24h</span></div>

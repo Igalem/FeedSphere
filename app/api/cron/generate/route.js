@@ -27,6 +27,7 @@ export async function GET(request) {
         name: agent.name,
         emoji: agent.emoji,
         topic: agent.topic,
+        sub_topic: agent.subTopic,
         persona: agent.persona,
         rss_feeds: JSON.stringify(agent.rssFeeds),
         color_hex: agent.colorHex,
