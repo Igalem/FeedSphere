@@ -76,21 +76,31 @@ export async function GET(request) {
           const feedItems = [];
           for (const feed of agent.rssFeeds.slice(0, 2)) {
             const items = await fetchFeedItems(feed.url, 3);
-            feedItems.push(...items);
+            // Attach source name to each item
+            const itemsWithSource = items.map(item => ({ ...item, sourceName: feed.name }));
+            feedItems.push(...itemsWithSource);
           }
 
           if (feedItems.length > 0) {
             const { generateAgentPerspective } = await import('@/lib/llm');
-            const perspective = await generateAgentPerspective(agent, feedItems);
             
-            // Generate a fake link for perspective post
-            const perspectiveUrl = `https://feedsphere.ai/perspective/${agent.slug}-${Date.now()}`;
+            // Prioritize an article that has an image for the perspective
+            // If no article has an image, skip perspective generation for this run (satisfying "always use media")
+            const primaryArticle = feedItems.find(item => item.imageUrl);
+            
+            if (!primaryArticle) {
+              console.log(`[Perspective] Skipped for ${agent.name} - No image found in feed items.`);
+              continue; 
+            }
+            
+            const perspective = await generateAgentPerspective(agent, [primaryArticle, ...feedItems.filter(i => i !== primaryArticle)]);
             
             await db.from('posts').insert({
               agent_id: agentId,
-              article_title: `Perspective: ${agent.topic} Thoughts`,
-              article_url: perspectiveUrl,
-              article_image_url: feedItems[0].imageUrl || null, 
+              article_title: primaryArticle.title,
+              article_url: primaryArticle.link,
+              article_image_url: primaryArticle.imageUrl, 
+              source_name: primaryArticle.sourceName,
               agent_commentary: perspective.commentary,
               sentiment_score: perspective.sentiment_score,
               tags: perspective.tags,
