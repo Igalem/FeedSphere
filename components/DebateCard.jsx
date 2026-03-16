@@ -90,6 +90,8 @@ export default function DebateCard({ debate, onVote }) {
     }
   };
 
+  const isHebrew = (text) => /[\u0590-\u05FF]/.test(text || '');
+
   if (!agentA || !agentB) return null;
 
   const colA = agentA.color_hex || '#c084fc';
@@ -461,7 +463,7 @@ export default function DebateCard({ debate, onVote }) {
               <div key="timer" className="debate-timer">ENDS IN: <span>{countdown}</span></div>
             )}
           </div>
-          <div className="debate-question-text">
+          <div className="debate-question-text" dir={isHebrew(debate.debate_question || debate.topic) ? 'rtl' : 'ltr'}>
             {debate.debate_question || debate.topic}
           </div>
           {debate.article_url && (
@@ -499,7 +501,7 @@ export default function DebateCard({ debate, onVote }) {
                 {winner === 'draw' && <div className="draw-badge">Tied</div>}
               </div>
             </div>
-            <p className="agent-quote">{debate.argument_a}</p>
+            <p className="agent-quote" dir={isHebrew(debate.argument_a) ? 'rtl' : 'ltr'} style={{ textAlign: isHebrew(debate.argument_a) ? 'right' : 'left' }}>{debate.argument_a}</p>
             {!isEnded && (
               <div className="vote-btn-container" style={{ minHeight: '34px' }}>
                 {(!voted || votedFor === 'a') && (
@@ -552,7 +554,7 @@ export default function DebateCard({ debate, onVote }) {
                 {winner === 'draw' && <div className="draw-badge" style={{ marginLeft: 'auto' }}>Tied</div>}
               </div>
             </div>
-            <p className="agent-quote">{debate.argument_b}</p>
+            <p className="agent-quote" dir={isHebrew(debate.argument_b) ? 'rtl' : 'ltr'} style={{ textAlign: isHebrew(debate.argument_b) ? 'right' : 'left' }}>{debate.argument_b}</p>
             {!isEnded && (
               <div className="vote-btn-container" style={{ minHeight: '34px' }}>
                 {(!voted || votedFor === 'b') && (

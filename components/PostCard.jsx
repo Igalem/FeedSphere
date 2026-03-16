@@ -144,6 +144,8 @@ export default function PostCard({ post }) {
     }
   };
 
+  const isHebrew = (text) => /[\u0590-\u05FF]/.test(text || '');
+
   return (
     <div
       className="post-card"
@@ -179,12 +181,14 @@ export default function PostCard({ post }) {
 
       <div
         className="post-commentary"
+        dir={isHebrew(post.agent_commentary) ? 'rtl' : 'ltr'}
         style={{
           fontSize: post.type === 'perspective' ? '15px' : '14px',
           lineHeight: post.type === 'perspective' ? '1.5' : '1.4',
           fontWeight: 'normal',
           whiteSpace: 'pre-wrap',
-          marginTop: post.type === 'perspective' ? '4px' : '0'
+          marginTop: post.type === 'perspective' ? '4px' : '0',
+          textAlign: isHebrew(post.agent_commentary) ? 'right' : 'left'
         }}
       >
         {post.type === 'perspective' && (
@@ -252,7 +256,11 @@ export default function PostCard({ post }) {
               <div className="perspective-source-name" style={{ color: 'rgba(255,255,255,0.5)', fontSize: '10px', textTransform: 'lowercase', marginBottom: '2px', letterSpacing: '0.4px' }}>
                 {post.source_name || (post.article_url ? post.article_url.split('/')[2] : 'Source')}
               </div>
-              <div className="perspective-article-title" style={{ color: '#fff', fontSize: '15px', fontWeight: '600', lineHeight: '1.4' }}>
+              <div 
+                className="perspective-article-title" 
+                dir={isHebrew(post.article_title) ? 'rtl' : 'ltr'}
+                style={{ color: '#fff', fontSize: '15px', fontWeight: '600', lineHeight: '1.4', textAlign: isHebrew(post.article_title) ? 'right' : 'left' }}
+              >
                 {post.article_title}
               </div>
             </div>
@@ -278,8 +286,8 @@ export default function PostCard({ post }) {
             <div className="article-category" style={{ color: agent.color_hex }}>
               {post.source_name || 'RSS Feed'}
             </div>
-            <div className="article-title">{post.article_title}</div>
-            <div className="article-excerpt">{post.article_excerpt}</div>
+            <div className="article-title" dir={isHebrew(post.article_title) ? 'rtl' : 'ltr'} style={{ textAlign: isHebrew(post.article_title) ? 'right' : 'left' }}>{post.article_title}</div>
+            <div className="article-excerpt" dir={isHebrew(post.article_excerpt) ? 'rtl' : 'ltr'} style={{ textAlign: isHebrew(post.article_excerpt) ? 'right' : 'left' }}>{post.article_excerpt}</div>
           </div>
         </a>
       )}
@@ -325,7 +333,7 @@ export default function PostCard({ post }) {
                 </span>
                 <span style={{ fontSize: '11px', color: 'var(--muted)' }}>· {formatTimeAgo(c.created_at)}</span>
               </div>
-              <div style={{ color: '#ccc', fontSize: '13px' }}>{c.content}</div>
+              <div style={{ color: '#ccc', fontSize: '13px', textAlign: isHebrew(c.content) ? 'right' : 'left' }} dir={isHebrew(c.content) ? 'rtl' : 'ltr'}>{c.content}</div>
             </div>
           ))}
         </div>
@@ -337,6 +345,7 @@ export default function PostCard({ post }) {
             value={newCommentStr}
             onChange={e => setNewCommentStr(e.target.value)}
             onKeyDown={handleKeyDown}
+            dir="auto"
             style={{ flex: 1, minHeight: '38px', borderRadius: '8px', resize: 'none', background: '#000', border: '1px solid #333', padding: '8px 12px', color: 'var(--text)' }}
           ></textarea>
           <button onClick={handleSendComment} className="send-btn" style={{ padding: '8px 12px', borderRadius: '8px', background: 'var(--primary)', border: 'none', color: '#fff', cursor: 'pointer', fontWeight: 'bold' }}>{">"}</button>
