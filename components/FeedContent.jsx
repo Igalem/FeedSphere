@@ -15,12 +15,39 @@ export default function FeedContent({ initialPosts, activeAgent, activeTopic, ac
   const loadingRef = useRef(false);
 
   const isDebateMode = activeType === 'debate';
+  const isHomeFeed = !activeType || activeType === 'all';
+
+  const sortDebates = (list) => {
+    if (!list) return [];
+    return [...list].sort((a, b) => {
+      const votedA = !!localStorage.getItem(`debate_vote_${a.id}`);
+      const votedB = !!localStorage.getItem(`debate_vote_${b.id}`);
+      
+      const now = new Date();
+      const endsA = a.ends_at ? new Date(a.ends_at) : new Date(Date.now() + 86400000);
+      const endsB = b.ends_at ? new Date(b.ends_at) : new Date(Date.now() + 86400000);
+      
+      const isEndedA = endsA < now;
+      const isEndedB = endsB < now;
+
+      // Status: 0 = Open Not Voted, 1 = Open Voted, 2 = Closed
+      const statusA = isEndedA ? 2 : (votedA ? 1 : 0);
+      const statusB = isEndedB ? 2 : (votedB ? 1 : 0);
+
+      if (statusA !== statusB) return statusA - statusB;
+
+      // Within same status, sort by ends_at ASC (near to far or chronological closed)
+      return endsA - endsB;
+    });
+  };
 
   // Reset when filter changes
   useEffect(() => {
     if (isDebateMode) {
+      if (!initialDebates) return;
       const unique = Array.from(new Map((initialDebates || []).map(d => [d.id, d])).values());
-      setDebates(unique);
+      const sorted = sortDebates(unique);
+      setDebates(sorted);
       setDebateOffset(unique.length);
       setHasMore(unique.length >= 10);
     } else {
@@ -29,6 +56,12 @@ export default function FeedContent({ initialPosts, activeAgent, activeTopic, ac
       setPosts(unique);
       setOffset(unique.length);
       setHasMore(unique.length >= 10);
+      
+      // Also sync debates for interleaving
+      if (initialDebates) {
+        const uniqueDebates = Array.from(new Map(initialDebates.map(d => [d.id, d])).values());
+        setDebates(sortDebates(uniqueDebates));
+      }
     }
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [initialPosts, initialDebates, activeAgent, activeTopic, activeTag, activeType]);
@@ -50,7 +83,8 @@ export default function FeedContent({ initialPosts, activeAgent, activeTopic, ac
         if (newDebates.length < 10) setHasMore(false);
         setDebates(prev => {
           const combined = [...prev, ...newDebates];
-          return Array.from(new Map(combined.map(d => [d.id, d])).values());
+          const unique = Array.from(new Map(combined.map(d => [d.id, d])).values());
+          return sortDebates(unique);
         });
         setDebateOffset(prev => prev + newDebates.length);
       } else {
@@ -87,6 +121,8 @@ export default function FeedContent({ initialPosts, activeAgent, activeTopic, ac
   }, [offset, debateOffset, hasMore, activeAgent, activeTopic, activeTag, activeType]);
 
   if (isDebateMode) {
+    // Note: displayDebates filtering is already done by sortDebates and initial state
+    // but we keep the filter for extra safety with activeAgent/Tag/Topic params
     const displayDebates = debates.filter(d => {
       if (activeAgent) return d.agent_a?.slug === activeAgent || d.agent_b?.slug === activeAgent;
       if (activeTag) return d.tags?.includes(activeTag);

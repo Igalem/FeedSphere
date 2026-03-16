@@ -451,12 +451,12 @@ export default function DebateCard({ debate }) {
         <div className="debate-header-section">
           <div className="debate-badge-row">
             {countdown === 'ENDED' ? (
-              <div className="debate-closed-badge">🔒 Debate Closed</div>
+              <div key="badge-closed" className="debate-closed-badge">🔒 Debate Closed</div>
             ) : (
-              <div className="debate-live-badge">⚔️ Live Debate</div>
+              <div key="badge-live" className="debate-live-badge">⚔️ Live Debate</div>
             )}
             {countdown && countdown !== 'ENDED' && (
-              <div className="debate-timer">ENDS IN: <span>{countdown}</span></div>
+              <div key="timer" className="debate-timer">ENDS IN: <span>{countdown}</span></div>
             )}
           </div>
           <div className="debate-question-text">
@@ -464,6 +464,7 @@ export default function DebateCard({ debate }) {
           </div>
           {debate.article_url && (
             <a
+              key="article-link"
               href={debate.article_url}
               target="_blank"
               rel="noopener noreferrer"
@@ -495,28 +496,32 @@ export default function DebateCard({ debate }) {
               </div>
             </div>
             <p className="agent-quote">{debate.argument_a}</p>
-            {(!voted || votedFor === 'a') && (
-              <button
-                className="debate-vote-btn"
-                style={{
-                  color: votedFor === 'a' ? '#fff' : 'var(--col-a)',
-                  borderColor: 'var(--col-a-border)',
-                  background: votedFor === 'a' ? 'var(--col-a-transparent)' : 'transparent',
-                }}
-                onClick={(e) => { e.stopPropagation(); handleVote('a'); }}
-                disabled={voted}
-              >
-                {votedFor === 'a' ? `✓ Voted` : `Vote for ${agentA.name.split(' ')[0]}`}
-              </button>
-            )}
+            <div className="vote-btn-container" style={{ minHeight: '34px' }}>
+              {(!voted || votedFor === 'a') && (
+                <button
+                  key="vote-btn-a"
+                  className="debate-vote-btn"
+                  style={{
+                    color: votedFor === 'a' ? '#fff' : 'var(--col-a)',
+                    borderColor: 'var(--col-a-border)',
+                    background: votedFor === 'a' ? 'var(--col-a-transparent)' : 'transparent',
+                    width: '100%'
+                  }}
+                  onClick={(e) => { e.stopPropagation(); handleVote('a'); }}
+                  disabled={voted}
+                >
+                  {votedFor === 'a' ? `✓ Voted` : `Vote for ${agentA.name.split(' ')[0]}`}
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Center */}
           <div className="debate-center-col">
             <div className="debate-thumbnail-wrap">
               {debate.article_image_url
-                ? <img src={debate.article_image_url} alt="Debate topic" />
-                : <div className="debate-thumbnail-placeholder">⚔️</div>
+                ? <img key="debate-img" src={debate.article_image_url} alt="Debate topic" />
+                : <div key="debate-img-placeholder" className="debate-thumbnail-placeholder">⚔️</div>
               }
             </div>
             <div className="vs-circle">VS</div>
@@ -539,20 +544,24 @@ export default function DebateCard({ debate }) {
               </div>
             </div>
             <p className="agent-quote">{debate.argument_b}</p>
-            {(!voted || votedFor === 'b') && (
-              <button
-                className="debate-vote-btn"
-                style={{
-                  color: votedFor === 'b' ? '#fff' : 'var(--col-b)',
-                  borderColor: 'var(--col-b-border)',
-                  background: votedFor === 'b' ? 'var(--col-b-transparent)' : 'transparent',
-                }}
-                onClick={(e) => { e.stopPropagation(); handleVote('b'); }}
-                disabled={voted}
-              >
-                {votedFor === 'b' ? `✓ Voted` : `Vote for ${agentB.name.split(' ')[0]}`}
-              </button>
-            )}
+            <div className="vote-btn-container" style={{ minHeight: '34px' }}>
+              {(!voted || votedFor === 'b') && (
+                <button
+                  key="vote-btn-b"
+                  className="debate-vote-btn"
+                  style={{
+                    color: votedFor === 'b' ? '#fff' : 'var(--col-b)',
+                    borderColor: 'var(--col-b-border)',
+                    background: votedFor === 'b' ? 'var(--col-b-transparent)' : 'transparent',
+                    width: '100%'
+                  }}
+                  onClick={(e) => { e.stopPropagation(); handleVote('b'); }}
+                  disabled={voted}
+                >
+                  {votedFor === 'b' ? `✓ Voted` : `Vote for ${agentB.name.split(' ')[0]}`}
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
@@ -581,7 +590,7 @@ export default function DebateCard({ debate }) {
           </div>
           <div className="vote-total-line">
             TOTAL VOTES: <span>{formatVotes(totalVotes)}</span>
-            {totalVotes === 0 && !voted && ' · Be the first to vote!'}
+            {totalVotes === 0 && !voted && <span key="first-vote"> · Be the first to vote!</span>}
           </div>
         </div>
       </div>
