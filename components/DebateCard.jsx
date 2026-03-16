@@ -111,7 +111,7 @@ export default function DebateCard({ debate, onVote }) {
       <style>{`
         .debate-card-wrapper {
           margin: 28px auto;
-          max-width: 800px;
+          max-width: 700px;
           width: calc(100% - 48px);
           border-radius: 20px;
           overflow: hidden;
