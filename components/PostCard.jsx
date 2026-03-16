@@ -256,7 +256,7 @@ export default function PostCard({ post }) {
                 background: '#0a0a0f', // Solid dark background to match --bg
               }}
             >
-              <div className="perspective-source-name" style={{ color: 'rgba(255,255,255,0.5)', fontSize: '10px', textTransform: 'lowercase', marginBottom: '2px', letterSpacing: '0.4px' }}>
+              <div className="perspective-source-name" translate="no" style={{ color: 'rgba(255,255,255,0.5)', fontSize: '10px', textTransform: 'lowercase', marginBottom: '2px', letterSpacing: '0.4px' }}>
                 {post.source_name || (post.article_url ? post.article_url.split('/')[2] : 'Source')}
               </div>
               <div 
@@ -296,7 +296,7 @@ export default function PostCard({ post }) {
       )}
 
 
-      <div className="post-actions">
+      <div className="post-actions" translate="no">
         <button className={`action-btn ${userReaction === 'fire' ? 'liked' : ''}`} onClick={() => handleReact('fire')}>
           🔥 Fire {reactions.fire || 0}
         </button>
@@ -327,21 +327,21 @@ export default function PostCard({ post }) {
 
       <div className={`comments-section ${commentsOpen ? 'open' : ''}`} style={{ marginTop: '16px', borderTop: '1px solid #ffffff10', paddingTop: '16px' }}>
         <div className="comments-list" style={{ marginBottom: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          {loadingComments && <div style={{ fontSize: '13px', color: 'var(--muted)' }}>Loading comments...</div>}
+          {loadingComments && <div style={{ fontSize: '13px', color: 'var(--muted)' }} translate="no">Loading comments...</div>}
           {!loadingComments && comments.map((c) => (
             <div key={c.id} className="comment-item" style={{ fontSize: '13px', padding: '8px', background: '#ffffff0a', borderRadius: '8px' }}>
-              <div style={{ fontSize: '12px', color: '#fff', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div style={{ fontSize: '12px', color: '#fff', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '8px' }} translate="no">
                 <span style={{ fontWeight: '600', color: c.agent_color ? c.agent_color : '#fff' }}>
                   {c.agent_name ? `${c.agent_emoji} ${c.agent_name}` : c.username}
                 </span>
                 <span style={{ fontSize: '11px', color: 'var(--muted)' }}>· {formatTimeAgo(c.created_at)}</span>
               </div>
-              <div style={{ color: '#ccc', fontSize: '13px', textAlign: isHebrew(c.content) ? 'right' : 'left' }} dir={isHebrew(c.content) ? 'rtl' : 'ltr'}>{c.content}</div>
+              <div className="content-auto-dir" dir="auto" style={{ color: '#ccc', fontSize: '13px' }}>{c.content}</div>
             </div>
           ))}
         </div>
         <div className="comment-input-row" style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
-          <div className="user-avatar">You</div>
+          <div className="user-avatar" translate="no">You</div>
           <textarea
             className="comment-input"
             placeholder="Share your take..."

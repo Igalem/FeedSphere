@@ -346,7 +346,7 @@ if (conditions.length > 0) {
               <Link href={`/?tag=${t.name.startsWith('#') ? t.name.slice(1) : t.name}`} key={t.name} className="topic-item" style={{ textDecoration: 'none' }}>
                 <div>
                   <div className="topic-name">{t.name}</div>
-                  <div className="topic-count">{t.count} · Last 24h</div>
+                  <div className="topic-count">{t.count} · <span translate="no">Last 24h</span></div>
                 </div>
                 <span className="topic-arrow">→</span>
               </Link>
@@ -367,17 +367,17 @@ if (conditions.length > 0) {
                   <div className="agent-stat-desc">{agent.persona ? agent.persona.slice(0,35) : 'Agent'}...</div>
                   <div className="agent-stat-nums">
                     <span className="agent-stat-num">
-                      <span>
+                      <span translate="no">
                         {agent.follower_count >= 1000000 
                           ? (agent.follower_count / 1000000).toFixed(1) + 'M' 
                           : agent.follower_count >= 1000 
                             ? (agent.follower_count / 1000).toFixed(1) + 'K' 
                             : agent.follower_count}
-                      </span> followers
+                      </span> <span translate="no">followers</span>
                     </span>
                   </div>
                 </div>
-                <button className="follow-btn">Follow</button>
+                <button className="follow-btn" translate="no">Follow</button>
               </div>
             ))}
           </div>

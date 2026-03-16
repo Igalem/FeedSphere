@@ -452,16 +452,18 @@ export default function DebateCard({ debate, onVote }) {
         {/* === HEADER === */}
         <div className="debate-header-section">
           <div className="debate-badge-row">
-            {isEnded ? (
-              <div key="badge-closed" className="debate-closed-badge" style={{ background: winner === 'draw' ? 'rgba(255,255,255,0.05)' : 'linear-gradient(135deg, rgba(255,255,255,0.15), rgba(255,255,255,0.05))' }}>
-                {winner === 'draw' ? '⚖️ Debate Tied' : '🏆 Result Final'}
-              </div>
-            ) : (
-              <div key="badge-live" className="debate-live-badge">⚔️ Live Debate</div>
-            )}
-            {countdown && !isEnded && (
-              <div key="timer" className="debate-timer">ENDS IN: <span>{countdown}</span></div>
-            )}
+            <div className="debate-header-meta" translate="no">
+              {isEnded ? (
+                <div key="badge-ended" className="debate-closed-badge" style={{ background: winner === 'draw' ? 'rgba(255,255,255,0.05)' : 'linear-gradient(135deg, rgba(255,255,255,0.15), rgba(255,255,255,0.05))' }}>
+                  {winner === 'draw' ? '⚖️ Debate Tied' : '🏆 Result Final'}
+                </div>
+              ) : (
+                <div key="badge-live" className="debate-live-badge">⚔️ Live Debate</div>
+              )}
+              {countdown && !isEnded && (
+                <div key="timer" className="debate-timer">ENDS IN: <span>{countdown}</span></div>
+              )}
+            </div>
           </div>
           <div className="debate-question-text content-auto-dir" dir="auto">
             {debate.debate_question || debate.topic}
@@ -498,8 +500,8 @@ export default function DebateCard({ debate, onVote }) {
               <div>
                 <div className="debate-agent-name" translate="no">{agentA.name}</div>
                 <div className="debate-agent-topic" translate="no" style={{ color: 'var(--col-a)' }}>{agentA.topic}</div>
-                {winner === 'a' && <div className="winner-badge-pro">Winner</div>}
-                {winner === 'draw' && <div className="draw-badge">Tied</div>}
+                {winner === 'a' && <div className="winner-badge-pro" translate="no">Winner</div>}
+                {winner === 'draw' && <div className="draw-badge" translate="no">Tied</div>}
               </div>
             </div>
             <div className="agent-quote content-auto-dir" dir="auto">{debate.argument_a}</div>
@@ -518,7 +520,9 @@ export default function DebateCard({ debate, onVote }) {
                     onClick={(e) => { e.stopPropagation(); handleVote('a'); }}
                     disabled={voted}
                   >
-                    {votedFor === 'a' ? `✓ Voted` : `Vote for ${agentA.name.split(' ')[0]}`}
+                    <span translate="no">
+                      {votedFor === 'a' ? `✓ Voted` : `Vote for ${agentA.name.split(' ')[0]}`}
+                    </span>
                   </button>
                 )}
               </div>
@@ -551,8 +555,8 @@ export default function DebateCard({ debate, onVote }) {
               <div style={{ textAlign: 'right' }}>
                 <div className="debate-agent-name" translate="no">{agentB.name}</div>
                 <div className="debate-agent-topic" translate="no" style={{ color: 'var(--col-b)' }}>{agentB.topic}</div>
-                {winner === 'b' && <div className="winner-badge-pro" style={{ marginLeft: 'auto' }}>Winner</div>}
-                {winner === 'draw' && <div className="draw-badge" style={{ marginLeft: 'auto' }}>Tied</div>}
+                {winner === 'b' && <div className="winner-badge-pro" translate="no" style={{ marginLeft: 'auto' }}>Winner</div>}
+                {winner === 'draw' && <div className="draw-badge" translate="no" style={{ marginLeft: 'auto' }}>Tied</div>}
               </div>
             </div>
             <div className="agent-quote content-auto-dir" dir="auto">{debate.argument_b}</div>
@@ -571,7 +575,9 @@ export default function DebateCard({ debate, onVote }) {
                     onClick={(e) => { e.stopPropagation(); handleVote('b'); }}
                     disabled={voted}
                   >
-                    {votedFor === 'b' ? `✓ Voted` : `Vote for ${agentB.name.split(' ')[0]}`}
+                    <span translate="no">
+                      {votedFor === 'b' ? `✓ Voted` : `Vote for ${agentB.name.split(' ')[0]}`}
+                    </span>
                   </button>
                 )}
               </div>
@@ -580,7 +586,7 @@ export default function DebateCard({ debate, onVote }) {
         </div>
 
         {/* === VOTE BAR === */}
-        <div className="debate-footer">
+        <div className="debate-footer" translate="no">
           <div className="vote-bar-labels">
             <span className="vote-bar-pct" style={{ color: 'var(--col-a)' }}>{agentA.name.split(' ')[0]} ({pctA}%)</span>
             <span className="vote-bar-center-label">{isEnded ? 'Final Result' : 'Current Standing'}</span>
