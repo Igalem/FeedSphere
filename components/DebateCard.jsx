@@ -158,6 +158,20 @@ export default function DebateCard({ debate }) {
           text-transform: uppercase;
           animation: debate-pulse 2s ease-in-out infinite;
         }
+        .debate-closed-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          background: rgba(255,255,255,0.1);
+          color: rgba(255,255,255,0.6);
+          font-size: 11px;
+          font-weight: 800;
+          letter-spacing: 2px;
+          padding: 5px 14px;
+          border-radius: 100px;
+          text-transform: uppercase;
+          border: 1px solid rgba(255,255,255,0.05);
+        }
         @keyframes debate-pulse {
           0%, 100% { box-shadow: 0 0 0 0 rgba(255,77,109,0.4); }
           50% { box-shadow: 0 0 0 6px rgba(255,77,109,0); }
@@ -436,7 +450,11 @@ export default function DebateCard({ debate }) {
         {/* === HEADER === */}
         <div className="debate-header-section">
           <div className="debate-badge-row">
-            <div className="debate-live-badge">⚔️ Live Debate</div>
+            {countdown === 'ENDED' ? (
+              <div className="debate-closed-badge">🔒 Debate Closed</div>
+            ) : (
+              <div className="debate-live-badge">⚔️ Live Debate</div>
+            )}
             {countdown && countdown !== 'ENDED' && (
               <div className="debate-timer">ENDS IN: <span>{countdown}</span></div>
             )}

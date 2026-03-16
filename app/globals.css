@@ -55,23 +55,29 @@ body::before {
 
 /* SIDEBAR */
 .sidebar {
-  padding: 24px 16px;
+  padding: 0;
+  padding-bottom: 32px;
   border-right: 1px solid var(--border);
   position: sticky;
   top: 0;
   height: 100vh;
+  max-height: 100vh;
   overflow-y: auto;
+  overflow-x: hidden;
   display: flex;
   flex-direction: column;
-  gap: 32px;
   background: #020202 !important;
+  z-index: 100;
 }
 
 .logo {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 8px 12px;
+  gap: 12px;
+  padding: 0 20px;
+  height: 72px; /* Matches feed-header height */
+  flex-shrink: 0;
+  border-bottom: 1px solid transparent; /* Align with header border if needed */
 }
 
 .logo-mark {
@@ -96,31 +102,33 @@ body::before {
   color: var(--accent);
 }
 
-nav {
+.sidebar-nav-container {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 24px;
+  padding: 16px 0;
 }
 
 .nav-label {
   font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 2px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
   text-transform: uppercase;
   color: var(--muted);
-  padding: 0 12px;
+  padding: 0 20px;
   margin-bottom: 8px;
   margin-top: 16px;
+  opacity: 0.8;
 }
 
 .nav-item {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 10px 12px;
-  border-radius: 10px;
+  gap: 14px;
+  padding: 10px 20px;
+  border-radius: 12px;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   color: var(--muted);
   font-size: 14px;
   font-weight: 500;
@@ -150,8 +158,12 @@ nav {
 
 .nav-icon {
   font-size: 18px;
-  width: 24px;
-  text-align: center;
+  width: 28px; /* Matched to agent avatar width */
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
 .badge {
@@ -168,16 +180,17 @@ nav {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  padding-bottom: 40px; /* Add space at the bottom of the list */
 }
 
 .agent-nav {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 8px 12px;
-  border-radius: 10px;
+  gap: 14px; /* Consistent with nav-item */
+  padding: 8px 20px; /* Consistent with nav-item */
+  border-radius: 12px;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .agent-nav:hover {
@@ -193,12 +206,17 @@ nav {
   font-size: 14px;
   flex-shrink: 0;
   overflow: hidden;
+  background: var(--surface2);
 }
 
 .agent-name-sm {
   font-size: 13px;
   color: var(--muted);
   flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding-right: 8px;
 }
 
 .agent-dot {
@@ -212,6 +230,7 @@ nav {
 .feed {
   padding: 0;
   border-right: 1px solid var(--border);
+  min-width: 0; /* Prevent grid column blow-out */
 }
 
 .feed-header {
@@ -224,8 +243,9 @@ nav {
   z-index: 100;
   display: flex;
   align-items: center;
-  justify-content: center; /* Center everything in the header */
+  justify-content: flex-start;
   height: 72px;
+  padding: 0 20px;
 }
 
 .feed-title {
@@ -698,7 +718,9 @@ nav {
   position: sticky;
   top: 0;
   height: 100vh;
+  max-height: 100vh;
   overflow-y: auto;
+  overflow-x: hidden;
   display: flex;
   flex-direction: column;
   gap: 28px;
@@ -718,13 +740,32 @@ nav {
 .feed-filters {
   display: flex;
   gap: 12px;
-  overflow-x: auto;
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE/Edge */
   align-items: center;
-  justify-content: center; /* Center the pills */
   width: 100%;
-  max-width: 1200px; /* Optional: cap the width for very wide screens */
+  max-width: 1200px;
+  padding: 0;
+  overflow: hidden;
+}
+
+.agents-scroll-container {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  flex: 1;
+  padding: 10px 40px 10px 15px;
+  margin-left: -5px; /* Offset to bring it closer to "Your Feed" while keeping the mask area */
+  mask-image: linear-gradient(to right, transparent, black 25px, black calc(100% - 40px), transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, black 25px, black calc(100% - 40px), transparent);
+}
+
+.agents-scroll-container::-webkit-scrollbar {
+  display: none;
+}
+
+.feed-filters .filter-btn:first-child {
+  flex-shrink: 0;
 }
 
 .feed-filters::-webkit-scrollbar {
@@ -747,6 +788,7 @@ nav {
   align-items: center;
   gap: 8px;
   height: 40px;
+  flex-shrink: 0;
 }
 
 .filter-btn:hover {

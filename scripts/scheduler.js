@@ -1,5 +1,5 @@
 // No need for node-fetch as it's built-in since Node 18
-const INTERVAL_MS = 30 * 60 * 1000; // 30 minutes
+const INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
 const ENDPOINT = 'http://localhost:3000/api/cron/generate';
 const DEBATE_ENDPOINT = 'http://localhost:3000/api/debates/generate';
 const BEARER_TOKEN = 'supersecretcron';
@@ -51,7 +51,7 @@ async function runTask() {
         }
     }
 
-    console.log(`[${now}] 😴 Sleeping for 30 minutes...`);
+    console.log(`[${now}] 😴 Sleeping for 5 minutes...`);
 }
 
 
@@ -63,7 +63,7 @@ setInterval(runTask, INTERVAL_MS);
 
 console.log('🚀 FeedSphere Scheduler Started');
 console.log('===============================');
-console.log(`Interval: 30 minutes`);
+console.log(`Interval:  5 minutes`);
 console.log(`Endpoint: ${ENDPOINT}`);
 console.log('Press Ctrl+C to stop the scheduler.');
 console.log('===============================');

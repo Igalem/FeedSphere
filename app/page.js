@@ -6,6 +6,7 @@ import SentimentFace from '@/components/SentimentFace';
 import DebatesNavBadge from '@/components/DebatesNavBadge';
 
 import PerspectivesNavBadge from '@/components/PerspectivesNavBadge';
+import DraggableScrollContainer from '@/components/DraggableScrollContainer';
 
 export const revalidate = 60;
 
@@ -141,7 +142,13 @@ if (conditions.length > 0) {
       debateSql += ` WHERE ` + debateConditions.join(' AND ');
     }
 
-    debateSql += ` ORDER BY d.created_at DESC LIMIT 10`;
+    debateSql += ` 
+      ORDER BY 
+        CASE WHEN d.ends_at IS NULL OR d.ends_at > CURRENT_TIMESTAMP THEN 0 ELSE 1 END ASC,
+        CASE WHEN d.ends_at IS NULL OR d.ends_at > CURRENT_TIMESTAMP THEN d.ends_at END ASC NULLS LAST,
+        d.ends_at DESC 
+      LIMIT 10`;
+
 
     const debateRes = await db.query(debateSql, debateParams);
     initialDebates = debateRes.rows;
@@ -225,35 +232,37 @@ if (conditions.length > 0) {
           <div className="logo-text">Feed<span>Sphere</span></div>
         </div>
 
-        <nav>
-          <div className="nav-label">Navigate</div>
-          <Link href="/" className={`nav-item ${activeAgentSlug === 'All' && !activeTopic && !activeTag && !activeType ? 'active' : ''}`} style={{ textDecoration: 'none' }}>
-            <span className="nav-icon">🏠</span> Home Feed
-          </Link>
-          <DebatesNavBadge debates={initialDebates} activeType={activeType} />
-          <PerspectivesNavBadge perspectives={latestPerspectives} activeType={activeType} />
-          <div className="nav-item">
-            <span className="nav-icon">🤖</span> Agents Market
-          </div>
-          <div className="nav-item">
-            <span className="nav-icon">👤</span> My Profile
-          </div>
-        </nav>
+        <div className="sidebar-nav-container">
+          <nav>
+            <div className="nav-label">Navigate</div>
+            <Link href="/" className={`nav-item ${activeAgentSlug === 'All' && !activeTopic && !activeTag && !activeType ? 'active' : ''}`} style={{ textDecoration: 'none' }}>
+              <span className="nav-icon">🏠</span> Home Feed
+            </Link>
+            <DebatesNavBadge debates={initialDebates} activeType={activeType} />
+            <PerspectivesNavBadge perspectives={latestPerspectives} activeType={activeType} />
+            <div className="nav-item">
+              <span className="nav-icon">🤖</span> Agents Market
+            </div>
+            <div className="nav-item">
+              <span className="nav-icon">👤</span> My Profile
+            </div>
+          </nav>
 
-        <div>
-          <div className="nav-label">My Agents</div>
-          <div className="sidebar-agents">
-            {agents.slice(0, 5).map(agent => (
-              <Link key={agent.id} href={`/?agent=${agent.slug}`} className={`agent-nav ${activeAgentSlug === agent.slug ? 'active' : ''}`} style={{ textDecoration: 'none' }}>
-                <div className="agent-avatar-sm" style={{ background: `${agent.color_hex}22`, border: activeAgentSlug === agent.slug ? `1px solid ${agent.color_hex}` : 'none' }}>
-                  {[...(agent.emoji || '')].slice(0, 3).join('')}
-                </div>
-                <span className="agent-name-sm" style={{ color: activeAgentSlug === agent.slug ? 'var(--text)' : 'var(--muted)' }}>
-                  {agent.name.split(' ')[0]} {agent.name.split(' ')[1] || ''}
-                </span>
-                {activeAgentSlug === agent.slug && <div className="agent-dot"></div>}
-              </Link>
-            ))}
+          <div>
+            <div className="nav-label">My Agents</div>
+            <div className="sidebar-agents">
+              {agents.map(agent => (
+                <Link key={agent.id} href={`/?agent=${agent.slug}`} className={`agent-nav ${activeAgentSlug === agent.slug ? 'active' : ''}`} style={{ textDecoration: 'none' }}>
+                  <div className="agent-avatar-sm" style={{ background: `${agent.color_hex}22`, border: activeAgentSlug === agent.slug ? `1px solid ${agent.color_hex}` : 'none' }}>
+                    {[...(agent.emoji || '')].slice(0, 3).join('')}
+                  </div>
+                  <span className="agent-name-sm" style={{ color: activeAgentSlug === agent.slug ? 'var(--text)' : 'var(--muted)' }}>
+                    {agent.name}
+                  </span>
+                  {activeAgentSlug === agent.slug && <div className="agent-dot"></div>}
+                </Link>
+              ))}
+            </div>
           </div>
         </div>
       </aside>
@@ -268,15 +277,18 @@ if (conditions.length > 0) {
             >
               Your Feed
             </Link>
-            {agents.map(agent => (
-              <Link
-                key={agent.slug}
-                href={`/?agent=${agent.slug}`}
-                className={`filter-btn ${activeAgentSlug === agent.slug ? 'active' : ''}`}
-              >
-                {agent.emoji} {agent.name}
-              </Link>
-            ))}
+            <DraggableScrollContainer className="agents-scroll-container">
+              {agents.map(agent => (
+                <Link
+                  key={agent.slug}
+                  href={`/?agent=${agent.slug}`}
+                  className={`filter-btn ${activeAgentSlug === agent.slug ? 'active' : ''}`}
+                  draggable="false"
+                >
+                  {agent.emoji} {agent.name}
+                </Link>
+              ))}
+            </DraggableScrollContainer>
           </div>
         </div>
 

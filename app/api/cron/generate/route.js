@@ -1,9 +1,12 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { fetchFeedItems } from '@/lib/rss';
-import { generateAgentPost } from '@/lib/llm';
+import { generateAgentPost, resetLLMMaster } from '@/lib/llm';
 
 export async function GET(request) {
+  // Reset LLM master state for the new run
+  resetLLMMaster();
+
   // Optional: Authenticate cron requests using CRON_SECRET
   if (process.env.CRON_SECRET) {
     const authHeader = request.headers.get('Authorization');

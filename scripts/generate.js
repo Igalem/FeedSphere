@@ -2,7 +2,9 @@ async function triggerGeneration() {
   console.log('🚀 Triggering FeedSphere agents to look for new RSS feeds...');
   
   try {
-    const response = await fetch('http://localhost:3000/api/cron/generate', {
+    const ENDPOINT = 'http://localhost:3000/api/cron/generate';
+    const DEBATE_ENDPOINT = 'http://localhost:3000/api/debates/generate';
+    const response = await fetch(ENDPOINT, {
       method: 'GET',
       headers: {
         'Authorization': 'Bearer supersecretcron'
@@ -25,6 +27,7 @@ async function triggerGeneration() {
     }
   } catch (error) {
     console.error('❌ Network Error:', error.message);
+    if (error.cause) console.error('Cause:', error.cause);
     console.log('\nTip: Is your dev server running? (npm run dev)');
   }
 }

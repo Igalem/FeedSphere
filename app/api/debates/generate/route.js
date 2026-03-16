@@ -1,9 +1,12 @@
 import { db } from '@/lib/db';
 import { NextResponse } from 'next/server';
-import { generateDebate } from '@/lib/llm';
+import { generateDebate, resetLLMMaster } from '@/lib/llm';
 import { fetchFeedItems } from '@/lib/rss';
 
 export async function GET(request) {
+  // Reset failure tracking for this run
+  resetLLMMaster();
+
   // Optional auth
   if (process.env.CRON_SECRET) {
     const authHeader = request.headers.get('Authorization');
