@@ -44,8 +44,7 @@ export default function DebateCard({ debate, onVote }) {
 
   useEffect(() => {
     if (!debate.ends_at) {
-      // Create a stable local end time if none provided
-      const fallback = new Date(Date.now() + 86400000).toISOString();
+      const fallback = new Date(Date.now() + 60 * 60 * 1000).toISOString();
       setEndsAt(fallback);
     }
   }, [debate.ends_at]);
@@ -59,10 +58,13 @@ export default function DebateCard({ debate, onVote }) {
   const pctA = totalVotes > 0 ? Math.round((votesA / totalVotes) * 100) : 50;
   const pctB = 100 - pctA;
 
+  const isEnded = countdown === 'ENDED';
+  const winner = isEnded ? (votesA > votesB ? 'a' : votesB > votesA ? 'b' : 'draw') : null;
+
   const formatVotes = (n) => n >= 1000 ? (n / 1000).toFixed(1) + 'K' : n.toString();
 
   const handleVote = async (side) => {
-    if (votedFor || voting) return;
+    if (votedFor || voting || isEnded) return;
     setVoting(true);
     if (side === 'a') setVotesA(v => v + 1);
     else setVotesB(v => v + 1);
@@ -103,7 +105,8 @@ export default function DebateCard({ debate, onVote }) {
       '--col-a-very-transparent': `${colA}18`,
       '--col-b-very-transparent': `${colB}18`,
       '--col-a-border': `${colA}66`,
-      '--col-b-border': `${colB}66`
+      '--col-b-border': `${colB}66`,
+      '--winner-glow': winner === 'a' ? `${colA}33` : winner === 'b' ? `${colB}33` : 'transparent'
     }}>
       <style>{`
         .debate-card-wrapper {
@@ -116,6 +119,15 @@ export default function DebateCard({ debate, onVote }) {
           animation: fadeSlide 0.4s ease both;
           box-shadow: 0 0 0 1px rgba(255,255,255,0.08);
           background: linear-gradient(160deg, #18162a 0%, #12121a 50%, #1a1228 100%);
+        }
+        .debate-card-wrapper.ended-draw {
+          background: linear-gradient(160deg, #1a1a24 0%, #12121a 50%, #1a1a24 100%);
+        }
+        .debate-card-wrapper.winner-a {
+          background: linear-gradient(160deg, var(--col-a-very-transparent) 0%, #12121a 50%, #1a1228 100%);
+        }
+        .debate-card-wrapper.winner-b {
+          background: linear-gradient(160deg, #18162a 0%, #12121a 50%, var(--col-b-very-transparent) 100%);
         }
         .debate-card-wrapper::before {
           content: '';
@@ -130,7 +142,6 @@ export default function DebateCard({ debate, onVote }) {
           pointer-events: none;
         }
 
-        /* HEADER */
         .debate-header-section {
           padding: 18px 20px 14px;
           text-align: center;
@@ -212,7 +223,6 @@ export default function DebateCard({ debate, onVote }) {
         }
         .debate-article-link:hover { color: rgba(255,255,255,0.75); }
 
-        /* 3-COL BODY */
         .debate-body {
           display: grid;
           grid-template-columns: 1fr 100px 1fr;
@@ -232,7 +242,6 @@ export default function DebateCard({ debate, onVote }) {
           .debate-card-wrapper { width: calc(100% - 32px); }
         }
 
-        /* AGENT COLUMNS */
         .debate-agent-col {
           position: relative;
           padding: 14px;
@@ -246,7 +255,7 @@ export default function DebateCard({ debate, onVote }) {
           transition: background 0.25s;
           cursor: pointer;
         }
-        .debate-agent-col:not(.voted):hover {
+        .debate-agent-col:not(.voted):not(.loser):hover {
           background: rgba(255,255,255,0.03);
         }
         .debate-agent-col.voted-col {
@@ -261,8 +270,8 @@ export default function DebateCard({ debate, onVote }) {
           pointer-events: none;
           user-select: none;
         }
-        .debate-agent-col.left { text-align: left; direction: ltr; }
-        .debate-agent-col.right { text-align: left; direction: ltr; }
+        .debate-agent-col.left { text-align: left; }
+        .debate-agent-col.right { text-align: left; }
         .debate-agent-col.left .debate-watermark { bottom: -10px; right: -10px; }
         .debate-agent-col.right .debate-watermark { bottom: -10px; left: -10px; }
 
@@ -307,9 +316,57 @@ export default function DebateCard({ debate, onVote }) {
           position: relative;
           z-index: 1;
         }
-        .debate-agent-col.right .agent-quote { text-align: left; }
+        
+        /* WINNER UI */
+        .winner-crown {
+          position: absolute;
+          top: -12px;
+          right: -12px;
+          font-size: 24px;
+          filter: drop-shadow(0 0 10px gold);
+          z-index: 10;
+          animation: winner-float 3s ease-in-out infinite;
+        }
+        .debate-agent-col.right .winner-crown { right: auto; left: -12px; }
+        @keyframes winner-float {
+          0%, 100% { transform: translateY(0) rotate(5deg); }
+          50% { transform: translateY(-5px) rotate(-5deg); }
+        }
 
-        /* VOTE BTN */
+        .winner-badge-pro {
+          display: flex;
+          align-items: center;
+          gap: 4px;
+          color: #fff;
+          font-size: 10px;
+          font-weight: 800;
+          text-transform: uppercase;
+          letter-spacing: 1px;
+          padding: 4px 10px;
+          border-radius: 6px;
+          background: linear-gradient(135deg, #ffd700, #ffa500);
+          box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
+          margin-top: 4px;
+          width: fit-content;
+        }
+        .debate-agent-col.winner-side {
+          background: rgba(255,255,255,0.05);
+          border: 1px solid rgba(255,255,255,0.1);
+          box-shadow: 0 0 30px var(--winner-glow, rgba(255,215,0,0.1));
+        }
+        .debate-agent-col.winner-side::after {
+          content: '';
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(45deg, transparent, rgba(255,255,255,0.05), transparent);
+          animation: winner-shimmer 2s infinite linear;
+          pointer-events: none;
+        }
+        @keyframes winner-shimmer {
+          0% { transform: translateX(-100%) rotate(45deg); }
+          100% { transform: translateX(200%) rotate(45deg); }
+        }
+
         .debate-vote-btn {
           padding: 8px 12px;
           border-radius: 10px;
@@ -323,12 +380,9 @@ export default function DebateCard({ debate, onVote }) {
           position: relative;
           z-index: 1;
         }
-        .debate-vote-btn:hover:not(:disabled) {
-          background: rgba(255,255,255,0.1);
-        }
+        .debate-vote-btn:hover:not(:disabled) { background: rgba(255,255,255,0.1); }
         .debate-vote-btn:disabled { cursor: default; opacity: 0.8; }
 
-        /* CENTER COLUMN */
         .debate-center-col {
           display: flex;
           flex-direction: column;
@@ -347,116 +401,63 @@ export default function DebateCard({ debate, onVote }) {
           box-shadow: 0 4px 20px rgba(0,0,0,0.4);
           flex-shrink: 0;
         }
-        .debate-thumbnail-wrap img {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-        }
+        .debate-thumbnail-wrap img { width: 100%; height: 100%; object-fit: cover; }
         .debate-thumbnail-placeholder {
-          width: 100%;
-          height: 100%;
-          display: grid;
-          place-items: center;
-          font-size: 36px;
-          background: linear-gradient(135deg, #1e1e30, #2a1a35);
+          width: 100%; height: 100%; display: grid; place-items: center;
+          font-size: 36px; background: linear-gradient(135deg, #1e1e30, #2a1a35);
         }
         .vs-circle {
-          width: 32px;
-          height: 32px;
-          border-radius: 50%;
+          width: 32px; height: 32px; border-radius: 50%;
           background: linear-gradient(135deg, #ff4d6d, #c084fc);
-          display: grid;
-          place-items: center;
-          font-size: 10px;
-          font-weight: 900;
-          color: #fff;
-          letter-spacing: 0.5px;
-          margin-top: -14px;
-          border: 2px solid #12121a;
-          box-shadow: 0 2px 12px rgba(192,132,252,0.4);
-          z-index: 2;
-          position: relative;
+          display: grid; place-items: center; font-size: 10px; font-weight: 900;
+          color: #fff; letter-spacing: 0.5px; margin-top: -14px;
+          border: 2px solid #12121a; box-shadow: 0 2px 12px rgba(192,132,252,0.4);
+          z-index: 2; position: relative;
         }
 
-        /* VOTE BAR */
-        .debate-footer {
-          padding: 0 20px 20px;
-        }
-        .vote-bar-labels {
-          display: flex;
-          align-items: center;
-          margin-bottom: 6px;
-          gap: 4px;
-        }
+        .debate-footer { padding: 0 20px 20px; }
+        .vote-bar-labels { display: flex; align-items: center; margin-bottom: 6px; gap: 4px; }
         .vote-bar-pct {
-          font-family: 'JetBrains Mono', monospace;
-          font-size: 12px;
-          font-weight: 700;
-          flex: 1;
-          min-width: 0;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          white-space: nowrap;
+          font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 700;
+          flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
         }
-        .vote-bar-pct.right-label {
-          text-align: right;
-        }
+        .vote-bar-pct.right-label { text-align: right; }
         .vote-bar-center-label {
-          font-size: 10px;
-          font-weight: 700;
-          letter-spacing: 2px;
-          text-transform: uppercase;
-          color: rgba(255,255,255,0.35);
-          flex-shrink: 0;
-          padding: 0 8px;
-          text-align: center;
+          font-size: 10px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
+          color: rgba(255,255,255,0.35); flex-shrink: 0; padding: 0 8px; text-align: center;
           white-space: nowrap;
         }
         .debate-vote-bar-track {
-          height: 10px;
-          border-radius: 10px;
-          overflow: hidden;
-          display: flex;
+          height: 10px; border-radius: 10px; overflow: hidden; display: flex;
           background: rgba(255,255,255,0.06);
         }
-        .debate-vote-bar-a {
-          transition: width 0.7s cubic-bezier(0.4,0,0.2,1);
-          border-radius: 10px 0 0 10px;
-        }
-        .debate-vote-bar-b {
-          transition: width 0.7s cubic-bezier(0.4,0,0.2,1);
-          border-radius: 0 10px 10px 0;
-          margin-left: auto;
-        }
+        .debate-vote-bar-a { transition: width 0.7s cubic-bezier(0.4,0,0.2,1); border-radius: 10px 0 0 10px; }
+        .debate-vote-bar-b { transition: width 0.7s cubic-bezier(0.4,0,0.2,1); border-radius: 0 10px 10px 0; margin-left: auto; }
         .vote-total-line {
-          text-align: center;
-          font-size: 11px;
-          color: rgba(255,255,255,0.35);
-          margin-top: 7px;
-          font-family: 'JetBrains Mono', monospace;
+          text-align: center; font-size: 11px; color: rgba(255,255,255,0.35);
+          margin-top: 7px; font-family: 'JetBrains Mono', monospace;
         }
-        .vote-total-line span {
-          color: rgba(255,255,255,0.6);
-          font-weight: 600;
-        }
-        .debate-agent-col.loser {
-          opacity: 0.45;
-          filter: grayscale(40%);
-          pointer-events: none;
+        .vote-total-line span { color: rgba(255,255,255,0.6); font-weight: 600; }
+        .debate-agent-col.loser { opacity: 0.35; filter: grayscale(80%); pointer-events: none; }
+        .draw-badge {
+          background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.6);
+          font-size: 10px; font-weight: 700; padding: 4px 10px; border-radius: 6px;
+          text-transform: uppercase; border: 1px solid rgba(255,255,255,0.1);
         }
       `}</style>
 
-      <div className="debate-card-wrapper">
-
+      <div className={`debate-card-wrapper ${winner ? `winner-${winner}` : ''} ${isEnded && winner === 'draw' ? 'ended-draw' : ''}`}>
         {/* === HEADER === */}
         <div className="debate-header-section">
           <div className="debate-badge-row">
-            {countdown === 'ENDED' ? (
-              <div key="badge-closed" className="debate-closed-badge">🔒 Debate Closed</div>
+            {isEnded ? (
+              <div key="badge-closed" className="debate-closed-badge" style={{ background: winner === 'draw' ? 'rgba(255,255,255,0.05)' : 'linear-gradient(135deg, rgba(255,255,255,0.15), rgba(255,255,255,0.05))' }}>
+                {winner === 'draw' ? '⚖️ Debate Tied' : '🏆 Result Final'}
+              </div>
             ) : (
               <div key="badge-live" className="debate-live-badge">⚔️ Live Debate</div>
             )}
-            {countdown && countdown !== 'ENDED' && (
+            {countdown && !isEnded && (
               <div key="timer" className="debate-timer">ENDS IN: <span>{countdown}</span></div>
             )}
           </div>
@@ -479,13 +480,13 @@ export default function DebateCard({ debate, onVote }) {
 
         {/* === 3-COL BODY === */}
         <div className="debate-body">
-
           {/* Agent A */}
           <div
-            className={`debate-agent-col left ${voted && votedFor !== 'a' ? 'loser' : ''} ${voted && votedFor === 'a' ? 'voted-col' : ''}`}
+            className={`debate-agent-col left ${isEnded && winner !== 'a' && winner !== 'draw' ? 'loser' : ''} ${voted && votedFor === 'a' ? 'voted-col' : ''} ${winner === 'a' ? 'winner-side' : ''}`}
             style={{ color: 'var(--col-a)' }}
-            onClick={() => !voted && handleVote('a')}
+            onClick={() => !voted && !isEnded && handleVote('a')}
           >
+            {winner === 'a' && <div className="winner-crown">👑</div>}
             <span className="debate-watermark" style={{ color: 'var(--col-a)' }}>&ldquo;</span>
             <div className="agent-header">
               <div className="debate-avatar" style={{ background: 'var(--col-a-very-transparent)', borderColor: 'var(--col-a-transparent)', color: 'var(--col-a)' }}>
@@ -494,27 +495,31 @@ export default function DebateCard({ debate, onVote }) {
               <div>
                 <div className="debate-agent-name">{agentA.name}</div>
                 <div className="debate-agent-topic" style={{ color: 'var(--col-a)' }}>{agentA.topic}</div>
+                {winner === 'a' && <div className="winner-badge-pro">Winner</div>}
+                {winner === 'draw' && <div className="draw-badge">Tied</div>}
               </div>
             </div>
             <p className="agent-quote">{debate.argument_a}</p>
-            <div className="vote-btn-container" style={{ minHeight: '34px' }}>
-              {(!voted || votedFor === 'a') && (
-                <button
-                  key="vote-btn-a"
-                  className="debate-vote-btn"
-                  style={{
-                    color: votedFor === 'a' ? '#fff' : 'var(--col-a)',
-                    borderColor: 'var(--col-a-border)',
-                    background: votedFor === 'a' ? 'var(--col-a-transparent)' : 'transparent',
-                    width: '100%'
-                  }}
-                  onClick={(e) => { e.stopPropagation(); handleVote('a'); }}
-                  disabled={voted}
-                >
-                  {votedFor === 'a' ? `✓ Voted` : `Vote for ${agentA.name.split(' ')[0]}`}
-                </button>
-              )}
-            </div>
+            {!isEnded && (
+              <div className="vote-btn-container" style={{ minHeight: '34px' }}>
+                {(!voted || votedFor === 'a') && (
+                  <button
+                    key="vote-btn-a"
+                    className="debate-vote-btn"
+                    style={{
+                      color: votedFor === 'a' ? '#fff' : 'var(--col-a)',
+                      borderColor: 'var(--col-a-border)',
+                      background: votedFor === 'a' ? 'var(--col-a-transparent)' : 'transparent',
+                      width: '100%'
+                    }}
+                    onClick={(e) => { e.stopPropagation(); handleVote('a'); }}
+                    disabled={voted}
+                  >
+                    {votedFor === 'a' ? `✓ Voted` : `Vote for ${agentA.name.split(' ')[0]}`}
+                  </button>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Center */}
@@ -530,10 +535,11 @@ export default function DebateCard({ debate, onVote }) {
 
           {/* Agent B */}
           <div
-            className={`debate-agent-col right ${voted && votedFor !== 'b' ? 'loser' : ''} ${voted && votedFor === 'b' ? 'voted-col' : ''}`}
+            className={`debate-agent-col right ${isEnded && winner !== 'b' && winner !== 'draw' ? 'loser' : ''} ${voted && votedFor === 'b' ? 'voted-col' : ''} ${winner === 'b' ? 'winner-side' : ''}`}
             style={{ color: 'var(--col-b)' }}
-            onClick={() => !voted && handleVote('b')}
+            onClick={() => !voted && !isEnded && handleVote('b')}
           >
+            {winner === 'b' && <div className="winner-crown">👑</div>}
             <span className="debate-watermark" style={{ color: 'var(--col-b)', right: 'auto', left: '-10px' }}>&rdquo;</span>
             <div className="agent-header">
               <div className="debate-avatar" style={{ background: 'var(--col-b-very-transparent)', borderColor: 'var(--col-b-transparent)', color: 'var(--col-b)' }}>
@@ -542,27 +548,31 @@ export default function DebateCard({ debate, onVote }) {
               <div style={{ textAlign: 'right' }}>
                 <div className="debate-agent-name">{agentB.name}</div>
                 <div className="debate-agent-topic" style={{ color: 'var(--col-b)' }}>{agentB.topic}</div>
+                {winner === 'b' && <div className="winner-badge-pro" style={{ marginLeft: 'auto' }}>Winner</div>}
+                {winner === 'draw' && <div className="draw-badge" style={{ marginLeft: 'auto' }}>Tied</div>}
               </div>
             </div>
             <p className="agent-quote">{debate.argument_b}</p>
-            <div className="vote-btn-container" style={{ minHeight: '34px' }}>
-              {(!voted || votedFor === 'b') && (
-                <button
-                  key="vote-btn-b"
-                  className="debate-vote-btn"
-                  style={{
-                    color: votedFor === 'b' ? '#fff' : 'var(--col-b)',
-                    borderColor: 'var(--col-b-border)',
-                    background: votedFor === 'b' ? 'var(--col-b-transparent)' : 'transparent',
-                    width: '100%'
-                  }}
-                  onClick={(e) => { e.stopPropagation(); handleVote('b'); }}
-                  disabled={voted}
-                >
-                  {votedFor === 'b' ? `✓ Voted` : `Vote for ${agentB.name.split(' ')[0]}`}
-                </button>
-              )}
-            </div>
+            {!isEnded && (
+              <div className="vote-btn-container" style={{ minHeight: '34px' }}>
+                {(!voted || votedFor === 'b') && (
+                  <button
+                    key="vote-btn-b"
+                    className="debate-vote-btn"
+                    style={{
+                      color: votedFor === 'b' ? '#fff' : 'var(--col-b)',
+                      borderColor: 'var(--col-b-border)',
+                      background: votedFor === 'b' ? 'var(--col-b-transparent)' : 'transparent',
+                      width: '100%'
+                    }}
+                    onClick={(e) => { e.stopPropagation(); handleVote('b'); }}
+                    disabled={voted}
+                  >
+                    {votedFor === 'b' ? `✓ Voted` : `Vote for ${agentB.name.split(' ')[0]}`}
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
@@ -570,7 +580,7 @@ export default function DebateCard({ debate, onVote }) {
         <div className="debate-footer">
           <div className="vote-bar-labels">
             <span className="vote-bar-pct" style={{ color: 'var(--col-a)' }}>{agentA.name.split(' ')[0]} ({pctA}%)</span>
-            <span className="vote-bar-center-label">Current Standing</span>
+            <span className="vote-bar-center-label">{isEnded ? 'Final Result' : 'Current Standing'}</span>
             <span className="vote-bar-pct right-label" style={{ color: 'var(--col-b)' }}>({pctB}%) {agentB.name.split(' ')[0]}</span>
           </div>
           <div className="debate-vote-bar-track">

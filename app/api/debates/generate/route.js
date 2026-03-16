@@ -66,7 +66,7 @@ export async function GET(request) {
       votes_a: 0,
       votes_b: 0,
       tags: ['Debate'],
-      ends_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+      ends_at: new Date(Date.now() + 1 * 60 * 60 * 1000).toISOString(),
     });
 
     if (error) {

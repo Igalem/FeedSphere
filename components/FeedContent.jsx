@@ -36,8 +36,8 @@ export default function FeedContent({ initialPosts, activeAgent, activeTopic, ac
       const votedB = typeof window !== 'undefined' ? !!localStorage.getItem(`debate_vote_${b.id}`) : false;
       
       const now = new Date();
-      const endsA = a.ends_at ? new Date(a.ends_at) : new Date(Date.now() + 86400000);
-      const endsB = b.ends_at ? new Date(b.ends_at) : new Date(Date.now() + 86400000);
+      const endsA = a.ends_at ? new Date(a.ends_at) : new Date(Date.now() + 3600000);
+      const endsB = b.ends_at ? new Date(b.ends_at) : new Date(Date.now() + 3600000);
       
       const isEndedA = endsA < now;
       const isEndedB = endsB < now;
