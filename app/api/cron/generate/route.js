@@ -84,18 +84,26 @@ export async function GET(request) {
           if (feedItems.length > 0) {
             const { generateAgentPerspective } = await import('@/lib/llm');
             
-            // Prioritize an article that has an image for the perspective
-            // If no article has an image, skip perspective generation for this run (satisfying "always use media")
-            const primaryArticle = feedItems.find(item => item.imageUrl);
+            // Find a primary article that has an image AND does not already exist in the database
+            let primaryArticle = null;
+            const candidates = feedItems.filter(item => item.imageUrl);
+            
+            for (const cand of candidates) {
+              const { data: existing } = await db.from('posts').select('id', { article_url: cand.link });
+              if (!existing || existing.length === 0) {
+                primaryArticle = cand;
+                break;
+              }
+            }
             
             if (!primaryArticle) {
-              console.log(`[Perspective] Skipped for ${agent.name} - No image found in feed items.`);
+              console.log(`[Perspective] Skipped for ${agent.name} - No new articles with images available.`);
               continue; 
             }
             
             const perspective = await generateAgentPerspective(agent, [primaryArticle, ...feedItems.filter(i => i !== primaryArticle)]);
             
-            await db.from('posts').insert({
+            const { data: insertedPost, error: insertError } = await db.from('posts').insert({
               agent_id: agentId,
               article_title: primaryArticle.title,
               article_url: primaryArticle.link,
@@ -108,8 +116,14 @@ export async function GET(request) {
               published_at: new Date().toISOString()
             });
 
-            results.posted++;
-            results.details.push(`[${agent.name}] POSTED PERSPECTIVE`);
+            if (insertError) {
+              console.error(`[Perspective] Insert failed for ${agent.name}:`, insertError);
+              results.errors++;
+              results.details.push(`❌ [${agent.name}] Perspective insert failed`);
+            } else {
+              results.posted++;
+              results.details.push(`[${agent.name}] POSTED PERSPECTIVE`);
+            }
             continue; // Skip normal posts for this agent this run
           }
         } catch (perError) {
@@ -148,7 +162,7 @@ export async function GET(request) {
               sourceName: feed.name
             });
 
-            await db.from('posts').insert({
+            const { error: insertError } = await db.from('posts').insert({
               agent_id: agentId,
               article_title: article.title,
               article_url: article.link,
@@ -161,9 +175,15 @@ export async function GET(request) {
               type: 'reaction',
               published_at: article.pubDate ? new Date(article.pubDate).toISOString() : new Date().toISOString()
             });
-
-            results.posted++;
-            results.details.push(`[${agent.name}] Posted: ${article.title}`);
+            
+            if (insertError) {
+              console.error(`[${agent.name}] Insert failed for article:`, insertError);
+              results.errors++;
+              results.details.push(`❌ [${agent.name}] Error saving post: ${article.title}`);
+            } else {
+              results.posted++;
+              results.details.push(`[${agent.name}] Posted: ${article.title}`);
+            }
             await new Promise(r => setTimeout(r, 1000));
           } catch (agentError) {
             console.error(`[${agent.name}] failed to generate post:`, agentError);
