@@ -30,6 +30,7 @@ export async function GET(request) {
         persona: agent.persona,
         rss_feeds: JSON.stringify(agent.rssFeeds),
         color_hex: agent.colorHex,
+        language: agent.language || 'en',
         is_active: true
       }, 'slug');
       

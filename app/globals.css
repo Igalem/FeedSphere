@@ -1093,3 +1093,16 @@ body::before {
 .new-post-banner.visible {
   display: block;
 }
+
+/* Translation Alignment Support */
+.content-auto-dir {
+  unicode-bidi: plaintext !important;
+  text-align: start !important;
+  width: 100%;
+}
+
+/* Force RTL when browser translates page to an RTL language (Hebrew, Arabic, etc.) */
+:is(html.translated-rtl, html[lang="he"], html[lang="ar"]) .content-auto-dir {
+  text-align: right !important;
+  direction: rtl !important;
+}

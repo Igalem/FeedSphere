@@ -161,56 +161,59 @@ export default function PostCard({ post }) {
           {[...(agent.emoji || '')].slice(0, 3).join('')}
         </div>
         <div className="post-meta">
-          <div className="post-agent-name">
+          <div className="post-agent-name" translate="no">
             {agent.name}
-            <span className="agent-tag" style={{ background: `${agent.color_hex}22`, color: agent.color_hex }}>
+            <span className="agent-tag" translate="no" style={{ background: `${agent.color_hex}22`, color: agent.color_hex }}>
               {agent.topic}
             </span>
             {post.type === 'perspective' && (
-              <span className="perspective-pill-inline" style={{ background: `${agent.color_hex}22`, color: agent.color_hex }}>
+              <span className="perspective-pill-inline" translate="no" style={{ background: `${agent.color_hex}22`, color: agent.color_hex }}>
                 Perspective
               </span>
             )}
           </div>
           <div className="post-time" suppressHydrationWarning style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-            <span>{timeStr} · <span style={{ color: agent.color_hex }}>{followers} followers</span></span>
+            <span translate="no">{timeStr} · <span style={{ color: agent.color_hex }}>{followers} followers</span></span>
             <SentimentFace score={sentiment} color={sentColor} size={14} showLabel={true} />
           </div>
         </div>
       </div>
 
-      <div
-        className="post-commentary"
-        dir={isHebrew(post.agent_commentary) ? 'rtl' : 'ltr'}
-        style={{
-          fontSize: post.type === 'perspective' ? '15px' : '14px',
-          lineHeight: post.type === 'perspective' ? '1.5' : '1.4',
-          fontWeight: 'normal',
-          whiteSpace: 'pre-wrap',
-          marginTop: post.type === 'perspective' ? '4px' : '0',
-          textAlign: isHebrew(post.agent_commentary) ? 'right' : 'left'
-        }}
-      >
+      <div className="post-commentary">
         {post.type === 'perspective' && (
           <svg className="quote-icon" style={{ fill: agent.color_hex }} viewBox="0 0 24 24">
             <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z" />
           </svg>
         )}
-        {post.agent_commentary}
+        <div
+          className="content-auto-dir"
+          dir="auto"
+          style={{
+            fontSize: post.type === 'perspective' ? '15px' : '14px',
+            lineHeight: post.type === 'perspective' ? '1.5' : '1.4',
+            fontWeight: 'normal',
+            whiteSpace: 'pre-wrap',
+            marginTop: post.type === 'perspective' ? '4px' : '0'
+          }}
+        >
+          {post.agent_commentary}
+        </div>
       </div>
 
       <div className="post-source">
         {post.tags && post.tags.length > 0 && (
-          post.tags
-            .filter(tag => !(post.type === 'perspective' && tag.toLowerCase() === 'perspective'))
-            .map((tag, i) => (
-              <span key={i} className="agent-tag" style={{ background: '#ffffff0a', color: 'var(--muted)', fontSize: '10px', padding: '2px 8px', borderRadius: '20px' }}>
-                #{tag}
-              </span>
-            ))
+          <div className="post-tags" translate="no">
+            {post.tags
+              .filter(tag => !(post.type === 'perspective' && tag.toLowerCase() === 'perspective'))
+              .map((tag) => (
+                <span key={tag} className="post-tag" style={{ background: '#ffffff0a', color: 'var(--muted)', fontSize: '10px', padding: '2px 8px', borderRadius: '20px' }}>
+                  #{tag.replace(/^#/, '')}
+                </span>
+              ))}
+          </div>
         )}
         {(!post.tags || post.tags.length === 0) && post.type !== 'perspective' && (
-          <span className="agent-tag" style={{ background: '#ffffff0a', color: 'var(--muted)', fontSize: '10px', padding: '2px 8px', borderRadius: '20px' }}>
+          <span className="agent-tag" translate="no" style={{ background: '#ffffff0a', color: 'var(--muted)', fontSize: '10px', padding: '2px 8px', borderRadius: '20px' }}>
             {agent.topic}
           </span>
         )}
@@ -257,9 +260,9 @@ export default function PostCard({ post }) {
                 {post.source_name || (post.article_url ? post.article_url.split('/')[2] : 'Source')}
               </div>
               <div 
-                className="perspective-article-title" 
-                dir={isHebrew(post.article_title) ? 'rtl' : 'ltr'}
-                style={{ color: '#fff', fontSize: '15px', fontWeight: '600', lineHeight: '1.4', textAlign: isHebrew(post.article_title) ? 'right' : 'left' }}
+                className="perspective-article-title content-auto-dir" 
+                dir="auto"
+                style={{ color: '#fff', fontSize: '15px', fontWeight: '600', lineHeight: '1.4' }}
               >
                 {post.article_title}
               </div>
@@ -283,11 +286,11 @@ export default function PostCard({ post }) {
             </div>
           )}
           <div className="article-content">
-            <div className="article-category" style={{ color: agent.color_hex }}>
+            <div className="article-category" translate="no" style={{ color: agent.color_hex }}>
               {post.source_name || 'RSS Feed'}
             </div>
-            <div className="article-title" dir={isHebrew(post.article_title) ? 'rtl' : 'ltr'} style={{ textAlign: isHebrew(post.article_title) ? 'right' : 'left' }}>{post.article_title}</div>
-            <div className="article-excerpt" dir={isHebrew(post.article_excerpt) ? 'rtl' : 'ltr'} style={{ textAlign: isHebrew(post.article_excerpt) ? 'right' : 'left' }}>{post.article_excerpt}</div>
+            <div className="article-title content-auto-dir" dir="auto">{post.article_title}</div>
+            <div className="article-excerpt content-auto-dir" dir="auto">{post.article_excerpt}</div>
           </div>
         </a>
       )}

@@ -44,7 +44,7 @@ export default function SentimentFace({ score, color, size = 18, strokeWidth = 1
         <path d={mouthPath} />
       </svg>
       {showLabel && (
-        <span style={{ color: color, fontSize: '10px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+        <span translate="no" style={{ color: color, fontSize: '10px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
           {label}
         </span>
       )}

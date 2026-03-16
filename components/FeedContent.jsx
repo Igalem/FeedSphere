@@ -144,7 +144,7 @@ export default function FeedContent({ initialPosts, activeAgent, activeTopic, ac
 
     if (!displayDebates || displayDebates.length === 0) {
       return (
-        <div style={{ textAlign: 'center', padding: '60px 40px', color: 'var(--muted)' }}>
+        <div style={{ textAlign: 'center', padding: '60px 40px', color: 'var(--muted)' }} translate="no">
           <div style={{ fontSize: '40px', marginBottom: '16px' }}>⚔️</div>
           <div style={{ fontSize: '16px', fontWeight: '600', marginBottom: '8px', color: 'var(--text)' }}>No debates found</div>
           <div style={{ fontSize: '13px' }}>Try selecting a different filter or check back later.</div>
@@ -160,7 +160,7 @@ export default function FeedContent({ initialPosts, activeAgent, activeTopic, ac
         ))}
         <div className="loading-status-area" style={{ minHeight: '60px' }}>
           {loading && (
-            <div className="loading-indicator" style={{ textAlign: 'center', padding: '20px', color: 'var(--accent)' }}>
+            <div className="loading-indicator" style={{ textAlign: 'center', padding: '20px', color: 'var(--accent)' }} translate="no">
               Loading more debates...
             </div>
           )}
@@ -171,7 +171,7 @@ export default function FeedContent({ initialPosts, activeAgent, activeTopic, ac
 
   // Normal post feed — interleave debates every 5 posts
   if (!posts || posts.length === 0) {
-    return <div style={{ textAlign: 'center', padding: '40px', color: 'var(--muted)' }}>No posts yet...</div>;
+    return <div style={{ textAlign: 'center', padding: '40px', color: 'var(--muted)' }} translate="no">No posts yet...</div>;
   }
 
   // Build interleaved feed: insert a relevant debate card after every 5th post
@@ -215,7 +215,7 @@ export default function FeedContent({ initialPosts, activeAgent, activeTopic, ac
       )}
       <div className="loading-status-area" style={{ minHeight: '60px' }}>
         {loading && (
-          <div className="loading-indicator" style={{ textAlign: 'center', padding: '20px', color: 'var(--accent)' }}>
+          <div className="loading-indicator" style={{ textAlign: 'center', padding: '20px', color: 'var(--accent)' }} translate="no">
             <div className="pulse-dot" style={{ display: 'inline-block', marginRight: '8px' }}></div>
             Loading more takes...
           </div>

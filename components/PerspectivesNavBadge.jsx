@@ -34,6 +34,7 @@ export default function PerspectivesNavBadge({ perspectives, activeType }) {
       href="/?type=perspective"
       className={`nav-item ${activeType === 'perspective' ? 'active' : ''}`}
       style={{ textDecoration: 'none' }}
+      translate="no"
     >
       <span className="nav-icon">✨</span> Perspectives
       {newCount > 0 && (

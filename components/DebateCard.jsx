@@ -463,7 +463,7 @@ export default function DebateCard({ debate, onVote }) {
               <div key="timer" className="debate-timer">ENDS IN: <span>{countdown}</span></div>
             )}
           </div>
-          <div className="debate-question-text" dir={isHebrew(debate.debate_question || debate.topic) ? 'rtl' : 'ltr'}>
+          <div className="debate-question-text content-auto-dir" dir="auto">
             {debate.debate_question || debate.topic}
           </div>
           {debate.article_url && (
@@ -473,6 +473,7 @@ export default function DebateCard({ debate, onVote }) {
               target="_blank"
               rel="noopener noreferrer"
               className="debate-article-link"
+              lang={isHebrew(debate.article_title || debate.topic) ? 'he' : 'en'}
               onClick={e => e.stopPropagation()}
             >
               📰 {debate.article_title || debate.topic}
@@ -495,13 +496,13 @@ export default function DebateCard({ debate, onVote }) {
                 {[...(agentA.emoji || '')].slice(0, 3).join('')}
               </div>
               <div>
-                <div className="debate-agent-name">{agentA.name}</div>
-                <div className="debate-agent-topic" style={{ color: 'var(--col-a)' }}>{agentA.topic}</div>
+                <div className="debate-agent-name" translate="no">{agentA.name}</div>
+                <div className="debate-agent-topic" translate="no" style={{ color: 'var(--col-a)' }}>{agentA.topic}</div>
                 {winner === 'a' && <div className="winner-badge-pro">Winner</div>}
                 {winner === 'draw' && <div className="draw-badge">Tied</div>}
               </div>
             </div>
-            <p className="agent-quote" dir={isHebrew(debate.argument_a) ? 'rtl' : 'ltr'} style={{ textAlign: isHebrew(debate.argument_a) ? 'right' : 'left' }}>{debate.argument_a}</p>
+            <div className="agent-quote content-auto-dir" dir="auto">{debate.argument_a}</div>
             {!isEnded && (
               <div className="vote-btn-container" style={{ minHeight: '34px' }}>
                 {(!voted || votedFor === 'a') && (
@@ -548,13 +549,13 @@ export default function DebateCard({ debate, onVote }) {
                 {[...(agentB.emoji || '')].slice(0, 3).join('')}
               </div>
               <div style={{ textAlign: 'right' }}>
-                <div className="debate-agent-name">{agentB.name}</div>
-                <div className="debate-agent-topic" style={{ color: 'var(--col-b)' }}>{agentB.topic}</div>
+                <div className="debate-agent-name" translate="no">{agentB.name}</div>
+                <div className="debate-agent-topic" translate="no" style={{ color: 'var(--col-b)' }}>{agentB.topic}</div>
                 {winner === 'b' && <div className="winner-badge-pro" style={{ marginLeft: 'auto' }}>Winner</div>}
                 {winner === 'draw' && <div className="draw-badge" style={{ marginLeft: 'auto' }}>Tied</div>}
               </div>
             </div>
-            <p className="agent-quote" dir={isHebrew(debate.argument_b) ? 'rtl' : 'ltr'} style={{ textAlign: isHebrew(debate.argument_b) ? 'right' : 'left' }}>{debate.argument_b}</p>
+            <div className="agent-quote content-auto-dir" dir="auto">{debate.argument_b}</div>
             {!isEnded && (
               <div className="vote-btn-container" style={{ minHeight: '34px' }}>
                 {(!voted || votedFor === 'b') && (

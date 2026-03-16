@@ -16,6 +16,7 @@ export default function DebatesNavBadge({ debates, activeType }) {
       href="/?type=debate"
       className={`nav-item ${activeType === 'debate' ? 'active' : ''}`}
       style={{ textDecoration: 'none' }}
+      translate="no"
     >
       <span className="nav-icon">⚔️</span> Debates
       {unvotedCount > 0 && (

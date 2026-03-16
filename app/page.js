@@ -226,13 +226,13 @@ if (conditions.length > 0) {
     <div className="app">
       {/* SIDEBAR */}
       <aside className="sidebar">
-        <div className="logo">
+        <div className="logo" translate="no">
           <div className="logo-mark">⚡</div>
           <div className="logo-text">Feed<span>Sphere</span></div>
         </div>
 
         <div className="sidebar-nav-container">
-          <nav>
+          <nav translate="no">
             <div className="nav-label">Navigate</div>
             <Link href="/" className={`nav-item ${activeAgentSlug === 'All' && !activeTopic && !activeTag && !activeType ? 'active' : ''}`} style={{ textDecoration: 'none' }}>
               <span className="nav-icon">🏠</span> Home Feed
@@ -247,7 +247,7 @@ if (conditions.length > 0) {
             </div>
           </nav>
 
-          <div>
+          <div translate="no">
             <div className="nav-label">My Agents</div>
             <div className="sidebar-agents">
               {agents.map(agent => (
@@ -269,7 +269,7 @@ if (conditions.length > 0) {
       {/* MAIN FEED */}
       <main className="feed">
         <div className="feed-header">
-          <div className="feed-filters">
+          <div className="feed-filters" translate="no">
             <Link
               href="/"
               className={`filter-btn ${activeAgentSlug === 'All' && !activeTopic && !activeTag ? 'active' : ''}`}
@@ -306,7 +306,7 @@ if (conditions.length > 0) {
       {/* RIGHT PANEL */}
       <aside className="panel">
         <div className="panel-section">
-          <div className="panel-title">📡 Live Pulse</div>
+          <div className="panel-title" translate="no">📡 Live Pulse</div>
           <div>
             {PULSE_DATA.map(p => {
               const trend = p.score > p.prev ? '↑' : p.score < p.prev ? '↓' : '-';
@@ -322,14 +322,14 @@ if (conditions.length > 0) {
 
               return (
                 <Link href={`/?topic=${p.topic}`} key={p.topic} className="pulse-widget" style={{ textDecoration: 'none' }}>
-                  <span className="pulse-topic-name">{p.topic}</span>
-                  <div className="pulse-trend-box" style={{ color: trendColor }}>
+                  <span className="pulse-topic-name" translate="no">{p.topic}</span>
+                  <div className="pulse-trend-box" style={{ color: trendColor }} translate="no">
                     <span className="pulse-trend-arrow">{trend}</span>
                     <span className="pulse-trend-percent">{percent}%</span>
                   </div>
                   <div className="pulse-sentiment-row">
                     <SentimentFace score={p.score} color={sColor} size={14} showLabel={true} />
-                    <div className="pulse-score-pill" style={{ background: `${sColor}15`, color: sColor }}>
+                    <div className="pulse-score-pill" style={{ background: `${sColor}15`, color: sColor }} translate="no">
                       {p.score}%
                     </div>
                   </div>
@@ -340,8 +340,8 @@ if (conditions.length > 0) {
         </div>
 
         <div className="panel-section">
-          <div className="panel-title">🔥 Trending Topics</div>
-          <div>
+          <div className="panel-title" translate="no">🔥 Trending Topics</div>
+          <div translate="no">
             {TRENDING.map(t => (
               <Link href={`/?tag=${t.name.startsWith('#') ? t.name.slice(1) : t.name}`} key={t.name} className="topic-item" style={{ textDecoration: 'none' }}>
                 <div>
@@ -355,10 +355,10 @@ if (conditions.length > 0) {
         </div>
 
         <div className="panel-section">
-          <div className="panel-title">🤖 Discover Agents</div>
+          <div className="panel-title" translate="no">🤖 Discover Agents</div>
           <div>
             {agents.slice(0, 2).map(agent => (
-              <div key={agent.id} className="trending-agent">
+              <div key={agent.id} className="trending-agent" translate="no">
                 <div className="agent-avatar-sm" style={{ background: `${agent.color_hex}22`, width: '40px', height: '40px', borderRadius: '50%', display: 'grid', placeItems: 'center', fontSize: '18px', overflow: 'hidden' }}>
                   {[...(agent.emoji || '')].slice(0, 3).join('')}
                 </div>
