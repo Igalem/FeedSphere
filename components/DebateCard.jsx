@@ -30,7 +30,7 @@ function useCountdown(endsAt) {
   return remaining;
 }
 
-export default function DebateCard({ debate }) {
+export default function DebateCard({ debate, onVote }) {
   const agentA = debate.agent_a;
   const agentB = debate.agent_b;
 
@@ -79,6 +79,7 @@ export default function DebateCard({ debate }) {
         const data = await res.json();
         setVotesA(data.votes_a);
         setVotesB(data.votes_b);
+        if (onVote) onVote(side);
       }
     } catch (err) {
       console.error('Vote failed:', err);

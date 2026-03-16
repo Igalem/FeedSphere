@@ -12,7 +12,19 @@ export default function FeedContent({ initialPosts, activeAgent, activeTopic, ac
   const [hasMore, setHasMore] = useState(
     activeType === 'debate' ? (initialDebates?.length >= 10) : (initialPosts?.length >= 10)
   );
+  const [votedIds, setVotedIds] = useState(new Set());
   const loadingRef = useRef(false);
+
+  useEffect(() => {
+    const ids = new Set();
+    const allDebates = debates || initialDebates || [];
+    allDebates.forEach(d => {
+      if (localStorage.getItem(`debate_vote_${d.id}`)) {
+        ids.add(d.id);
+      }
+    });
+    setVotedIds(ids);
+  }, [debates, initialDebates]);
 
   const isDebateMode = activeType === 'debate';
   const isHomeFeed = !activeType || activeType === 'all';
@@ -20,8 +32,8 @@ export default function FeedContent({ initialPosts, activeAgent, activeTopic, ac
   const sortDebates = (list) => {
     if (!list) return [];
     return [...list].sort((a, b) => {
-      const votedA = !!localStorage.getItem(`debate_vote_${a.id}`);
-      const votedB = !!localStorage.getItem(`debate_vote_${b.id}`);
+      const votedA = typeof window !== 'undefined' ? !!localStorage.getItem(`debate_vote_${a.id}`) : false;
+      const votedB = typeof window !== 'undefined' ? !!localStorage.getItem(`debate_vote_${b.id}`) : false;
       
       const now = new Date();
       const endsA = a.ends_at ? new Date(a.ends_at) : new Date(Date.now() + 86400000);
@@ -142,7 +154,9 @@ export default function FeedContent({ initialPosts, activeAgent, activeTopic, ac
     return (
       <div className="feed-container">
         {displayDebates.map(debate => (
-          <DebateCard key={`debate-${debate.id}`} debate={debate} />
+          <DebateCard key={`debate-${debate.id}`} debate={debate} onVote={() => {
+            setVotedIds(prev => new Set([...prev, debate.id]));
+          }} />
         ))}
         <div className="loading-status-area" style={{ minHeight: '60px' }}>
           {loading && (
@@ -162,16 +176,29 @@ export default function FeedContent({ initialPosts, activeAgent, activeTopic, ac
 
   // Build interleaved feed: insert a relevant debate card after every 5th post
   const filteredDebates = debates.filter(d => {
-    if (activeAgent) return d.agent_a?.slug === activeAgent || d.agent_b?.slug === activeAgent;
-    if (activeTag) return d.tags?.includes(activeTag);
-    if (activeTopic) return d.topic === activeTopic;
+    // 1. Relevance filters
+    if (activeAgent) {
+      if (d.agent_a?.slug !== activeAgent && d.agent_b?.slug !== activeAgent) return false;
+    } else if (activeTag) {
+      if (!d.tags?.includes(activeTag)) return false;
+    } else if (activeTopic) {
+      if (d.topic !== activeTopic) return false;
+    }
+
+    // 2. "Your Feed" logic: remove voted posts
+    // We consider "Your Feed" to be the home view with no specific filters
+    const isYourFeed = !activeAgent && !activeTag && !activeTopic && !activeType;
+    if (isYourFeed && votedIds.has(d.id)) {
+      return false;
+    }
+
     return true;
   });
 
   const feedItems = [];
   posts.forEach((post, i) => {
     feedItems.push({ type: 'post', data: post });
-    // ONLY interleave debates on the home feed (where activeType is null)
+    // ONLY interleave debates on the home feed or agent feeds (where activeType is null)
     if (!activeType && (i + 1) % 5 === 0 && filteredDebates[Math.floor((i + 1) / 5) - 1]) {
       feedItems.push({ type: 'debate', data: filteredDebates[Math.floor((i + 1) / 5) - 1] });
     }
@@ -181,7 +208,9 @@ export default function FeedContent({ initialPosts, activeAgent, activeTopic, ac
     <div className="feed-container">
       {feedItems.map((item) =>
         item.type === 'debate'
-          ? <DebateCard key={`debate-${item.data.id}`} debate={item.data} />
+          ? <DebateCard key={`debate-${item.data.id}`} debate={item.data} onVote={() => {
+              setVotedIds(prev => new Set([...prev, item.data.id]));
+            }} />
           : <PostCard key={`post-${item.data.id}`} post={item.data} />
       )}
       <div className="loading-status-area" style={{ minHeight: '60px' }}>
