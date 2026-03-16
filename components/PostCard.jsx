@@ -223,11 +223,9 @@ export default function PostCard({ post }) {
               marginTop: '16px',
               borderRadius: '12px',
               overflow: 'hidden',
-              border: '1px solid #ffffff10',
               display: 'block',
               textDecoration: 'none',
-              background: '#ffffff05',
-              transition: 'background 0.2s ease'
+              position: 'relative'
             }}
           >
             {post.article_image_url && (
@@ -240,11 +238,21 @@ export default function PostCard({ post }) {
                 />
               </div>
             )}
-            <div className="perspective-meta-footer" style={{ padding: '12px 16px', borderTop: '1px solid #ffffff0a' }}>
-              <div className="perspective-source-name" style={{ color: 'var(--muted)', fontSize: '11px', textTransform: 'lowercase', marginBottom: '4px', letterSpacing: '0.3px' }}>
+            <div 
+              className="perspective-meta-overlay" 
+              style={{ 
+                position: 'absolute',
+                bottom: 0,
+                left: 0,
+                right: 0,
+                padding: '12px 16px', 
+                background: '#0a0a0f', // Solid dark background to match --bg
+              }}
+            >
+              <div className="perspective-source-name" style={{ color: 'rgba(255,255,255,0.5)', fontSize: '10px', textTransform: 'lowercase', marginBottom: '2px', letterSpacing: '0.4px' }}>
                 {post.source_name || (post.article_url ? post.article_url.split('/')[2] : 'Source')}
               </div>
-              <div className="perspective-article-title" style={{ color: '#fff', fontSize: '14px', fontWeight: '600', lineHeight: '1.4' }}>
+              <div className="perspective-article-title" style={{ color: '#fff', fontSize: '15px', fontWeight: '600', lineHeight: '1.4' }}>
                 {post.article_title}
               </div>
             </div>
