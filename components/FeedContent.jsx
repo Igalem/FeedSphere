@@ -26,6 +26,13 @@ export default function FeedContent({ initialPosts, activeAgent, activeTopic, ac
     setVotedIds(ids);
   }, [debates, initialDebates]);
 
+  useEffect(() => {
+    if (activeType === 'debate') {
+      localStorage.setItem('debates_last_viewed_at', new Date().toISOString());
+      window.dispatchEvent(new Event('storage')); // Trigger update for NavBadge
+    }
+  }, [activeType]);
+
   const isDebateMode = activeType === 'debate';
   const isHomeFeed = !activeType || activeType === 'all';
 
@@ -48,7 +55,12 @@ export default function FeedContent({ initialPosts, activeAgent, activeTopic, ac
 
       if (statusA !== statusB) return statusA - statusB;
 
-      // Within same status, sort by ends_at ASC (near to far or chronological closed)
+      // Within same status:
+      if (isEndedA) {
+        // Recently closed first
+        return endsB - endsA;
+      }
+      // Soon to close first
       return endsA - endsB;
     });
   };

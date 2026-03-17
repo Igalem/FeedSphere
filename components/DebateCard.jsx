@@ -60,6 +60,7 @@ export default function DebateCard({ debate, onVote }) {
 
   const isEnded = countdown === 'ENDED';
   const winner = isEnded ? (votesA > votesB ? 'a' : votesB > votesA ? 'b' : 'draw') : null;
+  const isTieWithVotes = isEnded && winner === 'draw' && totalVotes > 0;
 
   const formatVotes = (n) => n >= 1000 ? (n / 1000).toFixed(1) + 'K' : n.toString();
 
@@ -108,7 +109,7 @@ export default function DebateCard({ debate, onVote }) {
       '--col-b-very-transparent': `${colB}18`,
       '--col-a-border': `${colA}66`,
       '--col-b-border': `${colB}66`,
-      '--winner-glow': winner === 'a' ? `${colA}33` : winner === 'b' ? `${colB}33` : 'transparent'
+      '--winner-glow': winner === 'a' ? `${colA}33` : winner === 'b' ? `${colB}33` : isTieWithVotes ? 'rgba(255,255,255,0.15)' : 'transparent'
     }}>
       <style>{`
         .debate-card-wrapper {
@@ -124,6 +125,10 @@ export default function DebateCard({ debate, onVote }) {
         }
         .debate-card-wrapper.ended-draw {
           background: linear-gradient(160deg, #1a1a24 0%, #12121a 50%, #1a1a24 100%);
+        }
+        .debate-card-wrapper.tie-with-votes {
+          background: linear-gradient(160deg, #1e1e30 0%, #12121a 50%, #1e1e30 100%);
+          box-shadow: 0 0 40px rgba(255, 255, 255, 0.05), 0 0 0 1px rgba(255,255,255,0.1);
         }
         .debate-card-wrapper.winner-a {
           background: linear-gradient(160deg, var(--col-a-very-transparent) 0%, #12121a 50%, #1a1228 100%);
@@ -446,16 +451,50 @@ export default function DebateCard({ debate, onVote }) {
           font-size: 10px; font-weight: 700; padding: 4px 10px; border-radius: 6px;
           text-transform: uppercase; border: 1px solid rgba(255,255,255,0.1);
         }
+        .tie-pro-badge {
+          background: linear-gradient(135deg, #6366f1, #a855f7, #ec4899);
+          background-size: 200% 200%;
+          animation: gradientMove 3s ease infinite;
+          color: #fff;
+          font-size: 10px;
+          font-weight: 800;
+          padding: 6px 12px;
+          border-radius: 8px;
+          text-transform: uppercase;
+          letter-spacing: 1.5px;
+          box-shadow: 0 4px 15px rgba(168, 85, 247, 0.4);
+          display: flex;
+          align-items: center;
+          gap: 6px;
+        }
+        @keyframes gradientMove {
+          0% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+          100% { background-position: 0% 50%; }
+        }
+        .tie-overlay {
+          position: absolute;
+          inset: 0;
+          background: radial-gradient(circle at center, rgba(168, 85, 247, 0.1) 0%, transparent 70%);
+          pointer-events: none;
+          z-index: 0;
+        }
       `}</style>
 
-      <div className={`debate-card-wrapper ${winner ? `winner-${winner}` : ''} ${isEnded && winner === 'draw' ? 'ended-draw' : ''}`}>
+
+      <div className={`debate-card-wrapper ${winner ? `winner-${winner}` : ''} ${isEnded && winner === 'draw' ? 'ended-draw' : ''} ${isTieWithVotes ? 'tie-with-votes' : ''}`}>
+        {isTieWithVotes && <div className="tie-overlay"></div>}
         {/* === HEADER === */}
         <div className="debate-header-section">
           <div className="debate-badge-row">
             <div className="debate-header-meta" translate="no">
               {isEnded ? (
-                <div key="badge-ended" className="debate-closed-badge" style={{ background: winner === 'draw' ? 'rgba(255,255,255,0.05)' : 'linear-gradient(135deg, rgba(255,255,255,0.15), rgba(255,255,255,0.05))' }}>
-                  {winner === 'draw' ? '⚖️ Debate Tied' : '🏆 Result Final'}
+                <div key="badge-ended" className={`debate-closed-badge ${isTieWithVotes ? 'tie-pro-badge' : ''}`}>
+                  {isTieWithVotes ? (
+                    <><span style={{ fontSize: '14px' }}>✨</span> Shared Perspective</>
+                  ) : (
+                    winner === 'draw' ? '⚖️ Debate Tied' : '🏆 Result Final'
+                  )}
                 </div>
               ) : (
                 <div key="badge-live" className="debate-live-badge">⚔️ Live Debate</div>

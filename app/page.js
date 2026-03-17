@@ -145,7 +145,8 @@ if (conditions.length > 0) {
     debateSql += ` 
       ORDER BY 
         CASE WHEN d.ends_at IS NULL OR d.ends_at > CURRENT_TIMESTAMP THEN 0 ELSE 1 END ASC,
-        d.ends_at ASC NULLS LAST
+        CASE WHEN d.ends_at IS NULL OR d.ends_at > CURRENT_TIMESTAMP THEN d.ends_at END ASC,
+        d.ends_at DESC
       LIMIT 10`;
 
 

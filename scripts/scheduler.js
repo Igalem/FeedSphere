@@ -7,6 +7,7 @@ async function startScheduler() {
     const INTERVAL_MS = SETTINGS.SCHEDULER_INTERVAL_MS;
     const ENDPOINT = SETTINGS.API_BASE_URL + SETTINGS.CRON_PATH;
     const DEBATE_ENDPOINT = SETTINGS.API_BASE_URL + SETTINGS.DEBATE_PATH;
+    const MAINTENANCE_ENDPOINT = SETTINGS.API_BASE_URL + '/api/debates/maintenance';
     const BEARER_TOKEN = SETTINGS.CRON_TOKEN;
 
     async function runTask() {
@@ -54,6 +55,22 @@ async function startScheduler() {
             } catch (err) {
                 console.error(`[${now}] ❌ Debate generation error: ${err.message}`);
             }
+        }
+
+        // Run maintenance for tied/unvoted debates
+        try {
+            const maintRes = await fetch(MAINTENANCE_ENDPOINT, {
+                method: 'GET',
+                headers: { 'Authorization': `Bearer ${BEARER_TOKEN}` }
+            });
+            if (maintRes.ok) {
+                const maintData = await maintRes.json();
+                if (maintData.extendedCount > 0) {
+                    console.log(`[${now}] 🛠️ Debate Maintenance: Extended ${maintData.extendedCount} debates.`);
+                }
+            }
+        } catch (maintErr) {
+            console.error(`[${now}] ❌ Maintenance error: ${maintErr.message}`);
         }
 
         console.log(`[${now}] 😴 Sleeping for ${INTERVAL_MS / 60000} minutes...`);

@@ -6,9 +6,21 @@ export default function DebatesNavBadge({ debates, activeType }) {
   const [unvotedCount, setUnvotedCount] = useState(0);
 
   useEffect(() => {
-    if (!debates || debates.length === 0) return;
-    const count = debates.filter(d => !localStorage.getItem(`debate_vote_${d.id}`)).length;
-    setUnvotedCount(count);
+    const updateCount = () => {
+      if (!debates || debates.length === 0) return;
+      const lastViewedAt = localStorage.getItem('debates_last_viewed_at');
+      const count = debates.filter(d => {
+        const isVoted = localStorage.getItem(`debate_vote_${d.id}`);
+        if (isVoted) return false;
+        if (!lastViewedAt) return true;
+        return new Date(d.created_at) > new Date(lastViewedAt);
+      }).length;
+      setUnvotedCount(count);
+    };
+
+    updateCount();
+    window.addEventListener('storage', updateCount);
+    return () => window.removeEventListener('storage', updateCount);
   }, [debates]);
 
   return (
