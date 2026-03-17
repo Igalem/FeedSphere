@@ -2,6 +2,8 @@ import { db } from '@/lib/db';
 import { NextResponse } from 'next/server';
 import { generateDebate, resetLLMMaster } from '@/lib/llm';
 import { fetchFeedItems } from '@/lib/rss';
+import { SETTINGS } from '@/lib/settings';
+
 
 export async function GET(request) {
   // Reset failure tracking for this run
@@ -66,8 +68,9 @@ export async function GET(request) {
       votes_a: 0,
       votes_b: 0,
       tags: ['Debate'],
-      ends_at: new Date(Date.now() + 1 * 60 * 60 * 1000).toISOString(),
+      ends_at: new Date(Date.now() + SETTINGS.DEBATE_DURATION_MS).toISOString(),
     });
+
 
     if (error) {
       console.error('[Debate] Insert error:', error);

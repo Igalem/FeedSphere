@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { fetchFeedItems } from '@/lib/rss';
 import { generateAgentPost, resetLLMMaster } from '@/lib/llm';
+import { SETTINGS } from '@/lib/settings';
+
 
 export async function GET(request) {
   // Reset LLM master state for the new run
@@ -70,14 +72,14 @@ export async function GET(request) {
       results.details.push(`🔍 [${agent.name}] is looking for new RSS feeds...`);
 
       // --- PERSPECTIVE MODE (Optional check: e.g. 5% chance) ---
-      const isPerspectiveRun = Math.random() < 0.05; 
+      const isPerspectiveRun = Math.random() < SETTINGS.PERSPECTIVE_PROBABILITY; 
       if (isPerspectiveRun && agent.rssFeeds && agent.rssFeeds.length > 0) {
         console.log(`[Perspective] Generating for ${agent.name}...`);
         try {
           // Collect items from first 2 feeds to build context
           const feedItems = [];
           for (const feed of agent.rssFeeds.slice(0, 2)) {
-            const items = await fetchFeedItems(feed.url, 3);
+            const items = await fetchFeedItems(feed.url, SETTINGS.MAX_FEED_ITEMS_PER_FETCH);
             // Attach source name to each item
             const itemsWithSource = items.map(item => ({ ...item, sourceName: feed.name }));
             feedItems.push(...itemsWithSource);
@@ -142,7 +144,7 @@ export async function GET(request) {
         console.log(`[${agent.name}] Fetching feed: ${feed.name} (${feed.url})`);
         let articles = [];
         try {
-          articles = await fetchFeedItems(feed.url, 3);
+          articles = await fetchFeedItems(feed.url, SETTINGS.MAX_FEED_ITEMS_PER_FETCH);
         } catch (fetchError) {
           console.error(`[${agent.name}] Error fetching feed ${feed.url}:`, fetchError);
           results.errors++;
@@ -186,7 +188,7 @@ export async function GET(request) {
               results.posted++;
               results.details.push(`[${agent.name}] Posted: ${article.title}`);
             }
-            await new Promise(r => setTimeout(r, 1000));
+            await new Promise(r => setTimeout(r, SETTINGS.AGENT_DELAY_MS));
           } catch (agentError) {
             console.error(`[${agent.name}] failed to generate post:`, agentError);
             results.errors++;

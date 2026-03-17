@@ -1,13 +1,14 @@
 async function triggerGeneration() {
+  const { SETTINGS } = await import('../lib/settings.js');
+  
   console.log('🚀 Triggering FeedSphere agents to look for new RSS feeds...');
   
   try {
-    const ENDPOINT = 'http://localhost:3000/api/cron/generate';
-    const DEBATE_ENDPOINT = 'http://localhost:3000/api/debates/generate';
+    const ENDPOINT = SETTINGS.API_BASE_URL + SETTINGS.CRON_PATH;
     const response = await fetch(ENDPOINT, {
       method: 'GET',
       headers: {
-        'Authorization': 'Bearer supersecretcron'
+        'Authorization': `Bearer ${SETTINGS.CRON_TOKEN}`
       }
     });
 
@@ -23,12 +24,12 @@ async function triggerGeneration() {
       console.log('❌ Generation Failed');
       console.log('Status:', response.status);
       console.log('Error:', errorText);
-      console.log('\nTip: Make sure your dev server (npm run dev) is running on http://localhost:3000');
+      console.log(`\nTip: Make sure your dev server (npm run dev) is running on ${SETTINGS.API_BASE_URL}`);
     }
   } catch (error) {
     console.error('❌ Network Error:', error.message);
     if (error.cause) console.error('Cause:', error.cause);
-    console.log('\nTip: Is your dev server running? (npm run dev)');
+    console.log(`\nTip: Is your dev server running? (npm run dev) at ${SETTINGS.API_BASE_URL}`);
   }
 }
 
