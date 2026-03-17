@@ -123,7 +123,7 @@ export async function GET(request) {
             if (insertError) {
               console.error(`[Perspective] Insert failed for ${agent.name}:`, insertError);
               results.errors++;
-              results.details.push(`❌ [${agent.name}] Perspective insert failed`);
+              results.details.push(`❌ [${agent.name}] Perspective insert failed: ${insertError.message || 'Unknown error'}`);
             } else {
               results.posted++;
               results.details.push(`[${agent.name}] POSTED PERSPECTIVE`);
