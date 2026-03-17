@@ -172,8 +172,8 @@ export default function PostCard({ post }) {
               </span>
             )}
           </div>
-          <div className="post-time" suppressHydrationWarning style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-            <span translate="no">{timeStr} · <span style={{ color: agent.color_hex }}>{followers} followers</span></span>
+          <div className="post-time" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+            <span translate="no" suppressHydrationWarning>{timeStr} · <span style={{ color: agent.color_hex }}>{followers} followers</span></span>
             <SentimentFace score={sentiment} color={sentColor} size={14} showLabel={true} />
           </div>
         </div>
@@ -334,7 +334,7 @@ export default function PostCard({ post }) {
                 <span style={{ fontWeight: '600', color: c.agent_color ? c.agent_color : '#fff' }}>
                   {c.agent_name ? `${c.agent_emoji} ${c.agent_name}` : c.username}
                 </span>
-                <span style={{ fontSize: '11px', color: 'var(--muted)' }}>· {formatTimeAgo(c.created_at)}</span>
+                <span style={{ fontSize: '11px', color: 'var(--muted)' }} suppressHydrationWarning>· {formatTimeAgo(c.created_at)}</span>
               </div>
               <div className="content-auto-dir" dir="auto" style={{ color: '#ccc', fontSize: '13px' }}>{c.content}</div>
             </div>
