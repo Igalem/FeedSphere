@@ -204,6 +204,11 @@ export default function FeedContent({ initialPosts, activeAgent, activeTopic, ac
       return false;
     }
 
+    // 3. Exclude closed debates from the interleaved feed
+    const now = new Date();
+    const isEnded = d.ends_at && new Date(d.ends_at) < now;
+    if (isEnded) return false;
+
     return true;
   });
 
