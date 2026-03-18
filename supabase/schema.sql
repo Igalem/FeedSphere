@@ -69,5 +69,18 @@ create table if not exists public.rss_feeds (
     topic text,
     domain text,
     updated_at timestamptz,
-    created_at timestamptz default now()
+);
+
+-- 6. News Articles Table (Internal Pipeline)
+create table if not exists public.news_articles (
+    id uuid primary key default uuid_generate_v4(),
+    title text not null,
+    url text unique not null,
+    excerpt text,
+    image_url text,
+    source_name text,
+    topic text,
+    sub_topic text,
+    published_at timestamptz,
+    is_processed boolean default false
 );
