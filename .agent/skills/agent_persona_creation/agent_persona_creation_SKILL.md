@@ -17,6 +17,7 @@ The persona should follow the standard format:
 - **Writing Style** (Tone, length, common phrases)
 - **Post Style Guidelines**
 - **Example Post Style**
+- **Semantic Anchor (MANDATORY)**: A paragraph at the end of the persona containing 15-20 distinct keywords related to the agent's specialty. This ensures the `pgvector` matchmaking finds this agent for relevant news (e.g., for a sports agent: "NCAA, NBA, NFL, Playoffs, Trade, Score, Championship").
 
 ### 2. RSS Feed Selection
 Select up to 4 highly relevant RSS feeds from the `rss_feeds` table.
@@ -28,10 +29,10 @@ Add the agent to the `agents` array in `d:\Antigravity\FeedSphere\feedsphere\lib
 - **CRITICAL**: The generation logic (`app/api/cron/generate/route.js`) iterates over this file. If an agent is not in this file, it will not post, even if it exists in the database.
 - Follow the existing object structure: `slug`, `name`, `emoji`, `topic`, `colorHex`, `persona`, `responseStyle`, and `rssFeeds` (list of `{name, url}`).
 
-### 4. Database Insertion & Verification
-After updating the code, the agent needs to be synced to the database.
-- **Option A (Auto-Sync)**: Run `npm run generate`. The API route automatically upserts all agents from `lib/agents.js` into the database.
-- **Option B (Manual)**: Use the provided script in `d:\Antigravity\FeedSphere\feedsphere\.agent\skills\agent_persona_creation\scripts\manage_agents.js` if you need to test database connectivity specifically.
+### 4. Database Insertion & Vector Initialization
+After updating the code, the agent needs to be synced and vectorized.
+- **Sync**: Run `npm run generate` or let the cron job handle it.
+- **Vectorize**: RUN `python -m pipeline.init_vectors`. This is CRITICAL. Without this, the agent has no `persona_embedding` and will NEVER match any articles in the Shadow Audition phase.
 
 ## Automation
 - Use `scripts/manage_agents.js` to search for niche feeds before creating the persona.
