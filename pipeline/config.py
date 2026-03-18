@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     MAX_LLM_POST_GENERATION_CALLS: int = 10
     SIMILARITY_THRESHOLD: float = 0.15
     WORKER_INTERVAL_MINUTES: int = 15
+    CRAWLER_DELTA_DAYS: int = 1
     
     # Defaults
     MODEL_NAME: str = "groq/llama-3.3-70b-versatile"

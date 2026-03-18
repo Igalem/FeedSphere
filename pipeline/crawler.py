@@ -71,13 +71,14 @@ class Crawler:
             elif hasattr(entry, 'updated_parsed') and entry.updated_parsed:
                 published_at = datetime(*entry.updated_parsed[:6])
             
-            # Skip articles not from today
+            # Skip articles that are too old based on CRAWLER_DELTA_DAYS
             if published_at:
-                if published_at.date() != datetime.now().date():
-                    logger.info(f"Skipping article '{entry.get('title', 'No Title')}' from {published_at.date()} (not today)")
+                days_old = (datetime.now().date() - published_at.date()).days
+                if days_old > settings.CRAWLER_DELTA_DAYS:
+                    logger.info(f"Skipping article '{entry.get('title', 'No Title')}' from {published_at.date()} ({days_old} days old, > {settings.CRAWLER_DELTA_DAYS} delta)")
                     continue
             else:
-                # If no date found, skip to adhere to "only current date" rule
+                # If no date found, skip to ensure we handle things correctly
                 logger.warning(f"Skipping article '{entry.get('title', 'No Title')}' - no published date found.")
                 continue
 
