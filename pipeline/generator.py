@@ -40,7 +40,8 @@ class Generator:
                      "1. Use your unique voice: {response_style}.\n"
                      "2. Provide a detailed reaction with a variety of word counts across different posts.\n"
                      "3. Keep it concise, maximum 3 rows/lines of text.\n"
-                     "4. Output format: JSON with 'agent_commentary' (string) and 'tags' (array of 3-5 strings).\n\n"
+                     "4. Output format: JSON with 'agent_commentary' (string) and 'tags' (array of 3 high-level PascalCase strings).\n"
+                     "5. Tags MUST be one-word PascalCase (e.g., 'MarchMadness', 'NFLNews', 'SportsAnalysis'). No spaces.\n\n"
                      "Return ONLY valid JSON.")
         ])
 
@@ -53,7 +54,8 @@ class Generator:
                      "Rules:\n"
                      "1. Provide a unique point of view based on your persona.\n"
                      "2. References the significance of the event.\n"
-                     "3. Output format: JSON with 'agent_commentary' (string) and 'tags' (array of 3-5 strings).\n\n"
+                     "3. Output format: JSON with 'agent_commentary' (string) and 'tags' (array of 3 high-level PascalCase strings).\n"
+                     "4. Tags MUST be one-word PascalCase (e.g., 'GlobalEconomy', 'TechInnovation', 'ClimatePulse'). No spaces.\n\n"
                      "Return ONLY valid JSON.")
         ])
 
@@ -64,12 +66,14 @@ class Generator:
                      "Article Excerpt: {article_excerpt}\n\n"
                      "Agent A Persona: {persona_a}\n"
                      "Agent B Persona: {persona_b}\n\n"
+                     "Rules:\n"
+                     "1. Tags MUST be one-word PascalCase (e.g., 'DebatePulse', 'TopicWar').\n\n"
                      "Output Format (JSON):\n"
                      "{{\n"
                      "  \"argument_a\": \"2-sentence argument from Agent A's perspective\",\n"
                      "  \"argument_b\": \"2-sentence counter-argument from Agent B using their unique voice\",\n"
                      "  \"debate_question\": \"A provocative question for the audience\",\n"
-                     "  \"tags\": [\"tag1\", \"tag2\", \"tag3\"]\n"
+                     "  \"tags\": [\"TagA\", \"TagB\", \"TagC\"]\n"
                      "}}")
         ])
 
@@ -156,13 +160,48 @@ class Generator:
         raise last_exception or Exception("All LLM providers and backups failed")
 
     def _clean_json_response(self, content: str) -> str:
-        """Cleans potentially markdown-wrapped JSON."""
-        content = content.strip()
-        if content.startswith("```"):
-            # Remove ```json ... ``` or ``` ... ```
-            content = re.sub(r'^```(?:json)?\n?', '', content)
-            content = re.sub(r'\n?```$', '', content)
+        """Cleans potentially markdown-wrapped JSON or extra text around JSON."""
+        # Find the first { - we assume the first json object is what we want
+        start_idx = content.find('{')
+        if start_idx == -1:
+            return content.strip()
+        
+        # Try to find the matching } for the FIRST valid object
+        # We can use json.JSONDecoder().raw_decode to find where the first object ends
+        try:
+            decoder = json.JSONDecoder()
+            # Feed it the string starting from the first {
+            obj, end_idx = decoder.raw_decode(content[start_idx:])
+            # Now we have a valid object and the index where it ends
+            
+            # Special case: check if it's the "set-like" notation {"a", "b"} that decoder might have missed
+            # Actually raw_decode will fail on {"a", "b"} because it's not valid JSON.
+            # So let's handle the set case separately if raw_decode fails.
+            
+            # Re-serialize to ensures it's clean and has only what we need
+            return json.dumps(obj)
+        except json.JSONDecodeError:
+            # If raw_decode fails, it might be the set-like notation or markdown-wrapped
+            # Try to grab from first { to last } as a last resort
+            match = re.search(r'(\{[\s\S]*\})', content)
+            if match:
+                json_str = match.group(1).strip()
+                # If it's a "set" of strings like {"a", "b"}
+                if '{"' in json_str and ":" not in re.sub(r'".*?"', '', json_str):
+                    parts = re.findall(r'"(.*?)"', json_str)
+                    if parts:
+                        return json.dumps({"agent_commentary": " ".join(parts), "tags": []})
+                return json_str
+
         return content.strip()
+
+    def _format_tag(self, tag: str) -> str:
+        """Formats a tag to PascalCase and removes non-alphanumeric chars."""
+        # Split by spaces, hyphens, or underscores
+        words = re.split(r'[\s\-_]+', tag)
+        # Capitalize each word and join
+        clean_words = [re.sub(r'\W+', '', word.capitalize()) for word in words]
+        return "".join(clean_words)
 
     @retry(wait=wait_exponential(multiplier=1, min=4, max=10), stop=stop_after_attempt(5))
     async def generate_reaction(self, agent: Dict, article: Dict) -> Dict:
@@ -177,7 +216,14 @@ class Generator:
         })
         
         try:
-            data = json.loads(self._clean_json_response(content))
+            json_str = self._clean_json_response(content)
+            data = json.loads(json_str)
+            
+            # Post-process tags
+            tags = [self._format_tag(t) for t in data.get("tags", [])]
+            # Limit to 3-5 tags
+            tags = tags[:5]
+            
             return {
                 "type": "reaction",
                 "agent_id": agent["id"],
@@ -187,12 +233,30 @@ class Generator:
                 "article_image_url": article.get("article_image_url"),
                 "source_name": article["source_name"],
                 "agent_commentary": data.get("agent_commentary", ""),
-                "tags": data.get("tags", []),
+                "tags": tags,
                 "published_at": article.get("published_at")
             }
         except Exception as e:
             logger.error(f"Failed to parse reaction JSON: {e}")
-            # Fallback to simple format if JSON fails
+            # Fallback but attempt to clean up JSON if it looks like one
+            if "agent_commentary" in content:
+                # Still raw JSON but we couldn't parse it? Let's just strip everything except inner double quotes
+                # This is a very basic fallback. Better to actually fix the source.
+                commentary_match = re.search(r'"agent_commentary":\s*"(.*?)"', content, re.DOTALL)
+                commentary = commentary_match.group(1) if commentary_match else content
+                return {
+                    "type": "reaction",
+                    "agent_id": agent["id"],
+                    "article_title": article["article_title"],
+                    "article_url": article["article_url"],
+                    "article_excerpt": article["article_excerpt"],
+                    "article_image_url": article.get("article_image_url"),
+                    "source_name": article["source_name"],
+                    "agent_commentary": commentary,
+                    "tags": [],
+                    "published_at": article.get("published_at")
+                }
+            
             return {
                 "type": "reaction",
                 "agent_id": agent["id"],
@@ -218,7 +282,13 @@ class Generator:
         })
         
         try:
-            data = json.loads(self._clean_json_response(content))
+            json_str = self._clean_json_response(content)
+            data = json.loads(json_str)
+            
+            # Post-process tags
+            tags = [self._format_tag(t) for t in data.get("tags", [])]
+            tags = tags[:5]
+
             return {
                 "type": "perspective",
                 "agent_id": agent["id"],
@@ -228,11 +298,26 @@ class Generator:
                 "article_image_url": article.get("article_image_url"),
                 "source_name": article["source_name"],
                 "agent_commentary": data.get("agent_commentary", ""),
-                "tags": data.get("tags", []),
+                "tags": tags,
                 "published_at": article.get("published_at")
             }
         except Exception as e:
             logger.error(f"Failed to parse perspective JSON: {e}")
+            if "agent_commentary" in content:
+                commentary_match = re.search(r'"agent_commentary":\s*"(.*?)"', content, re.DOTALL)
+                commentary = commentary_match.group(1) if commentary_match else content
+                return {
+                    "type": "perspective",
+                    "agent_id": agent["id"],
+                    "article_title": article["article_title"],
+                    "article_url": article["article_url"],
+                    "article_excerpt": article["article_excerpt"],
+                    "article_image_url": article.get("article_image_url"),
+                    "source_name": article["source_name"],
+                    "agent_commentary": commentary,
+                    "tags": [],
+                    "published_at": article.get("published_at")
+                }
             return {
                 "type": "perspective",
                 "agent_id": agent["id"],
@@ -259,7 +344,13 @@ class Generator:
         }, is_json=True)
         
         try:
-            data = json.loads(self._clean_json_response(content))
+            json_str = self._clean_json_response(content)
+            data = json.loads(json_str)
+            
+            # Post-process tags
+            tags = [self._format_tag(t) for t in data.get("tags", [])]
+            tags = tags[:5]
+
             return {
                 "type": "debate",
                 "topic": article["topic"],
@@ -272,7 +363,7 @@ class Generator:
                 "argument_a": data["argument_a"],
                 "argument_b": data["argument_b"],
                 "debate_question": data["debate_question"],
-                "tags": data.get("tags", []),
+                "tags": tags,
                 "published_at": article.get("published_at")
             }
         except Exception as e:

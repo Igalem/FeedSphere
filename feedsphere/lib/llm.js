@@ -231,12 +231,34 @@ export async function generateLLMResponse(systemPrompt, userMessages, options = 
 }
 
 function cleanLLMResponse(content) {
-  return content
+  const cleaned = content
     .replace(/<think>[\s\S]*?<\/think>/g, '')
     .replace(/<think>[\s\S]*/g, '')
     .trim();
+
+  // Special case: set-like notation {"sentence1", "sentence2"}
+  if (cleaned.startsWith('{"') && cleaned.endsWith('}') && !cleaned.includes('":')) {
+    const parts = cleaned.match(/"(.*?)"/g);
+    if (parts) {
+      const text = parts.map(p => p.slice(1, -1)).join(' ');
+      return JSON.stringify({ agent_commentary: text, tags: [] });
+    }
+  }
+
+  return cleaned;
 }
 
+function formatTag(tag) {
+  if (!tag) return "";
+  return tag
+    .split(/[\s\-_]+/)
+    .map(word => {
+      const clean = word.replace(/\W+/g, '');
+      if (!clean) return "";
+      return clean.charAt(0).toUpperCase() + clean.slice(1).toLowerCase();
+    })
+    .join('');
+}
 export async function generateAgentPost(agent, article) {
   const systemPrompt = `You are ${agent.name}.
 Topic: ${agent.topic} ${agent.sub_topic ? `(${agent.sub_topic})` : ''}
@@ -249,16 +271,15 @@ Rules:
 - Max 3 sentences for post takes.
 - Never start with "I think" or "In my opinion".
 - Never repeat what the article says, simply add your raw angle.
-- Never repeat what the article says, simply add your raw angle.
 - Never use the string '—', '--', or '-' in your output! Use commas, colons, or periods instead.
-- IMPORTANT: If your commentary contains double quotes (e.g. Hebrew abbreviations like צה\"ל), you MUST escape them as \\\" to keep the JSON valid.
+- Tags MUST be high-level PascalCase (e.g., 'MarchMadness', 'NFLNews', 'SportsAnalysis'). No spaces.
 - YOUR FINAL OUTPUT MUST BE A VALID JSON OBJECT AND NOTHING ELSE.
 
 JSON Structure:
 {
-  "commentary": "Your written take as the character (max 3 sentences)",
-  "sentiment_score": 0-100 (where 0 is very negative and 100 is very positive),
-  "tags": ["tag1", "tag2"] (2-3 relevant hashtags without the # sign, e.g. "Sports", "Victory")
+  "agent_commentary": "Your written take as the character (max 3 sentences)",
+  "sentiment_score": 0-100,
+  "tags": ["Tag1", "Tag2"]
 }
 
 Return ONLY the JSON object. Do not include any explanations or other text.`;
@@ -280,45 +301,34 @@ Return ONLY the JSON object. Do not include any explanations or other text.`;
     const jsonMatch = response.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
       try {
-        return JSON.parse(jsonMatch[0].replace(/,\s*([\}\]])/g, '$1'));
+        const data = JSON.parse(jsonMatch[0].replace(/,\s*([\}\]])/g, '$1'));
+        return {
+          agent_commentary: data.agent_commentary || data.commentary || "",
+          sentiment_score: data.sentiment_score || 50,
+          tags: (data.tags || []).map(formatTag).slice(0, 5)
+        };
       } catch (parseErr) {
         // Fallback: try to extract fields with regex if JSON is malformed
-        const commentaryMatch = jsonMatch[0].match(/"commentary"\s*:\s*"([\s\S]*?)"\s*(?:,|\n|\s*\})/);
-        const sentimentMatch = jsonMatch[0].match(/"sentiment_score"\s*:\s*(\d+)/);
+        const commKey = response.includes("agent_commentary") ? "agent_commentary" : "commentary";
+        const commentaryMatch = jsonMatch[0].match(new RegExp(`"${commKey}"\\s*:\\s*"([\\s\\S]*?)"\\s*(?:,|\\n|\\s*\\})`));
+        const sentimentMatch = jsonMatch[0].match(/"sentiment_score"\s*:\\s*(\d+)/);
         const tagsMatch = jsonMatch[0].match(/"tags"\s*:\s*\[([\s\S]*?)\]/);
         
-        // If non-greedy failed or produced very short result, try greedy lookahead for sentiment_score
         let commentary = commentaryMatch ? commentaryMatch[1].trim() : "";
-        if (!commentary || commentary.length < 5) {
-          const greedyMatch = jsonMatch[0].match(/"commentary"\s*:\s*"([\s\S]*)"\s*,\s*"sentiment_score"/);
-          if (greedyMatch) commentary = greedyMatch[1].trim();
-        }
-
         if (commentary) {
           return {
-            commentary: commentary
-              .replace(/\\"/g, '"')
-              .replace(/\\n/g, '\n')
-              .replace(/^"|"$/g, ''),
+            agent_commentary: commentary.replace(/\\"/g, '"').replace(/\\n/g, '\n').replace(/^"|"$/g, ''),
             sentiment_score: sentimentMatch ? parseInt(sentimentMatch[1], 10) : 50,
-            tags: tagsMatch ? tagsMatch[1].split(',').map(t => t.trim().replace(/^"|"$/g, '')) : []
+            tags: tagsMatch ? tagsMatch[1].split(',').map(t => formatTag(t.trim().replace(/^"|"$/g, ''))) : []
           };
         }
         throw parseErr;
       }
     }
-    return { commentary: response, sentiment_score: 50, tags: [] };
+    return { agent_commentary: response, sentiment_score: 50, tags: [] };
   } catch (e) {
     console.error('Failed to parse LLM JSON:', e);
-    // Final safety: if it looks like JSON but failed, try to strip the obvious JSON keys and structure
-    const cleanedCommentary = response
-      .replace(/^\{[\s\S]*?"commentary"\s*:\s*"/, '')
-      .replace(/"\s*,\s*"sentiment_score"[\s\S]*\}?$/, '')
-      .replace(/"\s*,\s*"tags"[\s\S]*\}?$/, '')
-      .replace(/\}?$/, '')
-      .trim();
-
-    return { commentary: cleanedCommentary || response, sentiment_score: 50, tags: [] };
+    return { agent_commentary: response, sentiment_score: 50, tags: [] };
   }
 }
 
@@ -326,8 +336,6 @@ export async function generateAgentPerspective(agent, articles) {
   const primaryArticle = articles[0];
   
   const systemPrompt = `You are an AI agent acting as a specific persona on a social network. 
-Your task is to transform a dry news item into an engaging, highly opinionated, and independent social media post. 
-
 Do NOT act like a news reporter or an aggregator. Do NOT summarize the article. You are a creator sharing your subjective, emotional take on the news. 
 
 Name: ${agent.name}
@@ -335,29 +343,19 @@ Topic: ${agent.topic} ${agent.sub_topic ? `(${agent.sub_topic})` : ''}
 Traits: ${agent.persona}
 Response Style: ${agent.responseStyle}
 
-INPUT DATA:
-News Title: ${primaryArticle.title}
-News Summary/Content: ${primaryArticle.snippet || ''}
-
-POST STRUCTURE REQUIREMENTS:
-1. The Hook (1 sentence): Start with a strong opening.
-2. The Core (2-3 short paragraphs): Blend facts with heavy bias.
-3. The Call to Action (CTA - Optional): MUST be on a new line with an EMPTY LINE ABOVE IT. 
-Available buttons: 🔥, 🧠, 🧊, 🎯.
-
 RULES:
 - Use the primary language naturally associated with your persona (e.g., if you are an Israeli reporter, write in Hebrew).
 - DO NOT mention "According to this article".
 - DO NOT add hashtags in post text. Use plain text.
-- IMPORTANT: If your commentary contains double quotes (e.g. Hebrew abbreviations like צה\"ל), you MUST escape them as \\\" to keep the JSON valid.
+- Tags MUST be high-level PascalCase (e.g., 'PoliticsToday', 'TechPulse'). No spaces.
 - Keep it under 150 words.
 - YOUR FINAL OUTPUT MUST BE A VALID JSON OBJECT.
 
 JSON Structure:
 {
-  "commentary": "The full text of your post using the structure and rules above.",
+  "agent_commentary": "The full text of your post.",
   "sentiment_score": 0-100,
-  "tags": ["Perspective", "tag1", "tag2"]
+  "tags": ["Perspective", "Tag1", "Tag2"]
 }
 
 Return ONLY the JSON object.`;
@@ -387,35 +385,41 @@ Return ONLY the JSON object.`;
 
     try {
       let parsed = JSON.parse(jsonStr);
-      if (parsed.commentary) {
+      const commentary = parsed.agent_commentary || parsed.commentary || "";
+      const sentiment = parsed.sentiment_score || 50;
+      const tags = (parsed.tags || []).map(formatTag).slice(0, 5);
+
+      if (commentary) {
         const ctaRegex = /(\n|^)([^.!?\n]*(\?|🔥|🧠|🧊|🎯)[^.!?\n]*)$|(\n|^)(So, what's your take.*)$|(\n|^)(What do you think.*)$|(\n|^)(Let me know.*)$/i;
-        const parts = parsed.commentary.split('\n').filter(p => p.trim() !== '');
+        const parts = commentary.split('\n').filter(p => p.trim() !== '');
         
+        let finalCommentary = commentary;
         if (parts.length > 1) {
           const lastPart = parts[parts.length - 1];
           if (ctaRegex.test(lastPart)) {
             const mainContent = parts.slice(0, -1).join('\n\n');
-            parsed.commentary = mainContent + '\n\n' + lastPart;
+            finalCommentary = mainContent + '\n\n' + lastPart;
           } else {
-             parsed.commentary = parts.join('\n\n');
+            finalCommentary = parts.join('\n\n');
           }
         }
+        return {
+          agent_commentary: finalCommentary,
+          sentiment_score: sentiment,
+          tags: tags
+        };
       }
-      return parsed;
+      return { agent_commentary: response, sentiment_score: 50, tags: ['Perspective'] };
     } catch (e) {
       // Regex extraction logic for robustness
-      const commentaryMatch = jsonStr.match(/"commentary"\s*:\s*"([\s\S]*?)"\s*(?:,|\n|\s*\})/);
-      const sentimentMatch = jsonStr.match(/"sentiment_score"\s*:\s*(-?\d+)/);
+      const commKey = jsonStr.includes("agent_commentary") ? "agent_commentary" : "commentary";
+      const commentaryMatch = jsonStr.match(new RegExp(`"${commKey}"\\s*:\\s*"([\\s\\S]*?)"\\s*(?:,|\\n|\\s*\\})`));
+      const sentimentMatch = jsonStr.match(/"sentiment_score"\s*:\s*(-? \d+)/);
       
       let commentary = commentaryMatch ? commentaryMatch[1].trim() : "";
-      if (!commentary || commentary.length < 5) {
-        const greedyMatch = jsonStr.match(/"commentary"\s*:\s*"([\s\S]*)"\s*,\s*"sentiment_score"/);
-        if (greedyMatch) commentary = greedyMatch[1].trim();
-      }
-
       if (commentary) {
         return {
-          commentary: commentary.replace(/\\n/g, '\n').replace(/\\"/g, '"').replace(/^"|"$/g, '').trim(),
+          agent_commentary: commentary.replace(/\\n/g, '\n').replace(/\\"/g, '"').replace(/^"|"$/g, '').trim(),
           sentiment_score: sentimentMatch ? parseInt(sentimentMatch[1], 10) : 50,
           tags: ['Perspective']
         };
@@ -424,16 +428,8 @@ Return ONLY the JSON object.`;
     }
   } catch (e) {
     console.error('Failed to parse Perspective LLM JSON:', e.message);
-    
-    // Final safety attempt
-    const cleaned = response
-      .replace(/^\{[\s\S]*?"commentary"\s*:\s*"/, '')
-      .replace(/"\s*,\s*"sentiment_score"[\s\S]*\}?$/, '')
-      .replace(/\}?$/, '')
-      .trim();
-      
     return {
-      commentary: cleaned || response,
+      agent_commentary: response,
       sentiment_score: 50,
       tags: ['Perspective']
     };
