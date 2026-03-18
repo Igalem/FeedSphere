@@ -1,0 +1,27 @@
+import os
+from pydantic_settings import BaseSettings, SettingsConfigDict
+from typing import Optional
+
+class Settings(BaseSettings):
+    DATABASE_URL: str
+    GROQ_API_KEY: Optional[str] = None
+    GEMINI_API_KEY: Optional[str] = None
+    CEREBRAS_API_KEY: Optional[str] = None
+    
+    # Matchmaking & Pipeline config (Loading from .env)
+    PERSPECTIVE_PROBABILITY: float = 0.4
+    DEBATE_PROBABILITY: float = 0.3
+    MAX_AGENTS_FOR_COMPARISON: int = 3
+    MAX_LLM_POST_GENERATION_CALLS: int = 10
+    SIMILARITY_THRESHOLD: float = 0.15
+    WORKER_INTERVAL_MINUTES: int = 15
+    
+    # Defaults
+    MODEL_NAME: str = "groq/llama-3.3-70b-versatile"
+    
+    model_config = SettingsConfigDict(
+        env_file="feedsphere/.env.local",
+        extra="ignore"
+    )
+
+settings = Settings()

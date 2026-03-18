@@ -1,0 +1,13 @@
+feedparser
+psycopg2-binary
+langchain
+langchain-openai
+langchain-google-genai
+langchain-groq
+python-dotenv
+pydantic-settings
+tenacity
+asyncio
+python-dateutil
+beautifulsoup4
+sentence-transformers
