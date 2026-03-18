@@ -40,9 +40,9 @@ class Generator:
                      "1. Use your unique voice: {response_style}.\n"
                      "2. Provide a detailed reaction with a variety of word counts across different posts.\n"
                      "3. Keep it concise, maximum 3 rows/lines of text.\n"
-                     "4. Output format: JSON with 'agent_commentary' (string) and 'tags' (array of 3 high-level PascalCase strings).\n"
+                     "4. Output format: JSON object with 'agent_commentary' (string) and 'tags' (array of 3 high-level PascalCase strings).\n"
                      "5. Tags MUST be one-word PascalCase (e.g., 'MarchMadness', 'NFLNews', 'SportsAnalysis'). No spaces.\n\n"
-                     "Return ONLY valid JSON.")
+                     "IMPORTANT: Return ONLY a valid JSON object. Do NOT return a list or set of strings. Example: {{\"agent_commentary\": \"...\", \"tags\": [\"...\", \"...\"]}}")
         ])
 
         self.perspective_prompt = ChatPromptTemplate.from_messages([
@@ -54,9 +54,9 @@ class Generator:
                      "Rules:\n"
                      "1. Provide a unique point of view based on your persona.\n"
                      "2. References the significance of the event.\n"
-                     "3. Output format: JSON with 'agent_commentary' (string) and 'tags' (array of 3 high-level PascalCase strings).\n"
+                     "3. Output format: JSON object with 'agent_commentary' (string) and 'tags' (array of 3 high-level PascalCase strings).\n"
                      "4. Tags MUST be one-word PascalCase (e.g., 'GlobalEconomy', 'TechInnovation', 'ClimatePulse'). No spaces.\n\n"
-                     "Return ONLY valid JSON.")
+                     "IMPORTANT: Return ONLY a valid JSON object. Do NOT return a list or set of strings. Example: {{\"agent_commentary\": \"...\", \"tags\": [\"...\", \"...\"]}}")
         ])
 
         self.debate_prompt = ChatPromptTemplate.from_messages([
@@ -74,7 +74,8 @@ class Generator:
                      "  \"argument_b\": \"2-sentence counter-argument from Agent B using their unique voice\",\n"
                      "  \"debate_question\": \"A provocative question for the audience\",\n"
                      "  \"tags\": [\"TagA\", \"TagB\", \"TagC\"]\n"
-                     "}}")
+                     "}}\n\n"
+                     "IMPORTANT: Return ONLY valid JSON.")
         ])
 
     async def _generate_llm_response(self, prompt: ChatPromptTemplate, values: Dict[str, Any], is_json: bool = False) -> str:
@@ -167,31 +168,58 @@ class Generator:
             return content.strip()
         
         # Try to find the matching } for the FIRST valid object
-        # We can use json.JSONDecoder().raw_decode to find where the first object ends
         try:
-            decoder = json.JSONDecoder()
-            # Feed it the string starting from the first {
-            obj, end_idx = decoder.raw_decode(content[start_idx:])
-            # Now we have a valid object and the index where it ends
+            # We'll try to find the actual end of the JSON object by tracking braces
+            brace_count = 0
+            in_string = False
+            escape = False
+            end_idx = -1
             
-            # Special case: check if it's the "set-like" notation {"a", "b"} that decoder might have missed
-            # Actually raw_decode will fail on {"a", "b"} because it's not valid JSON.
-            # So let's handle the set case separately if raw_decode fails.
-            
-            # Re-serialize to ensures it's clean and has only what we need
-            return json.dumps(obj)
-        except json.JSONDecodeError:
-            # If raw_decode fails, it might be the set-like notation or markdown-wrapped
-            # Try to grab from first { to last } as a last resort
-            match = re.search(r'(\{[\s\S]*\})', content)
-            if match:
-                json_str = match.group(1).strip()
-                # If it's a "set" of strings like {"a", "b"}
-                if '{"' in json_str and ":" not in re.sub(r'".*?"', '', json_str):
-                    parts = re.findall(r'"(.*?)"', json_str)
+            for i in range(start_idx, len(content)):
+                char = content[i]
+                if char == '"' and not escape:
+                    in_string = not in_string
+                elif char == '\\' and in_string:
+                    escape = not escape
+                    continue
+                elif not in_string:
+                    if char == '{':
+                        brace_count += 1
+                    elif char == '}':
+                        brace_count -= 1
+                        if brace_count == 0:
+                            end_idx = i + 1
+                            break
+                escape = False
+                
+            if end_idx != -1:
+                json_str = content[start_idx:end_idx]
+                
+                # 1. Handle "Invalid control character" (raw newlines in strings)
+                # This must be done before set detection to ensure strings are captured correctly
+                def escape_control_chars(match):
+                    s = match.group(0)
+                    # Replace raw newlines, tabs, and carriage returns with escaped versions
+                    return s.replace('\n', '\\n').replace('\r', '\\r').replace('\t', '\\t')
+                
+                json_str = re.sub(r'"(?:\\.|[^"\\])*"', escape_control_chars, json_str, flags=re.DOTALL)
+
+                # 2. Handle "set-like" notation: {"a", "b"}
+                # Check if it lacks colons OUTSIDE of strings
+                temp_str = re.sub(r'"(?:\\.|[^"\\])*"', '', json_str)
+                if ":" not in temp_str:
+                    # It's likely a set. Extract all strings.
+                    parts = re.findall(r'"((?:\\.|[^"\\])*)"', json_str, re.DOTALL)
                     if parts:
-                        return json.dumps({"agent_commentary": " ".join(parts), "tags": []})
+                        # Join and return as agent_commentary
+                        joined = " ".join(parts)
+                        return json.dumps({"agent_commentary": joined, "tags": []})
+                
                 return json_str
+
+        except Exception as e:
+            logger.warning(f"Error in _clean_json_response helper: {e}")
+            pass
 
         return content.strip()
 
@@ -237,11 +265,8 @@ class Generator:
                 "published_at": article.get("published_at")
             }
         except Exception as e:
-            logger.error(f"Failed to parse reaction JSON: {e}")
             # Fallback but attempt to clean up JSON if it looks like one
             if "agent_commentary" in content:
-                # Still raw JSON but we couldn't parse it? Let's just strip everything except inner double quotes
-                # This is a very basic fallback. Better to actually fix the source.
                 commentary_match = re.search(r'"agent_commentary":\s*"(.*?)"', content, re.DOTALL)
                 commentary = commentary_match.group(1) if commentary_match else content
                 return {
@@ -257,6 +282,8 @@ class Generator:
                     "published_at": article.get("published_at")
                 }
             
+            logger.error(f"Failed to parse reaction JSON: {e}")
+            logger.error(f"Raw content that failed to parse: {content}")
             return {
                 "type": "reaction",
                 "agent_id": agent["id"],
@@ -302,7 +329,6 @@ class Generator:
                 "published_at": article.get("published_at")
             }
         except Exception as e:
-            logger.error(f"Failed to parse perspective JSON: {e}")
             if "agent_commentary" in content:
                 commentary_match = re.search(r'"agent_commentary":\s*"(.*?)"', content, re.DOTALL)
                 commentary = commentary_match.group(1) if commentary_match else content
@@ -318,6 +344,9 @@ class Generator:
                     "tags": [],
                     "published_at": article.get("published_at")
                 }
+            
+            logger.error(f"Failed to parse perspective JSON: {e}")
+            logger.error(f"Raw content that failed to parse: {content}")
             return {
                 "type": "perspective",
                 "agent_id": agent["id"],
