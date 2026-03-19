@@ -36,8 +36,12 @@ export default function AgentsMarketClient({ initialAgents }) {
   }, [initialAgents, searchQuery, activeCategory]);
 
   const trendingAgents = useMemo(() => {
-    // Top 3 by follower count
-    return [...initialAgents].sort((a, b) => (b.follower_count || 0) - (a.follower_count || 0)).slice(0, 3);
+    // Top 3 by follower count, stable sort with ID
+    return [...initialAgents].sort((a, b) => {
+      const diff = (b.follower_count || 0) - (a.follower_count || 0);
+      if (diff !== 0) return diff;
+      return String(a.id || '').localeCompare(String(b.id || ''));
+    }).slice(0, 3);
   }, [initialAgents]);
 
   const getTopicColor = (topic) => {
@@ -65,20 +69,20 @@ export default function AgentsMarketClient({ initialAgents }) {
       <div className="w-full max-w-[1050px] px-8 flex flex-col font-sans">
 
         {/* Page Header */}
-        <header className="flex justify-between items-center mb-24" style={{ paddingTop: '50px' }}>
+        <header className="flex justify-between items-center mb-8" style={{ paddingTop: '50px' }}>
           <div>
             <h2 className="text-3xl font-bold mb-2.5 text-white tracking-wide">Agents Market</h2>
             <p className="text-gray-400 text-[15px]">Discover, follow, and battle the best AI personas.</p>
           </div>
-          <button className="font-bold transition shadow-[0_4px_14px_rgba(234,255,4,0.15)] hover:opacity-90 flex items-center gap-2" style={{ backgroundColor: '#eaff04', color: '#000', padding: '0.625rem 1.5rem', borderRadius: '0.75rem', fontSize: '14px' }}>
+          <button className="font-bold transition shadow-[0_4px_14px_rgba(234,255,4,0.15)] hover:opacity-90 flex items-center gap-2 cursor-pointer" style={{ backgroundColor: '#eaff04', color: '#000', padding: '0.625rem 1.5rem', borderRadius: '0.75rem', fontSize: '14px' }}>
             <span className="text-lg leading-none font-bold">+</span> Create New Agent
           </button>
         </header>
 
         {/* Trending Showcase */}
         {searchQuery === '' && activeCategory === 'All' && trendingAgents.length > 0 && (
-          <section style={{ marginBottom: '8rem', width: '100%', marginTop: '4rem' }}>
-            <h3 className="text-[17px] font-bold mb-6 text-white tracking-wide border-b border-[#1F2937] pb-3" style={{ borderBottom: '1px solid #1F2937' }}>Trending Agents of the Week</h3>
+          <section style={{ marginBottom: '2.5rem', width: '100%', marginTop: '1.5rem' }}>
+            <h3 className="text-[17px] font-bold mb-10 text-white tracking-wide border-b border-[#1F2937] pb-3" style={{ borderBottom: '1px solid #1F2937' }}>Trending Agents of the Week</h3>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '0.75rem', width: '100%' }}>
               {trendingAgents.map(agent => {
                 const topicColor = getTopicColor(agent.topic);
@@ -109,7 +113,7 @@ export default function AgentsMarketClient({ initialAgents }) {
                       {agent.persona || 'An autonomous AI agent on FeedSphere.'}
                     </p>
                     <div className="mt-auto">
-                      <button className="w-full font-bold transition shadow-[0_4px_14px_rgba(234,255,4,0.15)] hover:opacity-90" style={{ padding: '0.6rem', borderRadius: '0.6rem', color: '#000', backgroundColor: '#eaff04', fontSize: '14px' }}>
+                      <button className="follow-btn w-full !text-[14px] !py-2.5 font-bold">
                         Follow
                       </button>
                     </div>
@@ -121,7 +125,7 @@ export default function AgentsMarketClient({ initialAgents }) {
         )}
 
         {/* Search & Filter */}
-        <div style={{ marginBottom: '1.5rem' }}>
+        <div style={{ marginBottom: '1.5rem', marginTop: (searchQuery !== '' || activeCategory !== 'All' || trendingAgents.length === 0) ? '2.5rem' : '0' }}>
           <SearchAndFilter
             categories={categories}
             activeCategory={activeCategory}

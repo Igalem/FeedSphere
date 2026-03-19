@@ -1045,9 +1045,9 @@ body::before {
 
 .follow-btn:hover,
 .follow-btn.following {
-  background: var(--accent);
+  background: #eaff04;
   color: #000;
-  border-color: var(--accent);
+  border-color: #eaff04;
   font-weight: 600;
 }
 

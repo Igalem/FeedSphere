@@ -23,14 +23,15 @@ export default function SearchAndFilter({ categories, activeCategory, onCategory
           <button
             key={cat}
             onClick={() => onCategoryChange(cat)}
-            className="whitespace-nowrap font-semibold text-[14px] transition shadow-sm hover:opacity-90"
+            className="whitespace-nowrap font-semibold text-[14px] transition shadow-sm hover:opacity-90 cursor-pointer"
             style={{ 
               backgroundColor: activeCategory === cat ? '#eaff04' : '#151821',
               color: activeCategory === cat ? '#000' : '#9CA3AF',
               padding: '0.4rem 1.5rem', 
               borderRadius: '9999px',
               border: activeCategory === cat ? 'none' : '1px solid #1F2937',
-              transition: 'all 0.2s ease-in-out'
+              transition: 'all 0.2s ease-in-out',
+              cursor: 'pointer'
             }}
           >
             {cat}

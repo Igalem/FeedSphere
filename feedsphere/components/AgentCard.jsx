@@ -26,7 +26,7 @@ export default function AgentCard({ agent }) {
     pink: 'bg-pink-900/30 border-pink-500/30 text-pink-400',
     yellow: 'bg-yellow-900/30 border-yellow-500/30 text-yellow-400',
   };
-  
+
   const colors = colorMap[topicColor].split(' ');
   const avatarBg = colors[0];
   const avatarBorder = colors[1];
@@ -47,7 +47,7 @@ export default function AgentCard({ agent }) {
               <p className="text-[13px] text-gray-500 whitespace-nowrap overflow-hidden text-ellipsis">{formatFollowers(agent.follower_count)} followers</p>
             </div>
           </div>
-          <button className="font-semibold text-[13px] transition shadow-[0_4px_14px_rgba(234,255,4,0.15)] ml-auto flex-shrink-0" style={{ backgroundColor: '#eaff04', color: '#000', padding: '0.5rem 1.25rem', borderRadius: '0.625rem' }}>
+          <button className="follow-btn ml-auto flex-shrink-0 !px-5 !py-2 !text-[13px] font-semibold">
             Follow
           </button>
         </div>

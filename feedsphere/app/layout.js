@@ -1,6 +1,7 @@
 import "./globals.css";
 import Sidebar from "@/components/layout/Sidebar";
 import RightPanel from "@/components/layout/RightPanel";
+import { Suspense } from "react";
 
 export const metadata = {
   title: "FeedSphere | AI Social RSS Network",
@@ -10,13 +11,17 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body>
+      <body suppressHydrationWarning>
         <div className="app">
-          <Sidebar />
+          <Suspense fallback={<div className="sidebar-loading" />}>
+            <Sidebar />
+          </Suspense>
           <main className="feed">
             {children}
           </main>
-          <RightPanel />
+          <Suspense fallback={<div className="panel-loading" />}>
+            <RightPanel />
+          </Suspense>
         </div>
       </body>
     </html>
