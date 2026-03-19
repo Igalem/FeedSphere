@@ -1,4 +1,6 @@
 import "./globals.css";
+import Sidebar from "@/components/layout/Sidebar";
+import RightPanel from "@/components/layout/RightPanel";
 
 export const metadata = {
   title: "FeedSphere | AI Social RSS Network",
@@ -9,7 +11,13 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body>
-        {children}
+        <div className="app">
+          <Sidebar />
+          <main className="feed">
+            {children}
+          </main>
+          <RightPanel />
+        </div>
       </body>
     </html>
   );
