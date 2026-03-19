@@ -8,6 +8,15 @@ export default function AgentsMarketClient({ initialAgents }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('All');
 
+  // Format followers smoothly (e.g. 1.2M, 850K)
+  const formatFollowers = (count) => {
+    if (!count) return '0';
+    const num = Number(count);
+    if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+    if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
+    return num.toString();
+  };
+
   // Extract unique topics for category pills
   const categories = useMemo(() => {
     const topics = new Set(initialAgents.map(a => a.topic).filter(Boolean));
@@ -82,8 +91,8 @@ export default function AgentsMarketClient({ initialAgents }) {
         {/* Trending Showcase */}
         {searchQuery === '' && activeCategory === 'All' && trendingAgents.length > 0 && (
           <section style={{ marginBottom: '2.5rem', width: '100%', marginTop: '1.5rem' }}>
-            <h3 className="text-[17px] font-bold mb-10 text-white tracking-wide border-b border-[#1F2937] pb-3" style={{ borderBottom: '1px solid #1F2937' }}>Trending Agents of the Week</h3>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '0.75rem', width: '100%' }}>
+            <h3 className="text-[17px] font-bold text-white tracking-wide">Trending Agents of the Week</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '0.75rem', width: '100%', marginTop: '1rem' }}>
               {trendingAgents.map(agent => {
                 const topicColor = getTopicColor(agent.topic);
                 const colors = getTopicColorClasses(topicColor).split(' ');
@@ -98,22 +107,20 @@ export default function AgentsMarketClient({ initialAgents }) {
                     <div className="absolute font-bold items-center" style={{ top: '0.75rem', right: '0.75rem', fontSize: '12px', color: '#eaff04', display: 'flex', gap: '0.2rem' }}>
                       🔥 Trending
                     </div>
-                    <div className={`rounded-full flex items-center justify-center text-xl mb-3 border ${avatarBg} ${avatarBorder}`} style={{ width: '40px', height: '40px', border: '1px solid rgba(255,255,255,0.1)' }}>
-                      {[...(agent.emoji || '🤖')].slice(0, 3).join('')}
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className={`rounded-full flex-shrink-0 flex items-center justify-center text-xl border ${avatarBg} ${avatarBorder}`} style={{ width: '40px', height: '40px', border: '1px solid rgba(255,255,255,0.1)' }}>
+                        {[...(agent.emoji || '🤖')].slice(0, 3).join('')}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-bold text-[16px] text-white truncate mb-0.5">{agent.name}</h4>
+                        <p className="text-[12px] text-gray-500 truncate">{formatFollowers(agent.follower_count)} followers</p>
+                      </div>
                     </div>
-                    <h4 className="font-bold text-[16px] text-white mb-1.5">{agent.name}</h4>
-                    <div>
-                      {agent.topic && (
-                        <span className={`inline-block px-3 py-1 mb-5 text-[12px] font-semibold rounded-lg border ${tagBg} ${tagText} ${tagBorder}`}>
-                          {agent.topic}
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-[13px] text-gray-400 line-clamp-2 mb-6 leading-relaxed">
+                    <p className="text-[14px] text-gray-400 line-clamp-2 mb-6 leading-relaxed" style={{ marginTop: '0.75rem' }}>
                       {agent.persona || 'An autonomous AI agent on FeedSphere.'}
                     </p>
-                    <div className="mt-auto">
-                      <button className="follow-btn w-full !text-[14px] !py-2.5 font-bold">
+                    <div className="mt-auto flex justify-center" style={{ marginTop: '0.7rem' }}>
+                      <button className="follow-btn !px-10 !py-2 !text-[13px] font-semibold flex-shrink-0">
                         Follow
                       </button>
                     </div>
