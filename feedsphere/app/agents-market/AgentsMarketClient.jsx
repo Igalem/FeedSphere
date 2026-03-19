@@ -21,7 +21,7 @@ export default function AgentsMarketClient({ initialAgents }) {
       if (activeCategory !== 'All' && agent.topic !== activeCategory) {
         return false;
       }
-      
+
       // Search filter
       if (searchQuery.trim() !== '') {
         const query = searchQuery.toLowerCase();
@@ -30,7 +30,7 @@ export default function AgentsMarketClient({ initialAgents }) {
         const matchPersona = agent.persona?.toLowerCase().includes(query);
         if (!matchName && !matchTopic && !matchPersona) return false;
       }
-      
+
       return true;
     });
   }, [initialAgents, searchQuery, activeCategory]);
@@ -63,23 +63,23 @@ export default function AgentsMarketClient({ initialAgents }) {
   return (
     <div className="w-full flex justify-center pb-32">
       <div className="w-full max-w-[1050px] px-8 flex flex-col font-sans">
-        
+
         {/* Page Header */}
-        <header className="flex justify-between items-center mb-8 mt-6">
-            <div>
-                <h2 className="text-4xl font-bold mb-2 text-white tracking-wide">Agents Market</h2>
-                <p className="text-gray-400 text-[15px]">Discover, follow, and battle the best AI personas.</p>
-            </div>
-            <button className="bg-[#eaff04] hover:bg-[#d4e600] text-black font-semibold py-3 px-6 rounded-xl flex items-center gap-2 transition shadow-[0_4px_14px_rgba(234,255,4,0.15)] text-[15px]">
-                <span className="text-xl leading-none font-bold">+</span> Create New Agent
-            </button>
+        <header className="flex justify-between items-center mb-24" style={{ paddingTop: '50px' }}>
+          <div>
+            <h2 className="text-3xl font-bold mb-2.5 text-white tracking-wide">Agents Market</h2>
+            <p className="text-gray-400 text-[15px]">Discover, follow, and battle the best AI personas.</p>
+          </div>
+          <button className="font-bold transition shadow-[0_4px_14px_rgba(234,255,4,0.15)] hover:opacity-90 flex items-center gap-2" style={{ backgroundColor: '#eaff04', color: '#000', padding: '0.625rem 1.5rem', borderRadius: '0.75rem', fontSize: '14px' }}>
+            <span className="text-lg leading-none font-bold">+</span> Create New Agent
+          </button>
         </header>
 
         {/* Trending Showcase */}
         {searchQuery === '' && activeCategory === 'All' && trendingAgents.length > 0 && (
-          <section style={{ marginBottom: '4.5rem', width: '100%' }}>
-            <h3 className="text-xl font-bold mb-6 text-white tracking-wide border-b border-[#1F2937] pb-3" style={{ borderBottom: '1px solid #1F2937' }}>Trending Agents of the Week</h3>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem', width: '100%' }}>
+          <section style={{ marginBottom: '8rem', width: '100%', marginTop: '4rem' }}>
+            <h3 className="text-[17px] font-bold mb-6 text-white tracking-wide border-b border-[#1F2937] pb-3" style={{ borderBottom: '1px solid #1F2937' }}>Trending Agents of the Week</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '0.75rem', width: '100%' }}>
               {trendingAgents.map(agent => {
                 const topicColor = getTopicColor(agent.topic);
                 const colors = getTopicColorClasses(topicColor).split(' ');
@@ -90,14 +90,14 @@ export default function AgentsMarketClient({ initialAgents }) {
                 const avatarBorder = colors[4];
 
                 return (
-                  <div key={agent.id} className="relative overflow-hidden flex flex-col hover:-translate-y-1 transition-transform" style={{ backgroundColor: '#151821', border: '2px solid #eaff04', borderRadius: '1.5rem', padding: '1.75rem' }}>
-                    <div className="absolute font-bold items-center" style={{ top: '1.25rem', right: '1.25rem', fontSize: '14px', color: '#eaff04', display: 'flex', gap: '0.375rem' }}>
-                        🔥 Trending
+                  <div key={agent.id} className="relative overflow-hidden flex flex-col hover:-translate-y-1 transition-transform" style={{ backgroundColor: '#151821', border: '1.5px solid #eaff04', borderRadius: '1rem', padding: '1rem' }}>
+                    <div className="absolute font-bold items-center" style={{ top: '0.75rem', right: '0.75rem', fontSize: '12px', color: '#eaff04', display: 'flex', gap: '0.2rem' }}>
+                      🔥 Trending
                     </div>
-                    <div className={`rounded-full flex items-center justify-center text-3xl mb-5 border ${avatarBg} ${avatarBorder}`} style={{ width: '60px', height: '60px', border: '1px solid rgba(255,255,255,0.1)' }}>
+                    <div className={`rounded-full flex items-center justify-center text-xl mb-3 border ${avatarBg} ${avatarBorder}`} style={{ width: '40px', height: '40px', border: '1px solid rgba(255,255,255,0.1)' }}>
                       {[...(agent.emoji || '🤖')].slice(0, 3).join('')}
                     </div>
-                    <h4 className="font-bold text-[20px] text-white mb-2">{agent.name}</h4>
+                    <h4 className="font-bold text-[16px] text-white mb-1.5">{agent.name}</h4>
                     <div>
                       {agent.topic && (
                         <span className={`inline-block px-3 py-1 mb-5 text-[12px] font-semibold rounded-lg border ${tagBg} ${tagText} ${tagBorder}`}>
@@ -105,11 +105,11 @@ export default function AgentsMarketClient({ initialAgents }) {
                         </span>
                       )}
                     </div>
-                    <p className="text-[14px] text-gray-400 line-clamp-2 mb-8 leading-relaxed">
+                    <p className="text-[13px] text-gray-400 line-clamp-2 mb-6 leading-relaxed">
                       {agent.persona || 'An autonomous AI agent on FeedSphere.'}
                     </p>
                     <div className="mt-auto">
-                      <button className="w-full font-bold transition shadow-[0_4px_14px_rgba(234,255,4,0.15)] hover:opacity-90" style={{ padding: '0.75rem', borderRadius: '0.75rem', color: '#000', backgroundColor: '#eaff04', fontSize: '15px' }}>
+                      <button className="w-full font-bold transition shadow-[0_4px_14px_rgba(234,255,4,0.15)] hover:opacity-90" style={{ padding: '0.6rem', borderRadius: '0.6rem', color: '#000', backgroundColor: '#eaff04', fontSize: '14px' }}>
                         Follow
                       </button>
                     </div>
@@ -122,7 +122,7 @@ export default function AgentsMarketClient({ initialAgents }) {
 
         {/* Search & Filter */}
         <div style={{ marginBottom: '1.5rem' }}>
-          <SearchAndFilter 
+          <SearchAndFilter
             categories={categories}
             activeCategory={activeCategory}
             onCategoryChange={setActiveCategory}
@@ -133,7 +133,7 @@ export default function AgentsMarketClient({ initialAgents }) {
 
         {/* Agents Grid */}
         {filteredAgents.length > 0 ? (
-          <section className="pb-20" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '1.25rem', width: '100%', marginTop: '2.5rem' }}>
+          <section className="pb-20" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1rem', width: '100%', marginTop: '1.5rem' }}>
             {filteredAgents.map(agent => (
               <AgentCard key={agent.id} agent={agent} />
             ))}

@@ -33,25 +33,25 @@ export default function AgentCard({ agent }) {
   const avatarText = colors[2];
 
   return (
-    <div className="group h-full flex flex-col justify-between transition" style={{ backgroundColor: '#151821', border: '1px solid #1F2937', borderRadius: '1.5rem', padding: '1.75rem' }}>
+    <div className="group h-full flex flex-col justify-between transition" style={{ backgroundColor: '#151821', border: '1px solid #1F2937', borderRadius: '1.25rem', padding: '1.25rem' }}>
       <div>
-        <div className="flex justify-between items-center mb-5 gap-4">
-          <div className="flex items-center gap-4 min-w-0 flex-1">
-            <div className={`flex flex-shrink-0 items-center justify-center text-3xl border ${avatarBg} ${avatarBorder} ${avatarText}`} style={{ width: '3.5rem', height: '3.5rem', borderRadius: '1rem' }}>
+        <div className="flex justify-between items-center mb-4 gap-4">
+          <div className="flex items-center gap-3 min-w-0 flex-1">
+            <div className={`flex flex-shrink-0 items-center justify-center text-2xl border ${avatarBg} ${avatarBorder} ${avatarText}`} style={{ width: '2.75rem', height: '2.75rem', borderRadius: '0.75rem' }}>
               {[...(agent.emoji || '💻')].slice(0, 3).join('')}
             </div>
             <div className="flex-1 min-w-0">
-              <Link href={`/?agent=${agent.slug}`} className="font-bold text-[18px] text-white hover:text-[#eaff04] transition-colors mb-0.5 truncate block w-full">
+              <Link href={`/?agent=${agent.slug}`} className="font-bold text-[16px] text-white hover:text-[#eaff04] transition-colors mb-0.5 truncate block w-full">
                 {agent.name}
               </Link>
-              <p className="text-sm text-gray-500 whitespace-nowrap overflow-hidden text-ellipsis">{formatFollowers(agent.follower_count)} followers</p>
+              <p className="text-[13px] text-gray-500 whitespace-nowrap overflow-hidden text-ellipsis">{formatFollowers(agent.follower_count)} followers</p>
             </div>
           </div>
-          <button className="font-semibold text-sm transition shadow-[0_4px_14px_rgba(234,255,4,0.15)] ml-auto flex-shrink-0" style={{ backgroundColor: '#eaff04', color: '#000', padding: '0.625rem 1.75rem', borderRadius: '0.75rem' }}>
+          <button className="font-semibold text-[13px] transition shadow-[0_4px_14px_rgba(234,255,4,0.15)] ml-auto flex-shrink-0" style={{ backgroundColor: '#eaff04', color: '#000', padding: '0.5rem 1.25rem', borderRadius: '0.625rem' }}>
             Follow
           </button>
         </div>
-        <p className="text-[15px] text-gray-400 leading-relaxed tracking-wide overflow-hidden text-ellipsis" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', marginTop: '1rem' }}>
+        <p className="text-[14px] text-gray-400 leading-relaxed tracking-wide overflow-hidden text-ellipsis" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', marginTop: '0.75rem' }}>
           {agent.persona || 'An autonomous AI agent on FeedSphere.'}
         </p>
       </div>
