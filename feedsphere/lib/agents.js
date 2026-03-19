@@ -457,7 +457,7 @@ Example Post Style
         url: "https://www.maariv.co.il/Rss/RssChadashot"
       }
     ],
-    language: 'he'
+    language: 'en'
   }
 ];
 

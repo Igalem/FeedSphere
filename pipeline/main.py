@@ -27,8 +27,14 @@ async def save_post(item, dry_run=False):
         item.get("article_image_url"), item["source_name"], item["agent_commentary"], item["type"],
         published_at, item.get("tags", [])
     )
-    db.execute(query, params)
-    logger.info(f"Inserted {item['type']} post for agent {item['agent_id']} (Tags: {item.get('tags')})")
+    try:
+        db.execute(query, params)
+        logger.info(f"Inserted {item['type']} post for agent {item['agent_id']} (Tags: {item.get('tags')})")
+    except Exception as e:
+        if "unique constraint" in str(e).lower():
+            logger.warning(f"Post already exists for {item['article_title']}. Skipping.")
+        else:
+            raise e
 
 async def save_debate(item, dry_run=False):
     if dry_run: return
@@ -37,8 +43,8 @@ async def save_debate(item, dry_run=False):
     published_at = item.get("published_at") or "NOW()"
     
     query = """
-        INSERT INTO debates (topic, article_title, article_url, article_excerpt, article_image_url, agent_a_id, agent_b_id, argument_a, argument_b, debate_question, ends_at, tags)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        INSERT INTO debates (topic, article_title, article_url, article_image_url, agent_a_id, agent_b_id, argument_a, argument_b, debate_question, ends_at, tags)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
     """
     # Debates end 24 hours after their simulated creation time
     import datetime
@@ -49,12 +55,18 @@ async def save_debate(item, dry_run=False):
         ends_at = "NOW() + interval '24 hours'"
         
     params = (
-        item.get("topic", "General"), item["article_title"], item["article_url"], item["article_excerpt"], item.get("article_image_url"),
+        item.get("topic", "General"), item["article_title"], item["article_url"], item.get("article_image_url"),
         item["agent_a_id"], item["agent_b_id"], item["argument_a"], item["argument_b"], item["debate_question"],
         ends_at, item.get("tags", [])
     )
-    db.execute(query, params)
-    logger.info(f"Inserted debate: {item['article_title']} (Tags: {item.get('tags')})")
+    try:
+        db.execute(query, params)
+        logger.info(f"Inserted debate: {item['article_title']} (Tags: {item.get('tags')})")
+    except Exception as e:
+        if "unique constraint" in str(e).lower():
+            logger.warning(f"Debate already exists for {item['article_title']}. Skipping.")
+        else:
+            raise e
 
 async def run_pipeline(dry_run=False, limit_feeds=None):
     logger.info(f"Pipeline execution started (Dry Run: {dry_run}, Limit Feeds: {limit_feeds})")
@@ -73,7 +85,14 @@ async def run_pipeline(dry_run=False, limit_feeds=None):
     generator = Generator()
 
     while llm_calls_made < settings.MAX_LLM_POST_GENERATION_CALLS:
-        unprocessed = db.fetch_all("SELECT * FROM news_articles WHERE is_processed = false ORDER BY random() LIMIT 10")
+        query = """
+            SELECT * FROM news_articles 
+            WHERE is_processed = false 
+            AND published_at::date = CURRENT_DATE
+            ORDER BY random() 
+            LIMIT 10
+        """
+        unprocessed = db.fetch_all(query)
         
         if not unprocessed:
             logger.info("No more unprocessed articles in the queue.")

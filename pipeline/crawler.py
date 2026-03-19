@@ -144,18 +144,58 @@ class Crawler:
                     logger.debug(f"Failed to scrape og:image for {url}: {e}")
 
             if not image_url:
-                # Fallback to topic-based images
+                # Fallback to topic-based images with variety
                 topic_lower = (topic or "news").lower()
-                placeholders = {
-                    "sports": "https://images.unsplash.com/photo-1461896756913-c27eeff1d9b1?q=80&w=1000",
-                    "tech": "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?q=80&w=1000",
-                    "gaming": "https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=1000",
-                    "news": "https://images.unsplash.com/photo-1495020689067-958852a7765e?q=80&w=1000",
-                    "entertainment": "https://images.unsplash.com/photo-1603190287605-e6ade32fa852?q=80&w=1000",
-                    "health": "https://images.unsplash.com/photo-1505751172876-fa1923c5c528?q=80&w=1000"
+                
+                # Multiple image options per topic for variety
+                placeholder_pools = {
+                    "sports": [
+                        "https://images.unsplash.com/photo-1461896756913-c27eeff1d9b1?q=80&w=1000",
+                        "https://images.unsplash.com/photo-1504450758481-7338eba7524a?q=80&w=1000",
+                        "https://images.unsplash.com/photo-1471295253337-3ceaaedca401?q=80&w=1000",
+                        "https://images.unsplash.com/photo-1517649763962-0c623066013b?q=80&w=1000"
+                    ],
+                    "tech": [
+                        "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?q=80&w=1000",
+                        "https://images.unsplash.com/photo-1518770660439-4636190af475?q=80&w=1000",
+                        "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=1000",
+                        "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=1000"
+                    ],
+                    "gaming": [
+                        "https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=1000",
+                        "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1000",
+                        "https://images.unsplash.com/photo-1552824236-0776484ffb27?q=80&w=1000",
+                        "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=1000"
+                    ],
+                    "news": [
+                        "https://images.unsplash.com/photo-1495020689067-958852a7765e?q=80&w=1000",
+                        "https://images.unsplash.com/photo-1504711434969-e33886168f5c?q=80&w=1000",
+                        "https://images.unsplash.com/photo-1476242484419-cf5c5d4462bc?q=80&w=1000",
+                        "https://images.unsplash.com/photo-1588681664899-f142ff2dc9b1?q=80&w=1000"
+                    ],
+                    "entertainment": [
+                        "https://images.unsplash.com/photo-1603190287605-e6ade32fa852?q=80&w=1000",
+                        "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?q=80&w=1000",
+                        "https://images.unsplash.com/photo-1514525253344-99a4299965d2?q=80&w=1000",
+                        "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?q=80&w=1000"
+                    ],
+                    "health": [
+                        "https://images.unsplash.com/photo-1505751172876-fa1923c5c528?q=80&w=1000",
+                        "https://images.unsplash.com/photo-1532938911079-1b06ac7ceec7?q=80&w=1000",
+                        "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?q=80&w=1000",
+                        "https://images.unsplash.com/photo-1498837167922-ddd27525d352?q=80&w=1000"
+                    ]
                 }
-                image_url = placeholders.get(topic_lower, placeholders["news"])
-                logger.info(f"Using fallback image for topic '{topic_lower}': {image_url}")
+                
+                # Pick a pool or default to news
+                pool = placeholder_pools.get(topic_lower, placeholder_pools["news"])
+                
+                # Deterministically pick an image from the pool based on article URL
+                import hashlib
+                url_hash = int(hashlib.md5(url.encode()).hexdigest(), 16)
+                image_url = pool[url_hash % len(pool)]
+                
+                logger.info(f"Using varied fallback image for topic '{topic_lower}': {image_url}")
 
             if image_url:
                 logger.info(f"Final image for article '{title}': {image_url}")

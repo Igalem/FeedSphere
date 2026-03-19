@@ -195,23 +195,23 @@ class Generator:
             if end_idx != -1:
                 json_str = content[start_idx:end_idx]
                 
+                # Pre-processing to handle internal unescaped double quotes in commentary
+                # This is a heuristic: if we see "agent_commentary": "..." and there are 
+                # quotes in the middle that aren't followed by , or } they might be unescaped content.
+                # However, a better way is to just let the fallback regex handle the worst cases.
+                
                 # 1. Handle "Invalid control character" (raw newlines in strings)
-                # This must be done before set detection to ensure strings are captured correctly
                 def escape_control_chars(match):
                     s = match.group(0)
-                    # Replace raw newlines, tabs, and carriage returns with escaped versions
                     return s.replace('\n', '\\n').replace('\r', '\\r').replace('\t', '\\t')
                 
                 json_str = re.sub(r'"(?:\\.|[^"\\])*"', escape_control_chars, json_str, flags=re.DOTALL)
 
                 # 2. Handle "set-like" notation: {"a", "b"}
-                # Check if it lacks colons OUTSIDE of strings
                 temp_str = re.sub(r'"(?:\\.|[^"\\])*"', '', json_str)
                 if ":" not in temp_str:
-                    # It's likely a set. Extract all strings.
                     parts = re.findall(r'"((?:\\.|[^"\\])*)"', json_str, re.DOTALL)
                     if parts:
-                        # Join and return as agent_commentary
                         joined = " ".join(parts)
                         return json.dumps({"agent_commentary": joined, "tags": []})
                 
@@ -222,6 +222,16 @@ class Generator:
             pass
 
         return content.strip()
+
+    def _clean_commentary(self, text: str) -> str:
+        """Removes unwanted characters and emojis (specifically 🇮🇱)."""
+        if not text:
+            return ""
+        # Remove Israel flag
+        text = text.replace('🇮🇱', '')
+        # Clean up any residual double spaces or leading/trailing whitespace
+        text = re.sub(r'\s+', ' ', text).strip()
+        return text
 
     def _format_tag(self, tag: str) -> str:
         """Formats a tag to PascalCase and removes non-alphanumeric chars."""
@@ -260,14 +270,16 @@ class Generator:
                 "article_excerpt": article["article_excerpt"],
                 "article_image_url": article.get("article_image_url"),
                 "source_name": article["source_name"],
-                "agent_commentary": data.get("agent_commentary", ""),
+                "agent_commentary": self._clean_commentary(data.get("agent_commentary", "")),
                 "tags": tags,
                 "published_at": article.get("published_at")
             }
         except Exception as e:
             # Fallback but attempt to clean up JSON if it looks like one
             if "agent_commentary" in content:
-                commentary_match = re.search(r'"agent_commentary":\s*"(.*?)"', content, re.DOTALL)
+                # Use a lookahead to find the closing quote of the commentary field
+                # that is followed by the next field (tags) or the end object
+                commentary_match = re.search(r'"agent_commentary":\s*"(.*)"(?=\s*,\s*"tags"|\s*\})', content, re.DOTALL)
                 commentary = commentary_match.group(1) if commentary_match else content
                 return {
                     "type": "reaction",
@@ -277,7 +289,7 @@ class Generator:
                     "article_excerpt": article["article_excerpt"],
                     "article_image_url": article.get("article_image_url"),
                     "source_name": article["source_name"],
-                    "agent_commentary": commentary,
+                    "agent_commentary": self._clean_commentary(commentary),
                     "tags": [],
                     "published_at": article.get("published_at")
                 }
@@ -292,7 +304,7 @@ class Generator:
                 "article_excerpt": article["article_excerpt"],
                 "article_image_url": article.get("article_image_url"),
                 "source_name": article["source_name"],
-                "agent_commentary": content,
+                "agent_commentary": self._clean_commentary(content),
                 "tags": [],
                 "published_at": article.get("published_at")
             }
@@ -324,13 +336,15 @@ class Generator:
                 "article_excerpt": article["article_excerpt"],
                 "article_image_url": article.get("article_image_url"),
                 "source_name": article["source_name"],
-                "agent_commentary": data.get("agent_commentary", ""),
+                "agent_commentary": self._clean_commentary(data.get("agent_commentary", "")),
                 "tags": tags,
                 "published_at": article.get("published_at")
             }
         except Exception as e:
             if "agent_commentary" in content:
-                commentary_match = re.search(r'"agent_commentary":\s*"(.*?)"', content, re.DOTALL)
+                # Use a lookahead to find the closing quote of the commentary field
+                # that is followed by the next field (tags) or the end object
+                commentary_match = re.search(r'"agent_commentary":\s*"(.*)"(?=\s*,\s*"tags"|\s*\})', content, re.DOTALL)
                 commentary = commentary_match.group(1) if commentary_match else content
                 return {
                     "type": "perspective",
@@ -340,7 +354,7 @@ class Generator:
                     "article_excerpt": article["article_excerpt"],
                     "article_image_url": article.get("article_image_url"),
                     "source_name": article["source_name"],
-                    "agent_commentary": commentary,
+                    "agent_commentary": self._clean_commentary(commentary),
                     "tags": [],
                     "published_at": article.get("published_at")
                 }
@@ -355,7 +369,7 @@ class Generator:
                 "article_excerpt": article["article_excerpt"],
                 "article_image_url": article.get("article_image_url"),
                 "source_name": article["source_name"],
-                "agent_commentary": content,
+                "agent_commentary": self._clean_commentary(content),
                 "tags": [],
                 "published_at": article.get("published_at")
             }
@@ -389,9 +403,9 @@ class Generator:
                 "article_excerpt": article["article_excerpt"],
                 "agent_a_id": agent_a["id"],
                 "agent_b_id": agent_b["id"],
-                "argument_a": data["argument_a"],
-                "argument_b": data["argument_b"],
-                "debate_question": data["debate_question"],
+                "argument_a": self._clean_commentary(data["argument_a"]),
+                "argument_b": self._clean_commentary(data["argument_b"]),
+                "debate_question": self._clean_commentary(data["debate_question"]),
                 "tags": tags,
                 "published_at": article.get("published_at")
             }

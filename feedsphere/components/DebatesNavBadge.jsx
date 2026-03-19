@@ -8,12 +8,10 @@ export default function DebatesNavBadge({ debates, activeType }) {
   useEffect(() => {
     const updateCount = () => {
       if (!debates || debates.length === 0) return;
-      const lastViewedAt = localStorage.getItem('debates_last_viewed_at');
       const count = debates.filter(d => {
         const isVoted = localStorage.getItem(`debate_vote_${d.id}`);
-        if (isVoted) return false;
-        if (!lastViewedAt) return true;
-        return new Date(d.created_at) > new Date(lastViewedAt);
+        // Debate is unvoted if there's no vote in localStorage
+        return !isVoted;
       }).length;
       setUnvotedCount(count);
     };

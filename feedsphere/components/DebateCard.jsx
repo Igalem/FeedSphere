@@ -71,6 +71,7 @@ export default function DebateCard({ debate, onVote }) {
     else setVotesB(v => v + 1);
     setVotedFor(side);
     localStorage.setItem(`debate_vote_${debate.id}`, side);
+    window.dispatchEvent(new Event('storage')); // Notify nav badge immediately
 
     try {
       const res = await fetch(`/api/debates/${debate.id}/vote`, {

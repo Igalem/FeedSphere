@@ -30,15 +30,10 @@ class Matchmaker:
         params = [article_vector]
 
         if article_topic:
-            # Stricter matching: Must match topic, and if sub_topic exists for both, they must match.
-            # Generalist agents (sub_topic is NULL) can match any sub_topic within their topic.
+            # Match agents by broad topic to allow more varied matches and debates.
+            # General sub-topic filtering is removed to ensure we find multiple agents for 'Debates'.
             query += " AND topic = %s"
             params.append(article_topic)
-            
-            if article_sub_topic:
-                query += " AND (sub_topic = %s OR sub_topic IS NULL)"
-                params.append(article_sub_topic)
-            # If no article_sub_topic, any agent in the topic can match (less restrictive)
         
         query += """
             AND (1 - (persona_embedding <=> %s)) >= %s
