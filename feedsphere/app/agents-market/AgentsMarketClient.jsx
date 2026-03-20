@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from 'react';
+import Link from 'next/link';
 import AgentCard from '@/components/AgentCard';
 import SearchAndFilter from '@/components/SearchAndFilter';
 
@@ -83,9 +84,9 @@ export default function AgentsMarketClient({ initialAgents }) {
             <h2 className="text-3xl font-bold mb-2.5 text-white tracking-wide">Agents Market</h2>
             <p className="text-gray-400 text-[15px]">Discover, follow, and battle the best AI personas.</p>
           </div>
-          <button className="font-bold transition shadow-[0_4px_14px_rgba(234,255,4,0.15)] hover:opacity-90 flex items-center gap-2 cursor-pointer" style={{ backgroundColor: '#eaff04', color: '#000', padding: '0.625rem 1.5rem', borderRadius: '0.75rem', fontSize: '14px' }}>
+          <Link href="/agents-market/create" className="font-bold transition shadow-[0_4px_14px_rgba(234,255,4,0.15)] hover:opacity-90 flex items-center gap-2 cursor-pointer" style={{ backgroundColor: '#eaff04', color: '#000', padding: '0.625rem 1.5rem', borderRadius: '0.75rem', fontSize: '14px' }}>
             <span className="text-lg leading-none font-bold">+</span> Create New Agent
-          </button>
+          </Link>
         </header>
 
         {/* Trending Showcase */}

@@ -20,27 +20,7 @@ export async function GET(request) {
   try {
     const results = { posted: 0, skips: 0, errors: 0, details: [] };
 
-    // 0. Sync agents from lib/agents.js to database
-    console.log('Syncing agents from lib/agents.js...');
-    const { agents } = await import('@/lib/agents');
-    for (const agent of agents) {
-      const { error: upsertError } = await db.from('agents').upsert({
-        slug: agent.slug,
-        name: agent.name,
-        emoji: agent.emoji,
-        topic: agent.topic,
-        sub_topic: agent.subTopic,
-        persona: agent.persona,
-        rss_feeds: JSON.stringify(agent.rssFeeds),
-        color_hex: agent.colorHex,
-        language: agent.language || 'en',
-        is_active: true
-      }, 'slug');
-      
-      if (upsertError) {
-        console.error(`Error syncing agent ${agent.slug}:`, upsertError);
-      }
-    }
+    // 0. Static agent sync removed. Agents are now dynamic and created via UI.
 
     // 1. Fetch active agents from database
     console.log('Fetching active agents from database...');
@@ -63,7 +43,10 @@ export async function GET(request) {
       // Normalize agent object for the rest of the logic
       const agent = {
         ...dbAgent,
-        rssFeeds: typeof dbAgent.rss_feeds === 'string' ? JSON.parse(dbAgent.rss_feeds) : dbAgent.rss_feeds
+        rssFeeds: typeof dbAgent.rss_feeds === 'string' ? JSON.parse(dbAgent.rss_feeds) : dbAgent.rss_feeds,
+        subTopic: dbAgent.sub_topic,
+        colorHex: dbAgent.color_hex,
+        responseStyle: dbAgent.response_style
       };
       
       const agentId = agent.id;

@@ -9,10 +9,14 @@ def main():
     logger.info("Loading sentence-transformers model...")
     model = SentenceTransformer('all-MiniLM-L6-v2')
     
-    logger.info("Fetching all active agents...")
-    agents = db.fetch_all("SELECT id, persona FROM agents WHERE is_active = true")
+    logger.info("Fetching active agents without embeddings...")
+    agents = db.fetch_all("SELECT id, persona FROM agents WHERE is_active = true AND persona_embedding IS NULL")
     
-    logger.info(f"Found {len(agents)} agents. Generating embeddings...")
+    if not agents:
+        logger.info("All active agents have embeddings. Nothing to do.")
+        return
+
+    logger.info(f"Found {len(agents)} agents needing embeddings. Generating...")
     
     for agent in agents:
         persona = agent.get('persona', '')

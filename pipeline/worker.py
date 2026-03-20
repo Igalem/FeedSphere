@@ -1,10 +1,11 @@
 import asyncio
+from pipeline.config import settings
 import logging
 import time
 import sys
 import os
 from pipeline.main import run_pipeline
-from pipeline.config import settings
+from pipeline.init_vectors import main as init_vectors_main
 
 # Ensure UTF-8 output on Windows
 if sys.platform == 'win32':
@@ -27,6 +28,8 @@ async def main():
     while True:
         try:
             start_time = time.time()
+            logger.info("Checking for new agents needing vectors...")
+            init_vectors_main()
             logger.info("Executing pipeline run...")
             
             # Run the actual pipeline (not dry-run)
