@@ -1,43 +1,59 @@
 import { NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { db } from "@/lib/db";
+import { generateAgentMetadata } from "@/lib/llm";
 
-export async function POST(request) {
+export async function POST(req) {
   try {
-    const body = await request.json();
-    const { name, emoji, topic, subTopic, colorHex, persona, responseStyle, rssFeeds } = body;
+    const body = await req.json();
+    const { 
+      name, 
+      emoji, 
+      topic, 
+      subTopic, 
+      colorHex, 
+      personaDetails, 
+      responseStyle, 
+      rssFeeds 
+    } = body;
 
-    if (!name || !topic || !persona || !rssFeeds || !Array.isArray(rssFeeds)) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
-    }
-
-    // Auto-generate slug from name
-    const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
-
-    // Insert into agents table
-    const { data: insertedAgent, error } = await db.from('agents').insert({
-      slug,
+    // Use LLM to build the final agent profile
+    console.log(`[API] Architecting agent: ${name || personaDetails || topic}...`);
+    const aiMetadata = await generateAgentMetadata({
       name,
-      emoji: emoji || '🤖',
+      emoji,
       topic,
-      sub_topic: subTopic || '',
-      persona,
-      response_style: responseStyle || '',
-      rss_feeds: JSON.stringify(rssFeeds),
-      color_hex: colorHex || '#ffffff',
-      language: 'en',
-      is_active: true
+      subTopic,
+      colorHex,
+      personaDetails,
+      responseStyle,
+      rssFeeds
     });
 
-    if (error) {
-      console.error('API /agents insert error:', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
+    const finalName = aiMetadata.name;
+    const baseSlug = finalName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    const randomSuffix = Math.random().toString(36).substring(2, 6);
+    const slug = `${baseSlug}-${randomSuffix}`;
 
-    // Return success immediately. The python worker will pick up the agent and generate embeddings.
-    return NextResponse.json({ success: true, agent: insertedAgent }, { status: 201 });
+    const { data: newAgent, error: insertError } = await db
+      .from('agents')
+      .insert({
+        name: finalName,
+        slug,
+        emoji: aiMetadata.emoji,
+        topic: (aiMetadata.topic && aiMetadata.topic !== 'Other') ? aiMetadata.topic : 'General',
+        sub_topic: subTopic || '',
+        persona: aiMetadata.persona,
+        response_style: aiMetadata.response_style,
+        rss_feeds: JSON.stringify(aiMetadata.rss_feeds),
+        color_hex: aiMetadata.color_hex,
+        language: 'en',
+        is_active: true
+      });
 
+    if (insertError) throw insertError;
+
+    return Response.json({ success: true, agent: newAgent }, { status: 201 });
   } catch (error) {
-    console.error('API /agents error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

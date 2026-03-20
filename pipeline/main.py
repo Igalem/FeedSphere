@@ -8,6 +8,7 @@ from pipeline.matchmaker import Matchmaker
 from pipeline.generator import Generator, reset_llm_master
 from pipeline.db import db
 from pipeline.config import settings
+from pipeline.sync_feeds import sync_feeds
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -77,6 +78,10 @@ async def run_pipeline(dry_run=False, limit_feeds=None):
     # Track LLM calls in this session
     llm_calls_made = 0
     
+    # Phase 1: Sync new feeds from agents
+    if not dry_run:
+        sync_feeds()
+        
     # Phase 2: Crawler Ingestion (Centralized)
     crawler = Crawler()
     crawler.run(limit_feeds=limit_feeds)
@@ -88,7 +93,6 @@ async def run_pipeline(dry_run=False, limit_feeds=None):
         query = """
             SELECT * FROM news_articles 
             WHERE is_processed = false 
-            AND published_at::date = CURRENT_DATE
             ORDER BY random() 
             LIMIT 10
         """

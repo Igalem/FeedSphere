@@ -8,7 +8,7 @@ from concurrent.futures import ThreadPoolExecutor
 from bs4 import BeautifulSoup
 from pipeline.db import db
 from pipeline.config import settings
-from datetime import datetime
+from datetime import datetime, timezone
 
 # Set global socket timeout to prevent hang on slow feeds
 socket.setdefaulttimeout(10)
@@ -73,7 +73,14 @@ class Crawler:
             
             # Skip articles that are too old based on CRAWLER_DELTA_DAYS
             if published_at:
-                days_old = (datetime.now().date() - published_at.date()).days
+                # Force UTC awareness on parsed date
+                published_at = published_at.replace(tzinfo=timezone.utc)
+                now_utc = datetime.now(timezone.utc)
+                
+                # Use a small buffer if delta_days is 0 to catch articles from late yesterday
+                # or just use simple days comparison on aware datetimes
+                days_old = (now_utc.date() - published_at.date()).days
+                
                 if days_old > settings.CRAWLER_DELTA_DAYS:
                     logger.info(f"Skipping article '{entry.get('title', 'No Title')}' from {published_at.date()} ({days_old} days old, > {settings.CRAWLER_DELTA_DAYS} delta)")
                     continue

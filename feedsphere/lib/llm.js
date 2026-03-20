@@ -519,3 +519,126 @@ Rules: 1-2 sentences max, authentic voice, stay in character, no dashes.`;
   return generateLLMResponse(systemPrompt, userMessages, { maxTokens: 800, temperature: 0.6 });
 }
 
+export async function generateAgentMetadata(userInput) {
+  const systemPrompt = `You are the Lead AI Agent Architect for FeedSphere.
+Your mission is to take a user's rough agent idea and transform it into a world-class AI persona.
+
+### THE SKILL: PROFESIONAL PERSONA FORMAT
+Every persona you build must follow this exact structure:
+- **System Prompt — [Agent Name]**
+- **Personality Description** (2-3 sentences)
+- **Core Identity (Beliefs)** (2-3 strong convictions)
+- **Key Topics** (List of 3-5 high-level topics)
+- **Emotional Behavior** (How they react to news/events)
+- **Writing Style** (Tone, vocabulary, length constraints)
+- **Post Style Guidelines** (Specific social media behaviors)
+- **Example Post Style** (A short preview)
+- **Semantic Anchor (MANDATORY)**: A paragraph at the very end containing 15-20 distinct, high-value keywords related to the agent's specialty.
+
+### INPUT DATA
+The user might provide some fields. You MUST incorporate them but you are encouraged to polish/expand them:
+- Name: ${userInput.name || 'AI will generate'}
+- Topic: ${userInput.topic || 'AI will generate'} (If 'Other', you MUST infer a better category from News, Sports, Tech, Gaming, Health, Entertainment or a custom specific one)
+- Sub-Topic: ${userInput.subTopic || 'AI will generate'}
+- Persona Details (the rough idea): ${userInput.personaDetails || 'AI will generate'}
+- Response Style: ${userInput.responseStyle || 'AI will generate'}
+- RSS Feeds (user provided): ${JSON.stringify(userInput.rssFeeds || [])}
+
+### OUTPUT REQUIREMENTS
+- Research and select enough high-quality, real-world RSS feed URLs to reach a total of AT LEAST 4 VALID FEEDS for this agent. If the user provided some, add more to ensure the total count is 4 or more.
+- Select a professional Category/Topic that fits the agent.
+- Select a professional Color Hex code that matches the personality.
+- Select a perfect Emoji.
+- The "persona" field must be the FULL multi-section text description. **CRITICAL: Generate it as PLAIN TEXT with headers (e.g. 'PERSONALITY: ...'), NEVER return a JSON object or array in the persona field.**
+
+YOUR FINAL OUTPUT MUST BE A VALID JSON OBJECT AND NOTHING ELSE.
+
+JSON Structure:
+{
+  "name": "...",
+  "emoji": "...",
+  "topic": "...",
+  "persona": "...",
+  "responseStyle": "...",
+  "rss_feeds": [{"name": "...", "url": "..."}],
+  "color_hex": "..."
+}
+
+Return ONLY the JSON.`;
+
+  const userMessages = [
+    {
+      role: 'user',
+      content: `Architect this agent based on: ${userInput.personaDetails || userInput.name || userInput.topic}`
+    }
+  ];
+
+  const response = await generateLLMResponse(systemPrompt, userMessages, {
+    maxTokens: 2000,
+    temperature: 0.7,
+    responseMimeType: "application/json"
+  });
+
+  try {
+    const jsonMatch = response.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      const data = JSON.parse(jsonMatch[0].replace(/,\s*([\}\]])/g, '$1'));
+      
+      // Merge user feeds with AI suggested feeds, avoiding duplicates
+      const userFeeds = userInput.rssFeeds || [];
+      const aiFeeds = data.rss_feeds || data.rssFeeds || [];
+      const seenUrls = new Set(userFeeds.map(f => f.url.toLowerCase()));
+      const combinedFeeds = [...userFeeds];
+      
+      for (const feed of aiFeeds) {
+        if (feed.url && !seenUrls.has(feed.url.toLowerCase())) {
+          combinedFeeds.push(feed);
+          seenUrls.add(feed.url.toLowerCase());
+        }
+      }
+
+      // Strict Topic Inference check
+      let finalTopic = userInput.topic;
+      if (userInput.topic === 'Other' || !userInput.topic) {
+        if (!data.topic || data.topic === 'Other' || data.topic === 'General') {
+          throw new Error('AI could not infer a specific enough category for this agent. Please provide more details or select a predefined topic.');
+        }
+        finalTopic = data.topic;
+      }
+
+      // Ensure persona is text, even if AI returns it as an object
+      let finalPersona = data.persona;
+      if (typeof finalPersona === 'object' && finalPersona !== null) {
+        const formatValue = (v) => {
+          if (Array.isArray(v)) return v.join(', ');
+          if (typeof v === 'object' && v !== null) {
+            return Object.entries(v)
+              .map(([k, val]) => `${k}: ${formatValue(val)}`)
+              .join('; ');
+          }
+          return v;
+        };
+        
+        finalPersona = Object.entries(finalPersona)
+          .map(([key, val]) => {
+            const displayVal = formatValue(val);
+            return `${key.toUpperCase()}:\n${displayVal}`;
+          })
+          .join('\n\n');
+      }
+
+      return {
+        name: userInput.name || data.name,
+        emoji: userInput.emoji || data.emoji,
+        topic: finalTopic,
+        persona: finalPersona || data.persona,
+        response_style: userInput.responseStyle || data.responseStyle || data.response_style,
+        rss_feeds: combinedFeeds.slice(0, 10), // Allow up to 10 feeds for better coverage
+        color_hex: userInput.colorHex === 'AI' ? data.colorHex || data.color_hex : userInput.colorHex || data.color_hex
+      };
+    }
+  } catch (e) {
+    console.error('Failed to parse Agent Metadata JSON:', e);
+    throw new Error('AI Generation failed to produce valid agent metadata');
+  }
+}
