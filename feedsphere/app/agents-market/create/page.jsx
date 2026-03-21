@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 export default function CreateAgentPage() {
   const router = useRouter();
@@ -10,17 +11,22 @@ export default function CreateAgentPage() {
 
   const [formData, setFormData] = useState({
     name: '',
-    emoji: '',
-    topic: 'News',
+    emoji: '🤖',
+    topic: 'Tech',
     subTopic: '',
     colorHex: '#eaff04',
     personaDetails: '',
     responseStyle: '',
-    rssFeeds: [{ name: '', url: '' }]
+    rssFeeds: [
+      { name: '', url: '' },
+      { name: '', url: '' },
+      { name: '', url: '' },
+      { name: '', url: '' }
+    ]
   });
 
-  const topics = ['News', 'Sports', 'Tech', 'Gaming', 'Health', 'Entertainment', 'Other'];
-  const presetColors = ['#eaff04', '#f97316', '#3b82f6', '#8b5cf6', '#ef4444', '#ec4899', '#10b981', '#00439c', '#FF1493', '#8FBC8F', '#808080'];
+  const topics = ['Tech', 'Sports', 'Gaming', 'News', 'Entertainment', 'Finance', 'Health'];
+  const presetColors = ['#eaff04', '#ef4444', '#f97316', '#3b82f6', '#6366f1', '#a855f7'];
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -36,7 +42,6 @@ export default function CreateAgentPage() {
   };
 
   const addFeed = () => {
-    if (formData.rssFeeds.length >= 4) return;
     setFormData(prev => ({
       ...prev,
       rssFeeds: [...prev.rssFeeds, { name: '', url: '' }]
@@ -65,6 +70,12 @@ export default function CreateAgentPage() {
     // Filter out empty feeds
     const validFeeds = formData.rssFeeds.filter(f => f.name.trim() !== '' && f.url.trim() !== '');
 
+    if (validFeeds.length < 4) {
+      setError("Please provide at least 4 valid RSS feeds.");
+      setLoading(false);
+      return;
+    }
+
     try {
       const res = await fetch('/api/agents', {
         method: 'POST',
@@ -82,230 +93,269 @@ export default function CreateAgentPage() {
     }
   };
 
-  const inputClass = "w-full bg-[#151821] border border-gray-800 rounded-xl p-3.5 text-white placeholder-gray-600 focus:outline-none focus:border-[#eaff04] focus:ring-1 focus:ring-[#eaff04]/20 transition-all";
-  const labelClass = "block text-[13px] font-bold text-gray-500 mb-2 uppercase tracking-wider";
+  const inputClass = "w-full bg-[#0B0E14] border border-[#1F2937] rounded-xl px-4 py-3 placeholder-gray-600 focus:outline-none focus:border-[#eaff04] transition-all text-[14px] text-white";
+  const labelClass = "block text-[12px] font-bold text-gray-500 mb-2 uppercase tracking-wider";
+
+  // Shared button styling resembling the "agents-market" primary actions
+  const primaryButtonStyle = {
+    backgroundColor: '#eaff04',
+    color: '#000',
+    padding: '0.625rem 1.5rem',
+    borderRadius: '0.75rem',
+    fontSize: '14px',
+    fontWeight: 'bold',
+    boxShadow: '0 4px 14px rgba(234,255,4,0.15)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '0.5rem',
+    cursor: 'pointer',
+    transition: 'opacity 0.2s',
+  };
+
+  const secondaryButtonStyle = {
+    backgroundColor: 'transparent',
+    color: '#eaff04',
+    padding: '0.5rem 1rem',
+    borderRadius: '0.5rem',
+    fontSize: '13px',
+    fontWeight: 'bold',
+    border: '1px solid rgba(234,255,4,0.3)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '0.5rem',
+    cursor: 'pointer',
+    transition: 'all 0.2s',
+  };
 
   return (
-    <div className="w-full flex justify-center pb-32">
-      <div className="w-full max-w-[1050px] px-8 flex flex-col font-sans">
+    <div className="w-full flex justify-center pb-24 font-sans text-white">
+      <div className="w-full max-w-[900px] px-8 flex flex-col">
         
-        {/* Page Header */}
-        <header className="flex justify-between items-center mb-10" style={{ paddingTop: '50px' }}>
+        {/* Header */}
+        <header className="flex justify-between items-end mb-8" style={{ paddingTop: '50px' }}>
           <div>
-            <h2 className="text-3xl font-bold mb-2.5 text-white tracking-wide">Create New Agent</h2>
-            <p className="text-gray-400 text-[15px]">Design your AI persona, define their stance, and start the feed.</p>
+            <Link href="/agents-market" className="text-[13px] font-bold text-gray-500 hover:text-[#eaff04] mb-3 inline-block transition uppercase tracking-wider">
+              ← Back to Market
+            </Link>
+            <h2 className="text-3xl font-bold mb-2 text-white">Create New Agent</h2>
+            <p className="text-gray-400 text-[15px]">Design an autonomous persona, define their stance, and connect live datasets.</p>
           </div>
-          <button 
-            type="button" 
-            onClick={handleSubmit}
-            disabled={loading}
-            className="font-bold transition shadow-[0_4px_14px_rgba(234,255,4,0.15)] hover:opacity-90 flex items-center gap-2 cursor-pointer disabled:opacity-50" 
-            style={{ backgroundColor: '#eaff04', color: '#000', padding: '0.625rem 1.5rem', borderRadius: '0.75rem', fontSize: '14px' }}
-          >
-            {loading ? '...' : (
-              <>
-                <span className="text-lg leading-none font-bold">+</span> Create Agent
-              </>
-            )}
-          </button>
         </header>
 
         {error && (
-          <div className="mb-6 bg-red-900/40 border border-red-500/50 p-4 rounded-xl flex items-center gap-3 text-red-200 animate-in fade-in slide-in-from-top-4">
+          <div className="mb-6 bg-red-900/40 border border-red-500/50 p-4 rounded-xl flex items-center gap-3 text-red-200">
             <span className="text-xl">⚠️</span> {error}
           </div>
         )}
 
-        <div className="space-y-10">
-          
-          {/* Section 1: Basic Identity */}
-          <section className="bg-[#0B0C10] border border-gray-800/60 p-10 rounded-[2rem] shadow-2xl">
-            <h2 className="text-2xl font-bold text-white mb-8">Basic Identity</h2>
+        {/* ONE unified card combining all sections */}
+        <div style={{ backgroundColor: '#151821', border: '1px solid #1F2937', borderRadius: '1.25rem', padding: '2.5rem' }}>
+          <form className="flex flex-col gap-10">
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="md:col-span-1">
-                <label className={labelClass}>Name <span className="text-[10px] text-[#eaff04] ml-1">(Optional/AI Pick)</span></label>
-                <input 
-                  type="text" 
-                  name="name" 
-                  value={formData.name} 
-                  onChange={handleChange} 
-                  className={inputClass} 
-                  placeholder="e.g., The Sports Oracle" 
-                />
+            {/* Block 1: Basic Identity */}
+            <div className="flex flex-col gap-6">
+              <h3 className="text-[18px] font-bold text-white tracking-wide border-b border-[#1F2937] pb-3">Basic Identity</h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div className="col-span-1 md:col-span-3">
+                  <label className={labelClass}>Name</label>
+                  <input 
+                    type="text" 
+                    name="name"
+                    value={formData.name}
+                    onChange={handleChange}
+                    className={inputClass} 
+                    placeholder="e.g. Protocol Oracle"
+                  />
+                </div>
+                <div className="col-span-1">
+                  <label className={labelClass}>Emoji</label>
+                  <input 
+                    type="text" 
+                    name="emoji"
+                    value={formData.emoji}
+                    onChange={handleChange}
+                    maxLength={2}
+                    className="w-full h-[46px] border border-[#1F2937] rounded-xl text-center text-xl outline-none focus:border-[#eaff04] bg-[#0B0E14] text-white" 
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className={labelClass}>Topic</label>
+                  <div className="relative">
+                    <select 
+                      name="topic"
+                      value={formData.topic}
+                      onChange={handleChange}
+                      className={`${inputClass} appearance-none cursor-pointer`}
+                    >
+                      {topics.map(t => <option key={t} value={t}>{t}</option>)}
+                    </select>
+                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-400">
+                      ▼
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <label className={labelClass}>Sub-Topic</label>
+                  <input 
+                    type="text" 
+                    name="subTopic"
+                    value={formData.subTopic}
+                    onChange={handleChange}
+                    placeholder="e.g. Cryptocurrency"
+                    className={inputClass} 
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className={labelClass}>Color Accent</label>
+                <div className="flex flex-wrap items-center gap-3 mt-1">
+                  {presetColors.map(color => (
+                    <button 
+                      key={color}
+                      type="button" 
+                      onClick={() => setFormData(prev => ({ ...prev, colorHex: color }))}
+                      className={`w-9 h-9 rounded-lg transition-all ${formData.colorHex === color ? 'ring-2 ring-white scale-110 shadow-lg' : 'opacity-80 hover:opacity-100 hover:scale-105'}`}
+                      style={{ backgroundColor: color }}
+                    ></button>
+                  ))}
+                  <span className="text-gray-500 mx-3 text-[13px] font-bold uppercase">or</span>
+                  <div className="flex items-center bg-[#0B0E14] border border-[#1F2937] rounded-lg px-3 h-10 w-32 focus-within:border-[#eaff04] transition">
+                    <span className="text-gray-500 mr-1 font-mono">#</span>
+                    <input 
+                      type="text" 
+                      value={formData.colorHex.replace('#', '')} 
+                      onChange={(e) => setFormData(prev => ({ ...prev, colorHex: '#' + e.target.value }))}
+                      className="bg-transparent text-white w-full outline-none font-mono uppercase text-sm" 
+                      maxLength="6"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Block 2: Persona Engine */}
+            <div className="flex flex-col gap-6 pt-2 border-t border-[#1F2937] border-dashed">
+              <div className="flex justify-between items-center border-b border-[#1F2937] pb-3 mb-2">
+                <h3 className="text-[18px] font-bold text-white tracking-wide">Persona Engine</h3>
+                <span className="text-[10px] font-bold text-[#eaff04] uppercase px-3 py-1 rounded bg-[#eaff04]/10 border border-[#eaff04]/20 hidden sm:block">Vector Search Enabled</span>
               </div>
               
               <div>
-                <label className={labelClass}>Emoji <span className="text-[10px] text-[#eaff04] ml-1">(Optional/AI Pick)</span></label>
-                <div className="relative">
-                  <input 
-                    type="text" 
-                    name="emoji" 
-                    value={formData.emoji} 
-                    onChange={handleChange} 
-                    className={`${inputClass} text-center text-xl`} 
-                    placeholder="Select..." 
-                    maxLength={5} 
-                  />
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2 bg-[#1c1f28] p-1.5 rounded-lg border border-gray-700">
-                    <span className="text-lg">🤖</span>
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <label className={labelClass}>Topic (Dropdown)</label>
-                <select name="topic" value={formData.topic} onChange={handleChange} className={inputClass}>
-                  {topics.map(t => <option key={t} value={t}>{t}</option>)}
-                </select>
-              </div>
-
-              <div>
-                <label className={labelClass}>Sub-Topic * <span className="text-[10px] text-gray-600 ml-1">(e.g., Barça)</span></label>
-                <input 
-                  type="text" 
-                  name="subTopic" 
-                  value={formData.subTopic} 
-                  onChange={handleChange} 
-                  className={inputClass} 
-                  placeholder="Sub-Topic (e.g., Analysis)" 
-                />
-              </div>
-            </div>
-
-            <div className="mt-8">
-              <label className={labelClass}>Color Accent <span className="text-[10px] text-gray-600 ml-1">(e.g., #3b82f6)</span></label>
-              <div className="flex items-center gap-4 flex-wrap mt-3">
-                <div className="flex gap-2 flex-wrap">
-                  {presetColors.map(color => (
-                    <button
-                      key={color}
-                      type="button"
-                      onClick={() => setFormData(prev => ({ ...prev, colorHex: color }))}
-                      className={`w-9 h-9 rounded-xl transition-all ${formData.colorHex === color ? 'scale-110 ring-2 ring-white shadow-lg' : 'hover:scale-105 opacity-60 hover:opacity-100'}`}
-                      style={{ backgroundColor: color }}
-                    />
-                  ))}
-                  <button
-                    type="button"
-                    onClick={() => setFormData(prev => ({ ...prev, colorHex: 'AI' }))}
-                    className={`px-4 h-9 rounded-xl transition-all flex items-center gap-2 border text-xs font-bold ${formData.colorHex === 'AI' ? 'bg-[#eaff04] text-black border-[#eaff04]' : 'bg-transparent text-gray-400 border-gray-800 hover:border-gray-600'}`}
-                  >
-                    ✨ AI Pick
-                  </button>
-                </div>
-                <input 
-                  type="text" 
-                  value={formData.colorHex === 'AI' ? 'AI Generated' : formData.colorHex} 
-                  readOnly
-                  className="bg-[#151821] border border-gray-800 rounded-xl px-4 py-2 text-xs font-mono text-gray-400 w-36 text-center"
-                />
-              </div>
-            </div>
-          </section>
-
-          {/* Section 2: Persona details */}
-          <section className="bg-[#0B0C10] border border-gray-800/60 p-10 rounded-[2rem] shadow-2xl">
-            <h2 className="text-2xl font-bold text-white mb-2">Persona details *</h2>
-            <p className="text-gray-500 text-sm mb-8">Describe the character. The AI Architecture Engine will build the full profile.</p>
-            
-            <div className="space-y-8">
-              <div>
+                <label className={labelClass}>System Prompt & Identity Directives</label>
                 <textarea 
-                  name="personaDetails" 
-                  value={formData.personaDetails} 
-                  onChange={handleChange} 
-                  className={`${inputClass} min-h-[160px] text-base leading-relaxed p-6`} 
-                  placeholder="e.g., A cynical tech journalist who loves fundamentals and hates hype..."
-                  rows={6} 
-                />
+                  name="personaDetails"
+                  value={formData.personaDetails}
+                  onChange={handleChange}
+                  rows="6" 
+                  className={`${inputClass} font-mono text-[13px] leading-relaxed resize-y`}
+                  placeholder="You are an uncompromising analyst...&#10;Core focus: Truths and algorithms."
+                ></textarea>
               </div>
 
               <div>
-                <label className={labelClass}>Response Style <span className="text-[10px] text-[#eaff04] ml-1">(Optional/AI Pick)</span></label>
+                <label className={labelClass}>Response Style Guidance</label>
                 <input 
                   type="text" 
-                  name="responseStyle" 
-                  value={formData.responseStyle} 
-                  onChange={handleChange} 
+                  name="responseStyle"
+                  value={formData.responseStyle}
+                  onChange={handleChange}
+                  placeholder="Short, direct, data-driven, occasionally cynical."
                   className={inputClass} 
-                  placeholder="e.g., Short, punchy, Gen-Z slang" 
                 />
               </div>
             </div>
-          </section>
 
-          {/* Section 3: Data Sources */}
-          <section className="bg-[#0B0C10] border border-gray-800/60 p-10 rounded-[2rem] shadow-2xl">
-            <div className="flex justify-between items-center mb-8">
-              <h2 className="text-2xl font-bold text-white">Data Sources <span className="text-[10px] text-[#eaff04] ml-2">(Optional)</span></h2>
-              <span className="px-3 py-1 bg-gray-900 rounded-full text-xs font-bold text-gray-500 border border-gray-800">{formData.rssFeeds.length} / 4 Feeds</span>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {formData.rssFeeds.map((feed, index) => (
-                <div key={index} className="relative bg-[#151821] p-6 rounded-2xl border border-gray-800/50 group">
-                  <div className="space-y-4">
-                    <div>
-                      <label className="text-[10px] font-black text-gray-600 uppercase mb-1 block">Feed Name</label>
+            {/* Block 3: Data Sources */}
+            <div className="flex flex-col gap-6 pt-2 border-t border-[#1F2937] border-dashed">
+              <div className="flex justify-between items-center border-b border-[#1F2937] pb-3 mb-2">
+                <h3 className="text-[18px] font-bold text-white tracking-wide">Data Sources (RSS)</h3>
+                <span className="text-[12px] font-bold text-gray-500 uppercase px-3 py-1 bg-[#0B0E14] rounded-lg border border-[#1F2937]">
+                  {formData.rssFeeds.length} / 4+ Required
+                </span>
+              </div>
+              
+              <div className="space-y-4">
+                {formData.rssFeeds.map((feed, index) => (
+                  <div key={index} className="flex flex-col sm:flex-row items-end gap-4 pb-4 border-b border-[#1F2937]/50 last:border-0 last:pb-0">
+                    <div className="flex-1 w-full">
+                      <label className="text-[10px] font-bold text-gray-500 uppercase mb-1.5 block">Feed Name</label>
                       <input 
                         type="text" 
-                        placeholder="TechCrunch Top" 
-                        value={feed.name} 
-                        onChange={(e) => handleFeedChange(index, 'name', e.target.value)} 
-                        className="w-full bg-transparent border-b border-gray-800 text-sm py-1 focus:outline-none focus:border-[#eaff04] transition-colors" 
+                        value={feed.name}
+                        onChange={(e) => handleFeedChange(index, 'name', e.target.value)}
+                        placeholder="Feed Title" 
+                        className={inputClass} 
                       />
                     </div>
-                    <div>
-                      <label className="text-[10px] font-black text-gray-600 uppercase mb-1 block">Feed URL</label>
+                    <div className="flex-1 w-full">
+                      <label className="text-[10px] font-bold text-gray-500 uppercase mb-1.5 block">Feed URL</label>
                       <input 
                         type="url" 
+                        value={feed.url}
+                        onChange={(e) => handleFeedChange(index, 'url', e.target.value)}
                         placeholder="https://..." 
-                        value={feed.url} 
-                        onChange={(e) => handleFeedChange(index, 'url', e.target.value)} 
-                        className="w-full bg-transparent border-b border-gray-800 text-sm py-1 focus:outline-none focus:border-[#eaff04] transition-colors" 
+                        className={`${inputClass} font-mono`} 
                       />
                     </div>
+                    {formData.rssFeeds.length > 1 && (
+                      <div className="pb-1 sm:pb-0 w-full sm:w-auto flex justify-end">
+                        <button 
+                          type="button" 
+                          onClick={() => removeFeed(index)}
+                          className="h-[46px] px-4 rounded-xl text-red-400 hover:bg-red-400/10 border border-transparent hover:border-red-400/20 transition flex items-center justify-center cursor-pointer" 
+                          title="Remove feed"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    )}
                   </div>
-                  {formData.rssFeeds.length > 1 && (
-                    <button 
-                      type="button" 
-                      onClick={() => removeFeed(index)} 
-                      className="absolute top-4 right-4 text-gray-700 hover:text-red-500 transition"
-                      title="Remove Feed"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                    </button>
-                  )}
+                ))}
+              </div>
+
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-2">
+                <button 
+                  type="button" 
+                  onClick={addFeed}
+                  style={secondaryButtonStyle}
+                  className="hover:bg-[#eaff04]/10"
+                >
+                  <span className="text-lg leading-none">+</span> Add Data Source
+                </button>
+                <div className="text-[12.5px] text-gray-500 flex items-center gap-2">
+                  <span>✨</span> The architecture requires at least 4 valid feeds.
                 </div>
-              ))}
+              </div>
             </div>
 
-            {formData.rssFeeds.length < 4 && (
+            {/* Block 4: Final Actions */}
+            <div className="pt-8 mt-2 border-t border-[#1F2937] flex flex-col sm:flex-row justify-end items-center gap-6">
+              <div className="text-[13px] text-gray-500 italic hidden sm:block">
+                Ready to deploy your agent into the market?
+              </div>
               <button 
-                type="button" 
-                onClick={addFeed} 
-                className="mt-8 bg-transparent border-2 border-dashed border-gray-800 text-gray-500 hover:border-[#eaff04] hover:text-[#eaff04] w-full py-4 rounded-2xl font-bold flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
+                type="button"
+                onClick={handleSubmit}
+                disabled={loading}
+                style={primaryButtonStyle}
+                className="w-full sm:w-auto hover:opacity-90 active:scale-95 disabled:opacity-50"
               >
-                <span className="text-xl">+</span> Add Feed
+                {loading ? 'Processing...' : (
+                  <>
+                    <span className="text-lg leading-none">+</span> Deploy Agent
+                  </>
+                )}
               </button>
-            )}
-            
-            <p className="mt-8 text-center text-xs text-gray-600 italic leading-relaxed">✨ The AI Architect will automatically research and add high-quality feeds to ensure your agent has a total of at least 4 active data sources.</p>
-          </section>
+            </div>
 
-          {/* Submit (Mobile/Footer) */}
-          <div className="flex justify-center md:hidden pt-4 pb-12">
-            <button 
-              type="button"
-              onClick={handleSubmit}
-              disabled={loading}
-              className="w-full bg-[#eaff04] text-black font-black py-5 rounded-2xl shadow-xl active:scale-95 disabled:opacity-50"
-            >
-              {loading ? 'Creating...' : 'Create Agent'}
-            </button>
-          </div>
-
+          </form>
         </div>
       </div>
     </div>
