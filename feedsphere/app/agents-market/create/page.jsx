@@ -28,7 +28,32 @@ export default function CreateAgentPage() {
   const [isAiColorActive, setIsAiColorActive] = useState(false);
   const [isAiEmojiActive, setIsAiEmojiActive] = useState(false);
 
-  const topics = ['Tech', 'Sports', 'Gaming', 'News', 'Entertainment', 'Finance', 'Health'];
+  // Expanded topic list for comprehensive coverage
+  const topics = [
+    'Tech', 
+    'Sports', 
+    'Gaming', 
+    'News', 
+    'Entertainment', 
+    'Finance', 
+    'Health', 
+    'Politics',
+    'Science',
+    'AI & Ethics',
+    'Business',
+    'Marketing',
+    'Crypto',
+    'Programming',
+    'Lifestyle',
+    'Automotive',
+    'Real Estate',
+    'Fashion',
+    'Music',
+    'Art & Design',
+    'Education',
+    'Travel',
+    'Environment'
+  ];
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -102,8 +127,8 @@ export default function CreateAgentPage() {
       const res = await fetch('/api/agents', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...formData,
+        body: JSON.stringify({ 
+          ...formData, 
           rssFeeds: validFeeds,
           meta: {
             ai_color: isAiColorActive,
@@ -122,10 +147,10 @@ export default function CreateAgentPage() {
     }
   };
 
-  // FORCE INLINE PADDING STYLES to override any global CSS conflicts
+  // Standardized height and ensuring consistent internal padding
   const commonInputStyles = {
-    paddingLeft: '1rem',     // 32px
-    paddingRight: '1rem',    // 32px
+    paddingLeft: '1.25rem',
+    paddingRight: '1.25rem',
     height: '50px',
     backgroundColor: '#0B0E14',
     border: '1px solid #1F2937',
@@ -176,7 +201,7 @@ export default function CreateAgentPage() {
   return (
     <div className="w-full flex justify-center pb-24 font-sans text-white">
       <div className="w-full max-w-[900px] px-8 flex flex-col">
-
+        
         <header className="flex justify-between items-end mb-12" style={{ paddingTop: '50px' }}>
           <div>
             <Link href="/agents-market" className="text-[13px] font-bold text-gray-500 hover:text-[#eaff04] mb-3 inline-block transition uppercase tracking-wider">
@@ -188,37 +213,37 @@ export default function CreateAgentPage() {
         </header>
 
         {error && (
-          <div className="mb-6 bg-red-900/40 border border-red-500/50 p-4 rounded-xl flex items-center gap-3 text-red-200 min-h-[56px]" style={{ paddingLeft: '2rem', paddingRight: '2rem' }}>
+          <div className="mb-6 bg-red-900/40 border border-red-500/50 p-4 rounded-xl flex items-center gap-3 text-red-200 min-h-[56px]" style={{ paddingLeft: '1.25rem', paddingRight: '1.25rem' }}>
             <span className="text-xl">⚠️</span> {error}
           </div>
         )}
 
         <div style={{ backgroundColor: '#151821', border: '1px solid #1F2937', borderRadius: '1.25rem', padding: '2.5rem' }}>
           <form className="flex flex-col gap-10">
-
+            
             {/* Block 1: Basic Identity */}
             <div className="flex flex-col gap-6">
               <h3 className="text-[18px] font-bold text-white tracking-wide border-b border-[#1F2937] pb-3 ml-1">Basic Identity</h3>
-
+              
               <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-
+                
                 {/* Emoji Block */}
                 <div className="md:col-span-3">
                   <label className={labelClass}>Emoji</label>
-                  <div className="flex items-center gap-3 bg-[#0B0E14] border border-[#1F2937] rounded-xl px-4 h-[56px] w-full">
+                  <div className="flex items-center gap-3 bg-[#0B0E14] border border-[#1F2937] rounded-xl px-4 h-[50px] w-full">
                     <div className="relative" ref={emojiPickerRef}>
                       <button
                         type="button"
                         onClick={() => { setShowEmojiPicker(!showEmojiPicker); setIsAiEmojiActive(false); }}
-                        className={`w-[42px] h-[42px] flex items-center justify-center text-2xl transition-all rounded-lg ${!isAiEmojiActive ? 'bg-[#151821] border border-[#eaff04]/30 shadow-inner' : 'opacity-30 grayscale'}`}
+                        className={`w-[36px] h-[36px] flex items-center justify-center text-xl transition-all rounded-lg ${!isAiEmojiActive ? 'bg-[#151821] border border-[#eaff04]/30' : 'opacity-30 grayscale'}`}
                         title="Manual Selection"
                       >
                         {!isAiEmojiActive ? formData.emoji : '🤖'}
                       </button>
                       {showEmojiPicker && (
-                        <div className="absolute z-50 top-[55px] left-0 shadow-2xl">
-                          <EmojiPicker
-                            onEmojiClick={onEmojiClick}
+                        <div className="absolute z-50 top-[45px] left-0 shadow-2xl">
+                          <EmojiPicker 
+                            onEmojiClick={onEmojiClick} 
                             theme={Theme.DARK}
                             width={320}
                             height={450}
@@ -226,11 +251,11 @@ export default function CreateAgentPage() {
                         </div>
                       )}
                     </div>
-                    <div className="w-[1px] h-[24px] bg-[#1F2937]/60"></div>
-                    <button
-                      type="button"
+                    <div className="w-[1px] h-[20px] bg-[#1F2937]/60"></div>
+                    <button 
+                      type="button" 
                       onClick={toggleAiEmoji}
-                      className={`flex-1 flex items-center justify-center gap-2 h-[42px] text-[11px] font-bold uppercase tracking-wider transition rounded-lg ${isAiEmojiActive ? 'text-[#eaff04] bg-[#eaff04]/10 border border-[#eaff04]/30' : 'text-gray-500 hover:text-white bg-[#151821] border border-transparent'}`}
+                      className={`flex-1 flex items-center justify-center gap-2 h-[36px] text-[10px] font-bold uppercase tracking-wider transition rounded-lg ${isAiEmojiActive ? 'text-[#eaff04] bg-[#eaff04]/10 border border-[#eaff04]/30' : 'text-gray-500 hover:text-white bg-[#151821] border border-transparent'}`}
                     >
                       <span>✨</span> AI Emoji
                     </button>
@@ -239,36 +264,36 @@ export default function CreateAgentPage() {
 
                 <div className="md:col-span-6">
                   <label className={labelClass}>Name</label>
-                  <input
-                    type="text"
+                  <input 
+                    type="text" 
                     name="name"
                     value={formData.name}
                     onChange={handleChange}
                     style={commonInputStyles}
-                    placeholder="e.g. Protocol Oracle"
+                    placeholder="e.g. News Flasher"
                   />
                 </div>
 
                 {/* Color Block */}
                 <div className="md:col-span-3">
                   <label className={labelClass}>Color</label>
-                  <div className="flex items-center gap-4 bg-[#0B0E14] border border-[#1F2937] rounded-xl px-4 h-[56px] w-full">
-                    <div className={`w-[34px] h-[34px] rounded-md overflow-hidden border transition-all ${!isAiColorActive ? 'border-[#eaff04]/30' : 'opacity-30 grayscale border-[#1F2937]'} flex-shrink-0 flex items-center justify-center`}>
-                      <input
-                        type="color"
-                        value={formData.colorHex}
+                  <div className="flex items-center gap-4 bg-[#0B0E14] border border-[#1F2937] rounded-xl px-4 h-[50px] w-full">
+                    <div className={`w-[30px] h-[30px] rounded-md overflow-hidden border transition-all ${!isAiColorActive ? 'border-[#eaff04]/30' : 'opacity-30 grayscale border-[#1F2937]'} flex-shrink-0 flex items-center justify-center ml-1`}>
+                      <input 
+                        type="color" 
+                        value={formData.colorHex} 
                         onChange={handleManualColorChange}
                         disabled={isAiColorActive}
-                        className="w-[180%] h-[180%] cursor-pointer scale-150 border-none bg-transparent"
+                        className="w-[180%] h-[180%] cursor-pointer scale-150 border-none bg-transparent" 
                       />
                     </div>
-                    <div className="w-[1px] h-[24px] bg-[#1F2937]/60"></div>
-                    <button
-                      type="button"
+                    <div className="w-[1px] h-[20px] bg-[#1F2937]/60"></div>
+                    <button 
+                      type="button" 
                       onClick={toggleAiColor}
-                      className={`flex-1 flex items-center justify-center gap-2 h-[42px] text-[11px] font-bold uppercase tracking-wider transition rounded-lg ${isAiColorActive ? 'text-[#eaff04] bg-[#eaff04]/10 border border-[#eaff04]/30' : 'text-gray-500 hover:text-white bg-[#151821] border border-transparent'}`}
+                      className={`flex-1 flex items-center justify-center gap-2 h-[36px] text-[10px] font-bold uppercase tracking-wider transition rounded-lg ${isAiColorActive ? 'text-[#eaff04] bg-[#eaff04]/10 border border-[#eaff04]/30' : 'text-gray-500 hover:text-white bg-[#151821] border border-transparent'}`}
                     >
-                      <span className="text-[13px]">✨</span> AI Color
+                      <span className="text-[12px]">✨</span> AI Color
                     </button>
                   </div>
                 </div>
@@ -279,16 +304,16 @@ export default function CreateAgentPage() {
                 <div>
                   <label className={labelClass}>Topic</label>
                   <div className="relative">
-                    <select
+                    <select 
                       name="topic"
                       value={formData.topic}
                       onChange={handleChange}
                       style={commonInputStyles}
-                      className="appearance-none cursor-pointer"
+                      className="appearance-none cursor-pointer pr-10"
                     >
                       {topics.map(t => <option key={t} value={t}>{t}</option>)}
                     </select>
-                    <div className="pointer-events-none absolute inset-y-0 right-8 flex items-center text-[10px] text-gray-500">
+                    <div className="pointer-events-none absolute inset-y-0 right-5 flex items-center text-[10px] text-gray-500">
                       ▼
                     </div>
                   </div>
@@ -296,13 +321,13 @@ export default function CreateAgentPage() {
 
                 <div>
                   <label className={labelClass}>Sub-Topic</label>
-                  <input
-                    type="text"
+                  <input 
+                    type="text" 
                     name="subTopic"
                     value={formData.subTopic}
                     onChange={handleChange}
                     style={commonInputStyles}
-                    placeholder="e.g. Cryptocurrency"
+                    placeholder="e.g. Analysis"
                   />
                 </div>
               </div>
@@ -314,15 +339,15 @@ export default function CreateAgentPage() {
                 <h3 className="text-[18px] font-bold text-white tracking-wide">Persona details</h3>
                 <span className="text-[10px] font-bold text-[#eaff04] uppercase px-3 h-[28px] flex items-center rounded bg-[#eaff04]/10 border border-[#eaff04]/20 hidden sm:flex">Vector Search Enabled</span>
               </div>
-
+              
               <div>
                 <label className={labelClass}>System Prompt & Identity Directives</label>
-                <textarea
+                <textarea 
                   name="personaDetails"
                   value={formData.personaDetails}
                   onChange={handleChange}
-                  rows="3"
-                  style={{ ...commonInputStyles, height: 'auto', paddingTop: '1.25rem', paddingBottom: '1.25rem', minHeight: '120px' }}
+                  rows="3" 
+                  style={{ ...commonInputStyles, height: 'auto', paddingTop: '1rem', paddingBottom: '1rem', minHeight: '120px' }}
                   className="font-mono leading-relaxed resize-y"
                   placeholder="You are an uncompromising analyst... Core focus: Truths and algorithms."
                 ></textarea>
@@ -330,8 +355,8 @@ export default function CreateAgentPage() {
 
               <div>
                 <label className={labelClass}>Response Style Guidance</label>
-                <input
-                  type="text"
+                <input 
+                  type="text" 
                   name="responseStyle"
                   value={formData.responseStyle}
                   onChange={handleChange}
@@ -346,37 +371,37 @@ export default function CreateAgentPage() {
               <div className="flex justify-between items-center border-b border-[#1F2937] pb-3 mb-2 ml-1">
                 <h3 className="text-[18px] font-bold text-white tracking-wide">Data Sources (RSS)</h3>
               </div>
-
+              
               <div className="space-y-4">
                 {formData.rssFeeds.map((feed, index) => (
                   <div key={index} className="flex flex-col sm:flex-row items-end gap-4 pb-4 border-b border-[#1F2937]/50 last:border-0 last:pb-0 px-1">
                     <div className="flex-1 w-full">
                       <label className="text-[10px] font-bold text-gray-500 uppercase mb-1.5 block ml-1">Feed Name</label>
-                      <input
-                        type="text"
+                      <input 
+                        type="text" 
                         value={feed.name}
                         onChange={(e) => handleFeedChange(index, 'name', e.target.value)}
                         style={commonInputStyles}
-                        placeholder="Feed Title"
+                        placeholder="Feed Title" 
                       />
                     </div>
                     <div className="flex-1 w-full">
                       <label className="text-[10px] font-bold text-gray-500 uppercase mb-1.5 block ml-1">Feed URL</label>
-                      <input
-                        type="url"
+                      <input 
+                        type="url" 
                         value={feed.url}
                         onChange={(e) => handleFeedChange(index, 'url', e.target.value)}
                         style={commonInputStyles}
                         className="font-mono"
-                        placeholder="https://..."
+                        placeholder="https://..." 
                       />
                     </div>
                     {formData.rssFeeds.length > 1 && (
                       <div className="pb-0 w-full sm:w-auto flex justify-end">
-                        <button
-                          type="button"
+                        <button 
+                          type="button" 
                           onClick={() => removeFeed(index)}
-                          className="h-[56px] px-8 rounded-xl text-red-500/60 hover:text-red-400 hover:bg-red-400/10 border border-[#1F2937] hover:border-red-400/20 transition flex items-center justify-center cursor-pointer"
+                          className="h-[50px] px-6 rounded-xl text-red-500/60 hover:text-red-400 hover:bg-red-400/10 border border-[#1F2937] hover:border-red-400/20 transition flex items-center justify-center cursor-pointer" 
                           title="Remove feed"
                         >
                           ✕
@@ -388,8 +413,8 @@ export default function CreateAgentPage() {
               </div>
 
               <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-2 px-1">
-                <button
-                  type="button"
+                <button 
+                  type="button" 
                   onClick={addFeed}
                   style={secondaryButtonStyle}
                   className="hover:bg-[#eaff04]/10 hover:border-[#eaff04]"
@@ -407,7 +432,7 @@ export default function CreateAgentPage() {
               <div className="text-[14px] text-gray-500 italic hidden sm:block">
                 Ready to deploy your agent into the market?
               </div>
-              <button
+              <button 
                 type="button"
                 onClick={handleSubmit}
                 disabled={loading}
