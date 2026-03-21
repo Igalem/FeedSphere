@@ -29,8 +29,7 @@ export default function CreateAgentPage() {
   const [isAiEmojiActive, setIsAiEmojiActive] = useState(false);
 
   const topics = ['Tech', 'Sports', 'Gaming', 'News', 'Entertainment', 'Finance', 'Health'];
-  
-  // Close emoji picker when clicking outside
+
   useEffect(() => {
     function handleClickOutside(event) {
       if (emojiPickerRef.current && !emojiPickerRef.current.contains(event.target)) {
@@ -48,16 +47,16 @@ export default function CreateAgentPage() {
 
   const onEmojiClick = (emojiData) => {
     setFormData(prev => ({ ...prev, emoji: emojiData.emoji }));
-    setIsAiEmojiActive(false); // Turn off AI Emoji if manually picking
+    setIsAiEmojiActive(false);
     setShowEmojiPicker(false);
   };
 
   const toggleAiEmoji = () => {
     setIsAiEmojiActive(!isAiEmojiActive);
     if (!isAiEmojiActive) {
-      setFormData(prev => ({ ...prev, emoji: '✨' })); // Placeholder visual for AI Emoji
+      setFormData(prev => ({ ...prev, emoji: '✨' }));
     } else {
-      setFormData(prev => ({ ...prev, emoji: '🤖' })); // Revert to default
+      setFormData(prev => ({ ...prev, emoji: '🤖' }));
     }
   };
 
@@ -67,7 +66,7 @@ export default function CreateAgentPage() {
 
   const handleManualColorChange = (e) => {
     setFormData(prev => ({ ...prev, colorHex: e.target.value }));
-    setIsAiColorActive(false); // Turn off AI Color if manually picking
+    setIsAiColorActive(false);
   };
 
   const handleFeedChange = (index, field, value) => {
@@ -103,8 +102,8 @@ export default function CreateAgentPage() {
       const res = await fetch('/api/agents', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          ...formData, 
+        body: JSON.stringify({
+          ...formData,
           rssFeeds: validFeeds,
           meta: {
             ai_color: isAiColorActive,
@@ -123,15 +122,28 @@ export default function CreateAgentPage() {
     }
   };
 
-  // Increased standard padding to px-8 for even more space
-  const inputClass = "bg-[#0B0E14] border border-[#1F2937] rounded-xl px-8 h-[56px] placeholder-gray-600 focus:outline-none focus:border-[#eaff04] transition-all text-[15px] text-white w-full";
-  const labelClass = "block text-[12px] font-bold text-gray-500 mb-2 uppercase tracking-wider pl-1";
+  // FORCE INLINE PADDING STYLES to override any global CSS conflicts
+  const commonInputStyles = {
+    paddingLeft: '1rem',     // 32px
+    paddingRight: '1rem',    // 32px
+    height: '50px',
+    backgroundColor: '#0B0E14',
+    border: '1px solid #1F2937',
+    borderRadius: '0.75rem',
+    outline: 'none',
+    color: 'white',
+    fontSize: '15px',
+    width: '100%',
+    transition: 'all 0.2s',
+  };
+
+  const labelClass = "block text-[12px] font-bold text-gray-500 mb-2 uppercase tracking-wider ml-1";
 
   const primaryButtonStyle = {
     backgroundColor: '#eaff04',
     color: '#000',
     height: '56px',
-    padding: '0 2rem',
+    padding: '0 2.5rem',
     borderRadius: '0.75rem',
     fontSize: '15px',
     fontWeight: 'bold',
@@ -139,7 +151,7 @@ export default function CreateAgentPage() {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: '0.5rem',
+    gap: '0.6rem',
     cursor: 'pointer',
     transition: 'opacity 0.2s',
   };
@@ -148,7 +160,7 @@ export default function CreateAgentPage() {
     backgroundColor: 'transparent',
     color: '#eaff04',
     height: '56px',
-    padding: '0 1.5rem',
+    padding: '0 2rem',
     borderRadius: '0.75rem',
     fontSize: '14px',
     fontWeight: 'bold',
@@ -156,7 +168,7 @@ export default function CreateAgentPage() {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: '0.5rem',
+    gap: '0.6rem',
     cursor: 'pointer',
     transition: 'all 0.2s',
   };
@@ -164,7 +176,7 @@ export default function CreateAgentPage() {
   return (
     <div className="w-full flex justify-center pb-24 font-sans text-white">
       <div className="w-full max-w-[900px] px-8 flex flex-col">
-        
+
         <header className="flex justify-between items-end mb-12" style={{ paddingTop: '50px' }}>
           <div>
             <Link href="/agents-market" className="text-[13px] font-bold text-gray-500 hover:text-[#eaff04] mb-3 inline-block transition uppercase tracking-wider">
@@ -176,21 +188,21 @@ export default function CreateAgentPage() {
         </header>
 
         {error && (
-          <div className="mb-6 bg-red-900/40 border border-red-500/50 p-4 rounded-xl flex items-center gap-3 text-red-200 min-h-[56px] px-8">
+          <div className="mb-6 bg-red-900/40 border border-red-500/50 p-4 rounded-xl flex items-center gap-3 text-red-200 min-h-[56px]" style={{ paddingLeft: '2rem', paddingRight: '2rem' }}>
             <span className="text-xl">⚠️</span> {error}
           </div>
         )}
 
         <div style={{ backgroundColor: '#151821', border: '1px solid #1F2937', borderRadius: '1.25rem', padding: '2.5rem' }}>
           <form className="flex flex-col gap-10">
-            
+
             {/* Block 1: Basic Identity */}
             <div className="flex flex-col gap-6">
-              <h3 className="text-[18px] font-bold text-white tracking-wide border-b border-[#1F2937] pb-3 px-1">Basic Identity</h3>
-              
+              <h3 className="text-[18px] font-bold text-white tracking-wide border-b border-[#1F2937] pb-3 ml-1">Basic Identity</h3>
+
               <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-                
-                {/* Emoji Selector */}
+
+                {/* Emoji Block */}
                 <div className="md:col-span-3">
                   <label className={labelClass}>Emoji</label>
                   <div className="flex items-center gap-3 bg-[#0B0E14] border border-[#1F2937] rounded-xl px-4 h-[56px] w-full">
@@ -198,28 +210,27 @@ export default function CreateAgentPage() {
                       <button
                         type="button"
                         onClick={() => { setShowEmojiPicker(!showEmojiPicker); setIsAiEmojiActive(false); }}
-                        className={`w-[40px] h-[40px] flex items-center justify-center text-2xl transition-all rounded-lg ${!isAiEmojiActive ? 'bg-[#151821] border border-[#eaff04]/30' : 'opacity-40 grayscale'}`}
-                        title="Manual Picker"
+                        className={`w-[42px] h-[42px] flex items-center justify-center text-2xl transition-all rounded-lg ${!isAiEmojiActive ? 'bg-[#151821] border border-[#eaff04]/30 shadow-inner' : 'opacity-30 grayscale'}`}
+                        title="Manual Selection"
                       >
                         {!isAiEmojiActive ? formData.emoji : '🤖'}
                       </button>
                       {showEmojiPicker && (
-                        <div className="absolute z-50 top-[50px] left-0">
-                          <EmojiPicker 
-                            onEmojiClick={onEmojiClick} 
+                        <div className="absolute z-50 top-[55px] left-0 shadow-2xl">
+                          <EmojiPicker
+                            onEmojiClick={onEmojiClick}
                             theme={Theme.DARK}
-                            width={300}
-                            height={400}
+                            width={320}
+                            height={450}
                           />
                         </div>
                       )}
                     </div>
-                    <div className="w-[1px] h-[24px] bg-[#1F2937]"></div>
-                    <button 
-                      type="button" 
+                    <div className="w-[1px] h-[24px] bg-[#1F2937]/60"></div>
+                    <button
+                      type="button"
                       onClick={toggleAiEmoji}
-                      className={`flex-1 flex items-center justify-center gap-2 h-[40px] text-[11px] font-bold uppercase tracking-wider transition rounded-lg ${isAiEmojiActive ? 'text-[#eaff04] bg-[#eaff04]/10 border border-[#eaff04]/30' : 'text-gray-500 hover:text-white bg-[#151821] border border-transparent'}`}
-                      title="AI Emoji Picker"
+                      className={`flex-1 flex items-center justify-center gap-2 h-[42px] text-[11px] font-bold uppercase tracking-wider transition rounded-lg ${isAiEmojiActive ? 'text-[#eaff04] bg-[#eaff04]/10 border border-[#eaff04]/30' : 'text-gray-500 hover:text-white bg-[#151821] border border-transparent'}`}
                     >
                       <span>✨</span> AI Emoji
                     </button>
@@ -228,12 +239,12 @@ export default function CreateAgentPage() {
 
                 <div className="md:col-span-6">
                   <label className={labelClass}>Name</label>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     name="name"
                     value={formData.name}
                     onChange={handleChange}
-                    className={inputClass} 
+                    style={commonInputStyles}
                     placeholder="e.g. Protocol Oracle"
                   />
                 </div>
@@ -241,25 +252,23 @@ export default function CreateAgentPage() {
                 {/* Color Block */}
                 <div className="md:col-span-3">
                   <label className={labelClass}>Color</label>
-                  <div className="flex items-center gap-3 bg-[#0B0E14] border border-[#1F2937] rounded-xl px-4 h-[56px] w-full">
-                    <div className={`w-[32px] h-[32px] rounded-md overflow-hidden border transition-all ${!isAiColorActive ? 'border-[#eaff04]/30' : 'opacity-40 grayscale border-[#1F2937]'} flex-shrink-0 ml-1`}>
-                      <input 
-                        type="color" 
-                        value={formData.colorHex} 
+                  <div className="flex items-center gap-4 bg-[#0B0E14] border border-[#1F2937] rounded-xl px-4 h-[56px] w-full">
+                    <div className={`w-[34px] h-[34px] rounded-md overflow-hidden border transition-all ${!isAiColorActive ? 'border-[#eaff04]/30' : 'opacity-30 grayscale border-[#1F2937]'} flex-shrink-0 flex items-center justify-center`}>
+                      <input
+                        type="color"
+                        value={formData.colorHex}
                         onChange={handleManualColorChange}
                         disabled={isAiColorActive}
-                        className="w-[150%] h-[150%] -translate-x-1/4 -translate-y-1/4 border-none bg-transparent cursor-pointer block" 
-                        title="Manual Picker"
+                        className="w-[180%] h-[180%] cursor-pointer scale-150 border-none bg-transparent"
                       />
                     </div>
-                    <div className="w-[1px] h-[24px] bg-[#1F2937]"></div>
-                    <button 
-                      type="button" 
+                    <div className="w-[1px] h-[24px] bg-[#1F2937]/60"></div>
+                    <button
+                      type="button"
                       onClick={toggleAiColor}
-                      className={`flex-1 flex items-center justify-center gap-2 h-[40px] text-[11px] font-bold uppercase tracking-wider transition rounded-lg ${isAiColorActive ? 'text-[#eaff04] bg-[#eaff04]/10 border border-[#eaff04]/30' : 'text-gray-500 hover:text-white bg-[#151821] border border-transparent'}`}
-                      title="AI Color Picker"
+                      className={`flex-1 flex items-center justify-center gap-2 h-[42px] text-[11px] font-bold uppercase tracking-wider transition rounded-lg ${isAiColorActive ? 'text-[#eaff04] bg-[#eaff04]/10 border border-[#eaff04]/30' : 'text-gray-500 hover:text-white bg-[#151821] border border-transparent'}`}
                     >
-                      <span className="text-[14px]">✨</span> AI Color
+                      <span className="text-[13px]">✨</span> AI Color
                     </button>
                   </div>
                 </div>
@@ -270,15 +279,16 @@ export default function CreateAgentPage() {
                 <div>
                   <label className={labelClass}>Topic</label>
                   <div className="relative">
-                    <select 
+                    <select
                       name="topic"
                       value={formData.topic}
                       onChange={handleChange}
-                      className={`${inputClass} appearance-none cursor-pointer pr-12`}
+                      style={commonInputStyles}
+                      className="appearance-none cursor-pointer"
                     >
                       {topics.map(t => <option key={t} value={t}>{t}</option>)}
                     </select>
-                    <div className="pointer-events-none absolute inset-y-0 right-8 flex items-center text-xs text-gray-400">
+                    <div className="pointer-events-none absolute inset-y-0 right-8 flex items-center text-[10px] text-gray-500">
                       ▼
                     </div>
                   </div>
@@ -286,13 +296,13 @@ export default function CreateAgentPage() {
 
                 <div>
                   <label className={labelClass}>Sub-Topic</label>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     name="subTopic"
                     value={formData.subTopic}
                     onChange={handleChange}
+                    style={commonInputStyles}
                     placeholder="e.g. Cryptocurrency"
-                    className={inputClass} 
                   />
                 </div>
               </div>
@@ -300,71 +310,73 @@ export default function CreateAgentPage() {
 
             {/* Block 2: Persona details */}
             <div className="flex flex-col gap-6 pt-2 border-t border-[#1F2937] border-dashed">
-              <div className="flex justify-between items-center border-b border-[#1F2937] pb-3 mb-2 px-1">
+              <div className="flex justify-between items-center border-b border-[#1F2937] pb-3 mb-2 ml-1">
                 <h3 className="text-[18px] font-bold text-white tracking-wide">Persona details</h3>
                 <span className="text-[10px] font-bold text-[#eaff04] uppercase px-3 h-[28px] flex items-center rounded bg-[#eaff04]/10 border border-[#eaff04]/20 hidden sm:flex">Vector Search Enabled</span>
               </div>
-              
+
               <div>
                 <label className={labelClass}>System Prompt & Identity Directives</label>
-                <textarea 
+                <textarea
                   name="personaDetails"
                   value={formData.personaDetails}
                   onChange={handleChange}
-                  rows="3" 
-                  className="w-full bg-[#0B0E14] border border-[#1F2937] rounded-xl px-8 py-5 placeholder-gray-600 focus:outline-none focus:border-[#eaff04] transition-all text-[15px] font-mono leading-relaxed text-white resize-y min-h-[112px]"
+                  rows="3"
+                  style={{ ...commonInputStyles, height: 'auto', paddingTop: '1.25rem', paddingBottom: '1.25rem', minHeight: '120px' }}
+                  className="font-mono leading-relaxed resize-y"
                   placeholder="You are an uncompromising analyst... Core focus: Truths and algorithms."
                 ></textarea>
               </div>
 
               <div>
                 <label className={labelClass}>Response Style Guidance</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   name="responseStyle"
                   value={formData.responseStyle}
                   onChange={handleChange}
+                  style={commonInputStyles}
                   placeholder="Short, direct, data-driven, occasionally cynical."
-                  className={inputClass} 
                 />
               </div>
             </div>
 
             {/* Block 3: Data Sources */}
             <div className="flex flex-col gap-6 pt-2 border-t border-[#1F2937] border-dashed">
-              <div className="flex justify-between items-center border-b border-[#1F2937] pb-3 mb-2 px-1">
+              <div className="flex justify-between items-center border-b border-[#1F2937] pb-3 mb-2 ml-1">
                 <h3 className="text-[18px] font-bold text-white tracking-wide">Data Sources (RSS)</h3>
               </div>
-              
+
               <div className="space-y-4">
                 {formData.rssFeeds.map((feed, index) => (
                   <div key={index} className="flex flex-col sm:flex-row items-end gap-4 pb-4 border-b border-[#1F2937]/50 last:border-0 last:pb-0 px-1">
                     <div className="flex-1 w-full">
-                      <label className="text-[10px] font-bold text-gray-500 uppercase mb-1.5 block pl-1">Feed Name</label>
-                      <input 
-                        type="text" 
+                      <label className="text-[10px] font-bold text-gray-500 uppercase mb-1.5 block ml-1">Feed Name</label>
+                      <input
+                        type="text"
                         value={feed.name}
                         onChange={(e) => handleFeedChange(index, 'name', e.target.value)}
-                        placeholder="Feed Title" 
-                        className={inputClass} 
+                        style={commonInputStyles}
+                        placeholder="Feed Title"
                       />
                     </div>
                     <div className="flex-1 w-full">
-                      <label className="text-[10px] font-bold text-gray-500 uppercase mb-1.5 block pl-1">Feed URL</label>
-                      <input 
-                        type="url" 
+                      <label className="text-[10px] font-bold text-gray-500 uppercase mb-1.5 block ml-1">Feed URL</label>
+                      <input
+                        type="url"
                         value={feed.url}
                         onChange={(e) => handleFeedChange(index, 'url', e.target.value)}
-                        placeholder="https://..." 
-                        className={`${inputClass} font-mono`} 
+                        style={commonInputStyles}
+                        className="font-mono"
+                        placeholder="https://..."
                       />
                     </div>
                     {formData.rssFeeds.length > 1 && (
                       <div className="pb-0 w-full sm:w-auto flex justify-end">
-                        <button 
-                          type="button" 
+                        <button
+                          type="button"
                           onClick={() => removeFeed(index)}
-                          className="h-[56px] px-8 rounded-xl text-red-500/60 hover:text-red-400 hover:bg-red-400/10 border border-[#1F2937] hover:border-red-400/20 transition flex items-center justify-center cursor-pointer" 
+                          className="h-[56px] px-8 rounded-xl text-red-500/60 hover:text-red-400 hover:bg-red-400/10 border border-[#1F2937] hover:border-red-400/20 transition flex items-center justify-center cursor-pointer"
                           title="Remove feed"
                         >
                           ✕
@@ -376,8 +388,8 @@ export default function CreateAgentPage() {
               </div>
 
               <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-2 px-1">
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   onClick={addFeed}
                   style={secondaryButtonStyle}
                   className="hover:bg-[#eaff04]/10 hover:border-[#eaff04]"
@@ -395,7 +407,7 @@ export default function CreateAgentPage() {
               <div className="text-[14px] text-gray-500 italic hidden sm:block">
                 Ready to deploy your agent into the market?
               </div>
-              <button 
+              <button
                 type="button"
                 onClick={handleSubmit}
                 disabled={loading}
