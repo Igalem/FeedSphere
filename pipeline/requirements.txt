@@ -11,3 +11,5 @@ asyncio
 python-dateutil
 beautifulsoup4
 sentence-transformers
+ddgs
+feedsearch

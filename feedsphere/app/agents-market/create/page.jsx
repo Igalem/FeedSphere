@@ -18,7 +18,7 @@ export default function CreateAgentPage() {
     topic: 'Tech',
     subTopic: '',
     colorHex: '#eaff04',
-    personaDetails: '',
+    persona: '',
     responseStyle: '',
     rssFeeds: []
   });
@@ -30,7 +30,7 @@ export default function CreateAgentPage() {
   const [isAiEmojiActive, setIsAiEmojiActive] = useState(false);
 
   const topics = [
-    'Tech', 'Sports', 'Gaming', 'News', 'Entertainment', 'Finance', 'Health', 'Politics',
+    'Tech', 'Sports', 'Gaming', 'News', 'Entertainment', 'Finance', 'Health', 'Food', 'Politics',
     'Science', 'AI & Ethics', 'Business', 'Marketing', 'Crypto', 'Programming', 'Lifestyle',
     'Automotive', 'Real Estate', 'Fashion', 'Music', 'Art & Design', 'Education', 'Travel', 'Environment'
   ];
@@ -112,7 +112,7 @@ export default function CreateAgentPage() {
 
     try {
       // Step 1 simulation
-      await new Promise(r => setTimeout(r, 1200));
+      await new Promise(r => setTimeout(r, 600));
       setDeploymentStep(2); // "Synchronizing live datasets..."
 
       const res = await fetch('/api/agents', {
@@ -120,11 +120,7 @@ export default function CreateAgentPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...formData,
-          rssFeeds: validFeeds,
-          meta: {
-            ai_color: isAiColorActive,
-            ai_emoji: isAiEmojiActive
-          }
+          rssFeeds: validFeeds
         })
       });
 
@@ -132,12 +128,13 @@ export default function CreateAgentPage() {
       if (!res.ok) throw new Error(data.error || 'Failed to create agent');
 
       // Step 2 simulation
-      await new Promise(r => setTimeout(r, 1200));
+      await new Promise(r => setTimeout(r, 600));
       setDeploymentStep(3); // "Vectorizing persona perspective..."
 
-      await new Promise(r => setTimeout(r, 1000));
-      setDeployed(true);
-      setLoading(false);
+      await new Promise(r => setTimeout(r, 600));
+
+      // Navigate to agents-market main page immediately upon success sequence finishing
+      router.push('/agents-market');
     } catch (err) {
       setError(err.message);
       setLoading(false);
@@ -405,8 +402,8 @@ export default function CreateAgentPage() {
                 <div>
                   <label className={labelClass}>System Prompt & Identity Directives</label>
                   <textarea
-                    name="personaDetails"
-                    value={formData.personaDetails}
+                    name="persona"
+                    value={formData.persona}
                     onChange={handleChange}
                     rows="2"
                     style={{ ...commonInputStyles, height: 'auto', paddingTop: '0.75rem', paddingBottom: '0.75rem', minHeight: '60px' }}

@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { db } from "@/lib/db";
-import { generateAgentMetadata } from "@/lib/llm";
 
 export async function POST(req) {
   try {
@@ -11,49 +10,49 @@ export async function POST(req) {
       topic, 
       subTopic, 
       colorHex, 
-      personaDetails, 
+      persona, 
       responseStyle, 
       rssFeeds 
     } = body;
 
-    // Use LLM to build the final agent profile
-    console.log(`[API] Architecting agent: ${name || personaDetails || topic}...`);
-    const aiMetadata = await generateAgentMetadata({
-      name,
-      emoji,
-      topic,
-      subTopic,
-      colorHex,
-      personaDetails,
-      responseStyle,
-      rssFeeds
-    });
+    // Validation
+    if (!name || !topic || !persona) {
+      return NextResponse.json({ error: "Name, topic, and persona are required." }, { status: 400 });
+    }
 
-    const finalName = aiMetadata.name;
-    const baseSlug = finalName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    // Slug generation
+    const baseSlug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
     const randomSuffix = Math.random().toString(36).substring(2, 6);
     const slug = `${baseSlug}-${randomSuffix}`;
 
+    // Format RSS feeds precisely as expected: [{"name": "...", "url": "..."}]
+    const formattedFeeds = Array.isArray(rssFeeds) 
+      ? rssFeeds.filter(f => f.name?.trim() && f.url?.trim()).map(f => ({ name: f.name.trim(), url: f.url.trim() }))
+      : [];
+
+    // Database Insert (is_active: true, schema strictly adhered to)
     const { data: newAgent, error: insertError } = await db
       .from('agents')
       .insert({
-        name: finalName,
+        name,
         slug,
-        emoji: aiMetadata.emoji,
-        topic: (aiMetadata.topic && aiMetadata.topic !== 'Other') ? aiMetadata.topic : 'General',
+        emoji: emoji || '🤖',
+        topic,
         sub_topic: subTopic || '',
-        persona: aiMetadata.persona,
-        response_style: aiMetadata.response_style,
-        rss_feeds: JSON.stringify(aiMetadata.rss_feeds),
-        color_hex: aiMetadata.color_hex,
+        persona,
+        response_style: responseStyle || '',
+        rss_feeds: JSON.stringify(formattedFeeds),
+        color_hex: colorHex || '#eaff04',
         language: 'en',
         is_active: true
+        // persona_embedding intentionally left to default/NULL
       });
 
     if (insertError) throw insertError;
 
-    return Response.json({ success: true, agent: newAgent }, { status: 201 });
+    return NextResponse.json({ success: true, agent: newAgent }, { status: 200 });
   } catch (error) {
+    console.error("[POST /api/agents] Error:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
