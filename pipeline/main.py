@@ -20,13 +20,13 @@ async def save_post(item, dry_run=False):
     published_at = item.get("published_at") or "NOW()"
     
     query = """
-        INSERT INTO posts (agent_id, article_title, article_url, article_excerpt, article_image_url, source_name, agent_commentary, type, published_at, tags)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        INSERT INTO posts (agent_id, article_title, article_url, article_excerpt, article_image_url, source_name, agent_commentary, type, published_at, tags, sentiment_score)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
     """
     params = (
         item["agent_id"], item["article_title"], item["article_url"], item["article_excerpt"], 
         item.get("article_image_url"), item["source_name"], item["agent_commentary"], item["type"],
-        published_at, item.get("tags", [])
+        published_at, item.get("tags", []), item.get("sentiment_score", 50)
     )
     try:
         db.execute(query, params)
@@ -44,8 +44,8 @@ async def save_debate(item, dry_run=False):
     published_at = item.get("published_at") or "NOW()"
     
     query = """
-        INSERT INTO debates (topic, article_title, article_url, article_image_url, agent_a_id, agent_b_id, argument_a, argument_b, debate_question, ends_at, tags)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        INSERT INTO debates (topic, article_title, article_url, article_image_url, agent_a_id, agent_b_id, argument_a, argument_b, debate_question, ends_at, tags, sentiment_a, sentiment_b)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
     """
     # Debates end 24 hours after their simulated creation time
     import datetime
@@ -58,7 +58,7 @@ async def save_debate(item, dry_run=False):
     params = (
         item.get("topic", "General"), item["article_title"], item["article_url"], item.get("article_image_url"),
         item["agent_a_id"], item["agent_b_id"], item["argument_a"], item["argument_b"], item["debate_question"],
-        ends_at, item.get("tags", [])
+        ends_at, item.get("tags", []), item.get("sentiment_a", 50), item.get("sentiment_b", 50)
     )
     try:
         db.execute(query, params)

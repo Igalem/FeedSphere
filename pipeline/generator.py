@@ -40,9 +40,9 @@ class Generator:
                      "1. Use your unique voice: {response_style}.\n"
                      "2. Provide a detailed reaction with a variety of word counts across different posts.\n"
                      "3. Keep it concise, maximum 3 rows/lines of text.\n"
-                     "4. Output format: JSON object with 'agent_commentary' (string) and 'tags' (array of 3 high-level PascalCase strings).\n"
+                     "4. Output format: JSON object with 'agent_commentary' (string), 'sentiment_score' (number 0-100), and 'tags' (array of 3 high-level PascalCase strings).\n"
                      "5. Tags MUST be one-word PascalCase (e.g., 'MarchMadness', 'NFLNews', 'SportsAnalysis'). No spaces.\n\n"
-                     "IMPORTANT: Return ONLY a valid JSON object. Do NOT return a list or set of strings. Example: {{\"agent_commentary\": \"...\", \"tags\": [\"...\", \"...\"]}}")
+                     "IMPORTANT: Return ONLY a valid JSON object. Do NOT return a list or set of strings. Example: {{\"agent_commentary\": \"...\", \"sentiment_score\": 50, \"tags\": [\"...\", \"...\"]}}")
         ])
 
         self.perspective_prompt = ChatPromptTemplate.from_messages([
@@ -54,9 +54,9 @@ class Generator:
                      "Rules:\n"
                      "1. Provide a unique point of view based on your persona.\n"
                      "2. References the significance of the event.\n"
-                     "3. Output format: JSON object with 'agent_commentary' (string) and 'tags' (array of 3 high-level PascalCase strings).\n"
+                     "3. Output format: JSON object with 'agent_commentary' (string), 'sentiment_score' (number 0-100), and 'tags' (array of 3 high-level PascalCase strings).\n"
                      "4. Tags MUST be one-word PascalCase (e.g., 'GlobalEconomy', 'TechInnovation', 'ClimatePulse'). No spaces.\n\n"
-                     "IMPORTANT: Return ONLY a valid JSON object. Do NOT return a list or set of strings. Example: {{\"agent_commentary\": \"...\", \"tags\": [\"...\", \"...\"]}}")
+                     "IMPORTANT: Return ONLY a valid JSON object. Do NOT return a list or set of strings. Example: {{\"agent_commentary\": \"...\", \"sentiment_score\": 50, \"tags\": [\"...\", \"...\"]}}")
         ])
 
         self.debate_prompt = ChatPromptTemplate.from_messages([
@@ -71,7 +71,9 @@ class Generator:
                      "Output Format (JSON):\n"
                      "{{\n"
                      "  \"argument_a\": \"2-sentence argument from Agent A's perspective\",\n"
+                     "  \"sentiment_a\": 50,\n"
                      "  \"argument_b\": \"2-sentence counter-argument from Agent B using their unique voice\",\n"
+                     "  \"sentiment_b\": 50,\n"
                      "  \"debate_question\": \"A provocative question for the audience\",\n"
                      "  \"tags\": [\"TagA\", \"TagB\", \"TagC\"]\n"
                      "}}\n\n"
@@ -404,7 +406,9 @@ class Generator:
                 "agent_a_id": agent_a["id"],
                 "agent_b_id": agent_b["id"],
                 "argument_a": self._clean_commentary(data["argument_a"]),
+                "sentiment_a": data.get("sentiment_a", 50),
                 "argument_b": self._clean_commentary(data["argument_b"]),
+                "sentiment_b": data.get("sentiment_b", 50),
                 "debate_question": self._clean_commentary(data["debate_question"]),
                 "tags": tags,
                 "published_at": article.get("published_at")

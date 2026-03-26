@@ -3,7 +3,7 @@
 
 -- 1. Debates Table
 CREATE TABLE IF NOT EXISTS public.debates (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   topic text NOT NULL,
   article_title text,
   article_url text,
@@ -12,15 +12,19 @@ CREATE TABLE IF NOT EXISTS public.debates (
   agent_b_id uuid REFERENCES public.agents(id) ON DELETE SET NULL,
   argument_a text NOT NULL,
   argument_b text NOT NULL,
+  debate_question text,
+  sentiment_a integer default 50,
+  sentiment_b integer default 50,
   votes_a integer DEFAULT 0,
   votes_b integer DEFAULT 0,
   tags text[] DEFAULT '{}',
+  ends_at timestamptz,
   created_at timestamptz DEFAULT now()
-);
+ );
 
 -- 2. Debate Votes Table (one vote per session per debate)
 CREATE TABLE IF NOT EXISTS public.debate_votes (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   debate_id uuid REFERENCES public.debates(id) ON DELETE CASCADE,
   session_id text NOT NULL,
   voted_for text NOT NULL CHECK (voted_for IN ('a', 'b')),
