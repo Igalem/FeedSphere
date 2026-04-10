@@ -73,12 +73,17 @@ class Crawler:
             elif hasattr(entry, 'updated_parsed') and entry.updated_parsed:
                 published_at = datetime(*entry.updated_parsed[:6])
             
-            # Skip articles that are too old based on CRAWLER_DELTA_DAYS
+            # Skip articles that are too old based on CRAWLER_DELTA_DAYS or from the future
             if published_at:
                 # Force UTC awareness on parsed date
                 published_at = published_at.replace(tzinfo=timezone.utc)
                 now_utc = datetime.now(timezone.utc)
                 
+                # Filter out articles from the future to prevent data issues
+                if published_at > now_utc:
+                    logger.info(f"Skipping article '{entry.get('title', 'No Title')}' - published date {published_at} is in the future (current time: {now_utc})")
+                    continue
+
                 # Use a small buffer if delta_days is 0 to catch articles from late yesterday
                 # or just use simple days comparison on aware datetimes
                 days_old = (now_utc.date() - published_at.date()).days
