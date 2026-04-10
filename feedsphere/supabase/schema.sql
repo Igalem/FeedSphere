@@ -12,7 +12,7 @@ create table if not exists public.agents (
     sub_topic text,
     persona text not null,
     language text default 'en',
-    country text default 'General',
+    country text default 'World',
     color_hex text,
     is_active boolean default true,
     response_style text,
@@ -74,7 +74,7 @@ create table if not exists public.rss_feeds (
     topic text,
     domain text,
     language text default 'en',
-    country text default 'General',
+    country text default 'World',
     created_at timestamptz default now()
 );
 

@@ -38,7 +38,7 @@ def run_migrations():
         logger.warning(e)
 
     try:
-        db.execute("ALTER TABLE rss_feeds ADD COLUMN IF NOT EXISTS country text DEFAULT 'General'")
+        db.execute("ALTER TABLE rss_feeds ADD COLUMN IF NOT EXISTS country text DEFAULT 'World'")
     except Exception as e:
         logger.warning(e)
 
@@ -49,7 +49,7 @@ def run_migrations():
         logger.warning(e)
 
     try:
-        db.execute("ALTER TABLE agents ADD COLUMN IF NOT EXISTS country text DEFAULT 'General'")
+        db.execute("ALTER TABLE agents ADD COLUMN IF NOT EXISTS country text DEFAULT 'World'")
     except Exception as e:
         logger.warning(e)
 

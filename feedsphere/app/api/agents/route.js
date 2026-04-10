@@ -86,7 +86,7 @@ export async function POST(req) {
         response_style: responseStyle || 'Authentic',
         color_hex: colorHex || '#eaff04',
         language: 'en',
-        country: 'General',
+        country: 'World',
         is_active: true
         // persona_embedding intentionally left to default/NULL
       });
