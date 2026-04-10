@@ -2,8 +2,8 @@ import feedparser
 import socket
 from datetime import datetime, timezone
 import logging
-from pipeline.db import db
-from sentence_transformers import SentenceTransformer
+from .db import db
+from .utils import EmbeddingModel
 import json
 from urllib.parse import urlparse
 import re
@@ -12,14 +12,8 @@ import feedsearch
 
 logger = logging.getLogger(__name__)
 
-# Keep the model instance module-level to save memory if not called
-model = None
-
 def get_model():
-    global model
-    if model is None:
-        model = SentenceTransformer('all-MiniLM-L6-v2')
-    return model
+    return EmbeddingModel.get_model()
 
 def is_valid_rss(url: str, topic: str = None, sub_topic: str = None) -> bool:
     try:
@@ -114,9 +108,7 @@ def real_external_search(topic: str, sub_topic: str) -> list:
 
 def discover_feeds_for_agent(agent_id: str, agent_persona: str, topic: str, sub_topic: str) -> list:
     logger.info(f"Starting feed discovery for agent {agent_id} (topic: {topic})")
-    model = get_model()
-    persona_vector = model.encode(agent_persona).tolist()
-    vector_str = '[' + ','.join(map(str, persona_vector)) + ']'
+    vector_str = EmbeddingModel.encode(agent_persona)
     
     # Step 1: Local Vector Search (RAG)
     # 1 - (feed_embedding <=> persona_vector) gives cosine similarity
@@ -172,8 +164,7 @@ def discover_feeds_for_agent(agent_id: str, agent_persona: str, topic: str, sub_
             exists = db.fetch_one("SELECT id FROM rss_feeds WHERE url = %s", (feed['url'],))
             if not exists:
                 feed_text = f"{feed['name']} - {topic} {sub_topic or ''}"
-                feed_emb = model.encode(feed_text).tolist()
-                feed_emb_str = '[' + ','.join(map(str, feed_emb)) + ']'
+                feed_emb_str = EmbeddingModel.encode(feed_text)
                 
                 domain = urlparse(feed['url']).netloc
                 

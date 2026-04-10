@@ -1,7 +1,7 @@
 import json
 import subprocess
 import os
-from pipeline.db import db
+from .db import db
 import logging
 
 logging.basicConfig(level=logging.INFO)

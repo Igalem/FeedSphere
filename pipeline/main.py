@@ -3,12 +3,12 @@ import logging
 import json
 import argparse
 import random
-from pipeline.crawler import Crawler
-from pipeline.matchmaker import Matchmaker
-from pipeline.generator import Generator, reset_llm_master
-from pipeline.db import db
-from pipeline.config import settings
-from pipeline.sync_feeds import sync_feeds
+from .crawler import Crawler
+from .matchmaker import Matchmaker
+from .generator import Generator, reset_llm_master
+from .db import db
+from .config import settings
+from .sync_feeds import sync_feeds
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

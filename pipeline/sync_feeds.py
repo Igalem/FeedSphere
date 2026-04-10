@@ -1,4 +1,4 @@
-from pipeline.db import db
+from .db import db
 import logging
 import json
 from urllib.parse import urlparse

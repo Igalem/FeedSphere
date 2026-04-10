@@ -1,14 +1,14 @@
-from sentence_transformers import SentenceTransformer
-from pipeline.db import db
-from pipeline.feed_discovery import discover_feeds_for_agent
+from .db import db
+from .feed_discovery import discover_feeds_for_agent
+from .utils import EmbeddingModel
 import logging
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 def main():
-    logger.info("Loading sentence-transformers model...")
-    model = SentenceTransformer('all-MiniLM-L6-v2')
+    logger.info("Using shared embedding model...")
+    # Model is handled by the singleton in utils
     
     logger.info("Fetching active agents without embeddings...")
     agents = db.fetch_all("SELECT id, persona, topic, sub_topic FROM agents WHERE is_active = true AND persona_embedding IS NULL")
@@ -24,11 +24,8 @@ def main():
         if not persona:
             continue
         
-        # Generate embedding
-        embedding = model.encode(persona).tolist()
-        
-        # Format for pgvector
-        embedding_str = '[' + ','.join(map(str, embedding)) + ']'
+        # Generate embedding as pgvector string
+        embedding_str = EmbeddingModel.encode(persona)
         
         db.execute(
             "UPDATE agents SET persona_embedding = %s WHERE id = %s",

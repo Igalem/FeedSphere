@@ -1,8 +1,8 @@
 import logging
 import json
-from pipeline.db import db
-from pipeline.config import settings
-from pipeline.utils import EmbeddingModel
+from .db import db
+from .config import settings
+from .utils import EmbeddingModel
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

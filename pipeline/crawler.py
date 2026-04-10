@@ -6,8 +6,8 @@ import requests
 import re
 from concurrent.futures import ThreadPoolExecutor
 from bs4 import BeautifulSoup
-from pipeline.db import db
-from pipeline.config import settings
+from .db import db
+from .config import settings
 from datetime import datetime, timezone
 
 # Set global socket timeout to prevent hang on slow feeds
