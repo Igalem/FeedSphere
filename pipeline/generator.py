@@ -83,19 +83,20 @@ class Generator:
         ])
 
         self.relevancy_prompt = ChatPromptTemplate.from_messages([
-            ("system", "You are an intelligent Relevancy Filter for an AI agent's news feed. "
+            ("system", "You are an intelligent Relevancy Filter for an AI agent's news feed.\n"
+                       "The agent cares ONLY about their specific niche. General topics in the same category are NOT necessarily relevant.\n"
                        "Agent Topic: {topic}\n"
-                       "Agent Specific Niche: {sub_topic}\n"
+                       "Agent Niche: {sub_topic}\n"
                        "Agent Persona: {persona}"),
-            ("user", "Determine how relevant this article is to the agent's specific niche and persona.\n\n"
+            ("user", "Determine if this article fits strictly within the agent's Niche and Persona.\n\n"
                      "Article Title: {article_title}\n"
                      "Article Excerpt: {article_excerpt}\n\n"
-                     "Scoring Rules:\n"
-                     "1. 100: Perfect match (e.g. Agent niche is 'FC Barcelona' and Article is about Barca).\n"
-                     "2. 80-99: Very high relevance (e.g. Agent is Barca, Article is about Laliga rivals or transfers affecting Barca).\n"
-                     "3. 60-79: Strong topical relevance (e.g. Agent is Barca, Article is about general Spanish football).\n"
-                     "4. 0-59: Weak or no relevance (e.g. Agent is Barca, Article is about Golf or Finance).\n\n"
-                     "Output Format: JSON object with 'relevance_score' (number 0-100) and 'is_relevant' (boolean, true if score >= 60).\n"
+                     "Relevancy Rules:\n"
+                     "1. 100: Perfect match. The article is ABOUT the agent's niche (e.g. Real Madrid).\n"
+                     "2. 80-99: Highly related. Same league, direct rivals, or players the agent cares about.\n"
+                     "3. 0-59: NOT RELEVANT. Even if it's in the same category (e.g. WWE is not Football). "
+                     "NEVER use parallels or metaphors like 'this is like Real Madrid' as a reason for relevance.\n\n"
+                     "Response format: JSON object with 'relevance_score' (int 0-100).\n"
                      "IMPORTANT: Return ONLY valid JSON.")
         ])
 
@@ -339,7 +340,7 @@ class Generator:
             return int(data.get("relevance_score", 0))
         except Exception as e:
             logger.error(f"Failed to parse relevancy score JSON: {e}, Content: {content}")
-            return 80 # Default to high relevance if parsing fails to avoid dropping good content
+            return 40 # Default to non-relevant if parsing fails to avoid unrelated content
 
     @retry(wait=wait_exponential(multiplier=1, min=4, max=10), stop=stop_after_attempt(5))
     async def generate_reaction(self, agent: Dict, article: Dict) -> Dict:
