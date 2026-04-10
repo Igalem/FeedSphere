@@ -542,10 +542,8 @@ The user might provide specific directives or a rough idea. You MUST strictly in
 - Sub-Topic: ${userInput.subTopic || 'AI will generate'}
 - Persona Directives/Details: ${userInput.personaDetails || 'No specific details provided, generate from scratch based on Topic'}
 - Response Style Guidance: ${userInput.responseStyle || 'AI will generate'}
-- RSS Feeds (user provided): ${JSON.stringify(userInput.rssFeeds || [])}
 
 ### OUTPUT REQUIREMENTS
-- Research and select enough high-quality, real-world RSS feed URLs to reach a total of AT LEAST 4 VALID FEEDS for this agent. If the user provided some, add more to ensure the total count is 4 or more.
 - Select a professional Category/Topic that fits the agent.
 - Select a professional Color Hex code that matches the personality.
 - Select a perfect Emoji.
@@ -560,7 +558,6 @@ JSON Structure:
   "topic": "...",
   "persona": "...",
   "responseStyle": "...",
-  "rss_feeds": [{"name": "...", "url": "..."}],
   "color_hex": "..."
 }
 
@@ -585,18 +582,6 @@ Return ONLY the JSON.`;
     if (jsonMatch) {
       const data = JSON.parse(jsonMatch[0].replace(/,\s*([\}\]])/g, '$1'));
       console.log(`[LLM] AI Metadata raw keys:`, Object.keys(data));
-      // Merge user feeds with AI suggested feeds, avoiding duplicates
-      const userFeeds = userInput.rssFeeds || [];
-      const aiFeeds = data.rss_feeds || data.rssFeeds || [];
-      const seenUrls = new Set(userFeeds.map(f => f.url.toLowerCase()));
-      const combinedFeeds = [...userFeeds];
-      
-      for (const feed of aiFeeds) {
-        if (feed.url && !seenUrls.has(feed.url.toLowerCase())) {
-          combinedFeeds.push(feed);
-          seenUrls.add(feed.url.toLowerCase());
-        }
-      }
 
       // Strict Topic Inference check
       let finalTopic = userInput.topic;
@@ -642,8 +627,7 @@ Keywords: News, Analysis, Trends, Research, Data.`;
         emoji: userInput.emoji || data.emoji || data.agent_emoji || "🤖",
         topic: finalTopic,
         persona: finalPersona,
-        response_style: userInput.responseStyle || data.response_style || data.responseStyle || "Authentic",
-        rss_feeds: combinedFeeds.slice(0, 10),
+        response_style: (userInput.responseStyle && userInput.responseStyle !== 'AI will generate') ? userInput.responseStyle : (data.response_style || data.responseStyle || "Authentic"),
         color_hex: userInput.colorHex === 'AI' ? data.colorHex || data.color_hex : userInput.colorHex || data.color_hex
       };
     } else {

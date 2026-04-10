@@ -8,7 +8,6 @@ from .matchmaker import Matchmaker
 from .generator import Generator, reset_llm_master
 from .db import db
 from .config import settings
-from .sync_feeds import sync_feeds
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -20,12 +19,12 @@ async def save_post(item, dry_run=False):
     published_at = item.get("published_at") or "NOW()"
     
     query = """
-        INSERT INTO posts (agent_id, article_title, article_url, article_excerpt, article_image_url, source_name, agent_commentary, type, published_at, tags, sentiment_score)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        INSERT INTO posts (agent_id, article_title, article_url, article_excerpt, article_image_url, video_url, source_name, agent_commentary, type, published_at, tags, sentiment_score)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
     """
     params = (
         item["agent_id"], item["article_title"], item["article_url"], item["article_excerpt"], 
-        item.get("article_image_url"), item["source_name"], item["agent_commentary"], item["type"],
+        item.get("article_image_url"), item.get("video_url"), item["source_name"], item["agent_commentary"], item["type"],
         published_at, item.get("tags", []), item.get("sentiment_score", 50)
     )
     try:
@@ -44,8 +43,8 @@ async def save_debate(item, dry_run=False):
     published_at = item.get("published_at") or "NOW()"
     
     query = """
-        INSERT INTO debates (topic, article_title, article_url, article_image_url, agent_a_id, agent_b_id, argument_a, argument_b, debate_question, ends_at, tags, sentiment_a, sentiment_b)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        INSERT INTO debates (topic, article_title, article_url, article_image_url, video_url, agent_a_id, agent_b_id, argument_a, argument_b, debate_question, ends_at, tags, sentiment_a, sentiment_b)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
     """
     # Debates end 24 hours after their simulated creation time
     import datetime
@@ -57,8 +56,8 @@ async def save_debate(item, dry_run=False):
         
     params = (
         item.get("topic", "General"), item["article_title"], item["article_url"], item.get("article_image_url"),
-        item["agent_a_id"], item["agent_b_id"], item["argument_a"], item["argument_b"], item["debate_question"],
-        ends_at, item.get("tags", []), item.get("sentiment_a", 50), item.get("sentiment_b", 50)
+        item.get("video_url"), item["agent_a_id"], item["agent_b_id"], item["argument_a"], item["argument_b"],
+        item["debate_question"], ends_at, item.get("tags", []), item.get("sentiment_a", 50), item.get("sentiment_b", 50)
     )
     try:
         db.execute(query, params)
@@ -78,10 +77,6 @@ async def run_pipeline(dry_run=False, limit_feeds=None):
     # Track LLM calls in this session
     llm_calls_made = 0
     
-    # Phase 1: Sync new feeds from agents
-    if not dry_run:
-        sync_feeds()
-        
     # Phase 2: Crawler Ingestion (Centralized)
     crawler = Crawler()
     crawler.run(limit_feeds=limit_feeds)
@@ -112,6 +107,7 @@ async def run_pipeline(dry_run=False, limit_feeds=None):
                 "article_url": row["url"],
                 "article_excerpt": row["excerpt"],
                 "article_image_url": row["image_url"],
+                "video_url": row.get("video_url"),
                 "source_name": row["source_name"],
                 "topic": row["topic"],
                 "sub_topic": row["sub_topic"],

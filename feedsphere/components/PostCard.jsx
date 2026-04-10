@@ -221,10 +221,7 @@ export default function PostCard({ post }) {
 
       {post.type === 'perspective' ? (
         post.article_url && (
-          <a
-            href={post.article_url}
-            target="_blank"
-            rel="noopener noreferrer"
+          <div
             className="perspective-media-block"
             style={{
               marginTop: '16px',
@@ -235,7 +232,20 @@ export default function PostCard({ post }) {
               position: 'relative'
             }}
           >
-            {post.article_image_url && (
+            {post.video_url && post.video_url.includes('youtube.com/embed') ? (
+              <div className="perspective-video-wrapper" style={{ width: '100%', aspectRatio: '16/9' }}>
+                <iframe
+                  width="100%"
+                  height="100%"
+                  src={post.video_url}
+                  title="YouTube video player"
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                  style={{ display: 'block' }}
+                ></iframe>
+              </div>
+            ) : post.article_image_url && (
               <div className="perspective-image-wrapper">
                 <img
                   src={post.article_image_url}
@@ -245,15 +255,17 @@ export default function PostCard({ post }) {
                 />
               </div>
             )}
-            <div 
+            <a 
+              href={post.article_url}
+              target="_blank"
+              rel="noopener noreferrer"
               className="perspective-meta-overlay" 
               style={{ 
-                position: 'absolute',
-                bottom: 0,
-                left: 0,
-                right: 0,
+                position: 'relative',
+                display: 'block',
                 padding: '12px 16px', 
                 background: '#0a0a0f', // Solid dark background to match --bg
+                textDecoration: 'none'
               }}
             >
               <div className="perspective-source-name" translate="no" style={{ color: 'rgba(255,255,255,0.5)', fontSize: '10px', textTransform: 'lowercase', marginBottom: '2px', letterSpacing: '0.4px' }}>
@@ -266,17 +278,28 @@ export default function PostCard({ post }) {
               >
                 {post.article_title}
               </div>
-            </div>
-          </a>
+            </a>
+          </div>
         )
       ) : (
-        <a
-          href={post.article_url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className={`post-article ${post.article_image_url ? 'has-image' : 'no-image'}`}
+        <div
+          className={`post-article ${post.article_image_url || post.video_url ? 'has-media' : 'no-image'}`}
+          style={{ display: 'flex', flexDirection: 'column' }}
         >
-          {post.article_image_url && (
+          {post.video_url && post.video_url.includes('youtube.com/embed') ? (
+            <div className="article-video-wrapper" style={{ width: '100%', aspectRatio: '16/9' }}>
+               <iframe
+                  width="100%"
+                  height="100%"
+                  src={post.video_url}
+                  title="YouTube video player"
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                  style={{ borderTopLeftRadius: '12px', borderTopRightRadius: '12px' }}
+                ></iframe>
+            </div>
+          ) : post.article_image_url && (
             <div className="article-image-wrapper">
               <img
                 src={post.article_image_url}
@@ -285,14 +308,20 @@ export default function PostCard({ post }) {
               />
             </div>
           )}
-          <div className="article-content">
+          <a
+            href={post.article_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="article-content"
+            style={{ textDecoration: 'none' }}
+          >
             <div className="article-category" translate="no" style={{ color: agent.color_hex }}>
               {post.source_name || 'RSS Feed'}
             </div>
             <div className="article-title content-auto-dir" dir="auto">{post.article_title}</div>
             <div className="article-excerpt content-auto-dir" dir="auto">{post.article_excerpt}</div>
-          </div>
-        </a>
+          </a>
+        </div>
       )}
 
 

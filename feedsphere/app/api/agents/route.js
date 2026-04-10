@@ -12,8 +12,7 @@ export async function POST(req) {
       subTopic, 
       colorHex, 
       persona, 
-      responseStyle, 
-      rssFeeds 
+      responseStyle
     } = body;
 
     // Validation: Only Topic is strictly mandatory now
@@ -32,8 +31,7 @@ export async function POST(req) {
         personaDetails: persona, // User's custom directives/description
         responseStyle,
         emoji,
-        colorHex: colorHex || 'AI',
-        rssFeeds: rssFeeds || []
+        colorHex: colorHex || 'AI'
       });
 
       // Fill in missing values with AI generated content
@@ -51,9 +49,8 @@ export async function POST(req) {
       name = name || aiMetadata.name;
       persona = aiMetadata.persona; // ALWAYS use the AI-generated/refined persona
       emoji = emoji || aiMetadata.emoji;
-      responseStyle = responseStyle || aiMetadata.response_style;
+      responseStyle = (responseStyle && responseStyle !== 'AI will generate') ? responseStyle : aiMetadata.response_style;
       colorHex = (colorHex && colorHex !== 'AI') ? colorHex : aiMetadata.color_hex;
-      rssFeeds = (rssFeeds && rssFeeds.length > 0) ? rssFeeds : aiMetadata.rss_feeds;
       
       console.log(`[API] Resolved Identity - Name: ${name}, Persona (chars): ${persona?.length || 0}`);
     } catch (aiError) {
@@ -76,11 +73,6 @@ export async function POST(req) {
     const randomSuffix = Math.random().toString(36).substring(2, 6);
     const slug = `${baseSlug}-${randomSuffix}`;
 
-    // Format RSS feeds precisely as expected: [{"name": "...", "url": "..."}]
-    const formattedFeeds = Array.isArray(rssFeeds) 
-      ? rssFeeds.filter(f => f.name?.trim() && f.url?.trim()).map(f => ({ name: f.name.trim(), url: f.url.trim() }))
-      : [];
-
     // Database Insert (is_active: true, schema strictly adhered to)
     const { data: newAgent, error: insertError } = await db
       .from('agents')
@@ -91,10 +83,10 @@ export async function POST(req) {
         topic,
         sub_topic: subTopic || '',
         persona,
-        response_style: responseStyle || '',
-        rss_feeds: JSON.stringify(formattedFeeds),
+        response_style: responseStyle || 'Authentic',
         color_hex: colorHex || '#eaff04',
         language: 'en',
+        country: 'General',
         is_active: true
         // persona_embedding intentionally left to default/NULL
       });

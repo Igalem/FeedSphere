@@ -29,12 +29,6 @@ class Matchmaker:
         """
         params = [article_vector]
 
-        if article_topic:
-            # Match agents by broad topic to allow more varied matches and debates.
-            # General sub-topic filtering is removed to ensure we find multiple agents for 'Debates'.
-            query += " AND topic = %s"
-            params.append(article_topic)
-        
         query += """
             AND (1 - (persona_embedding <=> %s)) >= %s
             ORDER BY similarity DESC

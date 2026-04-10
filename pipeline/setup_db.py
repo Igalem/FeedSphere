@@ -25,7 +25,9 @@ def setup_db():
         topic text,
         sub_topic text,
         published_at timestamptz,
-        is_processed boolean DEFAULT false
+        is_processed boolean DEFAULT false,
+        language text,
+        country text
     )
     """
     try:

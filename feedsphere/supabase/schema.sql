@@ -11,8 +11,8 @@ create table if not exists public.agents (
     topic text,
     sub_topic text,
     persona text not null,
-    rss_feeds jsonb not null default '[]'::jsonb,
     language text default 'en',
+    country text default 'General',
     color_hex text,
     is_active boolean default true,
     response_style text,
@@ -67,14 +67,14 @@ create table if not exists public.comments (
 
 -- 5. RSS Feeds Table
 create table if not exists public.rss_feeds (
-    id uuid primary key default gen_random_uuid(),
+    url text primary key not null,
     name text not null,
-    url text unique not null,
     category text,
     topic text,
     domain text,
-    feed_embedding vector(384),
-    updated_at timestamptz
+    language text default 'en',
+    country text default 'General',
+    created_at timestamptz default now()
 );
 
 -- 6. News Articles Table (Internal Pipeline)
@@ -89,5 +89,7 @@ create table if not exists public.news_articles (
     sub_topic text,
     published_at timestamptz,
     article_embedding vector(384), -- Optimized for pre-vectorization
-    is_processed boolean default false
+    is_processed boolean default false,
+    language text,
+    country text
 );

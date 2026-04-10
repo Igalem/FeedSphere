@@ -28,7 +28,7 @@ class Crawler:
 
     def get_feeds(self):
         # Fetch feeds from rss_feeds table
-        feeds = db.fetch_all("SELECT name, url, topic, category FROM rss_feeds")
+        feeds = db.fetch_all("SELECT name, url, topic, category, language, country FROM rss_feeds")
         return feeds
 
     def is_duplicate(self, url):
@@ -46,7 +46,7 @@ class Crawler:
             return True
         return False
 
-    def fetch_feed(self, feed_url, feed_name=None, feed_topic=None, feed_sub_topic=None):
+    def fetch_feed(self, feed_url, feed_name=None, feed_topic=None, feed_sub_topic=None, feed_language=None, feed_country=None):
         logger.info(f"Fetching feed: {feed_url}")
         try:
             # Use a short timeout for the specific request
@@ -103,52 +103,82 @@ class Crawler:
                 logger.warning(f"Skipping article '{title}' - no topic provided for feed.")
                 continue
 
-            # Try to find an image
-            image_url = None
+            # 1. NEW: Identify Video URL first (specifically YouTube)
+            video_url = None
             if 'media_content' in entry and entry.media_content:
-                image_url = entry.media_content[0].get('url')
-            
-            if not image_url and 'links' in entry:
-                for link in entry.links:
-                    if link.get('rel') == 'enclosure' and link.get('type', '').startswith('image'):
-                        image_url = link.get('href')
+                for mc in entry.media_content:
+                    v_url = mc.get('url', '')
+                    if "youtube.com" in v_url or "vimeo.com" in v_url or v_url.endswith(('.mp4', '.mov')):
+                        video_url = v_url
                         break
             
+            if not video_url:
+                # Check for YouTube links in the entry or content
+                for link in entry.get('links', []):
+                    l_href = link.get('href', '')
+                    if "youtube.com/embed/" in l_href:
+                        video_url = l_href
+                        break
+
+            # 2. Extract best possible Image (Prioritizing static images/thumbnails)
+            image_url = None
+            
+            # --- PRIORITY 1: media_thumbnail within media_content ---
+            if 'media_content' in entry and entry.media_content:
+                for mc in entry.media_content:
+                    if 'thumbnails' in mc and mc.thumbnails:
+                        image_url = mc.thumbnails[0].get('url')
+                        if image_url: break
+
+            # --- PRIORITY 2: Standalone media_thumbnail ---
             if not image_url and 'media_thumbnail' in entry and entry.media_thumbnail:
                 image_url = entry.media_thumbnail[0].get('url')
-
+            
+            # --- PRIORITY 3: Actual image in enclosures ---
             if not image_url:
-                # Check enclosures directly
                 for enclosure in entry.get('enclosures', []):
-                    if enclosure.get('type', '').startswith('image'):
+                    e_type = enclosure.get('type', '')
+                    if e_type.startswith('image'):
                         image_url = enclosure.get('href')
                         break
+            
+            # --- PRIORITY 4: Specific image types in media_content ---
+            if not image_url and 'media_content' in entry:
+                for mc in entry.media_content:
+                    m_url = mc.get('url', '')
+                    m_type = mc.get('type', '')
+                    if m_type.startswith('image') or m_url.lower().endswith(('.jpg', '.jpeg', '.png', '.webp', '.gif')):
+                        image_url = m_url
+                        break
 
+            # --- PRIORITY 5: Scrape OG Image ---
             if not image_url:
-                # Look for img tag in summary/content
-                img_tag = soup.find('img')
-                if img_tag:
-                    image_url = img_tag.get('src')
-                elif 'content' in entry:
-                    # Also check full content if available
-                    for c in entry.content:
-                        content_soup = BeautifulSoup(c.value, "html.parser")
-                        img_tag = content_soup.find('img')
-                        if img_tag:
-                            image_url = img_tag.get('src')
-                            break
-
-            if not image_url:
-                # If still no image, try to fetch the article page for og:image
                 try:
-                    page_res = requests.get(url, timeout=5, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'})
+                    page_res = requests.get(url, timeout=5, headers={'User-Agent': 'Mozilla/5.0'})
                     if page_res.status_code == 200:
                         page_soup = BeautifulSoup(page_res.text, "html.parser")
                         og_image = page_soup.find("meta", property="og:image")
                         if og_image:
                             image_url = og_image.get("content")
-                except Exception as e:
-                    logger.debug(f"Failed to scrape og:image for {url}: {e}")
+                except Exception:
+                    pass
+
+            # 3. Fallback/Transformation Logic
+            # If we have a video but NO image, use the video thumbnail as the image
+            if not image_url and video_url and "youtube.com/embed/" in video_url:
+                video_id = video_url.split("youtube.com/embed/")[1].split("?")[0].split("/")[0]
+                image_url = f"https://img.youtube.com/vi/{video_id}/maxresdefault.jpg"
+                logger.info(f"Using YouTube thumbnail as fallback image: {image_url}")
+
+            # Final check: Don't let video URLs leak into image_url field unless they are thumbnails
+            if image_url and any(ext in image_url.lower() for ext in ["youtube.com/embed/", "player.vimeo.com", ".mp4", ".mov"]):
+                if "youtube.com/embed/" in image_url:
+                    video_id = image_url.split("youtube.com/embed/")[1].split("?")[0].split("/")[0]
+                    # Attempt to extract video URL if not already found
+                    if not video_url: video_url = image_url
+                    image_url = f"https://img.youtube.com/vi/{video_id}/maxresdefault.jpg"
+                else:
+                    image_url = None # Let fallback logic handle it
 
             if not image_url:
                 # Fallback to topic-based images with variety
@@ -214,27 +244,33 @@ class Crawler:
                 "article_url": url,
                 "article_excerpt": clean_summary[:500],
                 "article_image_url": image_url,
+                "video_url": video_url,
                 "topic": topic,
                 "sub_topic": sub_topic,
                 "source_name": feed_name or self.clean_source_name(getattr(d.feed, 'title', feed_url)),
-                "published_at": published_at
+                "published_at": published_at,
+                "language": feed_language,
+                "country": feed_country
             }
             
             # Save incrementally for better tracking
             try:
                 db.execute("""
-                    INSERT INTO news_articles (title, url, excerpt, image_url, source_name, topic, sub_topic, published_at)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                    INSERT INTO news_articles (title, url, excerpt, image_url, video_url, source_name, topic, sub_topic, published_at, language, country)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                     ON CONFLICT (url) DO NOTHING
                 """, (
                     article["article_title"],
                     article["article_url"],
                     article["article_excerpt"],
                     article["article_image_url"],
+                    article.get("video_url"),
                     article["source_name"],
                     article["topic"],
                     article["sub_topic"],
-                    article["published_at"]
+                    article["published_at"],
+                    article.get("language"),
+                    article.get("country")
                 ))
             except Exception as e:
                 logger.error(f"Error saving article to news_articles: {e}")
@@ -256,7 +292,7 @@ class Crawler:
         # Process feeds concurrently using ThreadPoolExecutor
         # limit to 10 threads to avoid overwhelming sources
         with ThreadPoolExecutor(max_workers=10) as executor:
-            future_to_feed = {executor.submit(self.fetch_feed, f["url"], f.get("name"), f.get("topic"), f.get("category")): f for f in feeds}
+            future_to_feed = {executor.submit(self.fetch_feed, f["url"], f.get("name"), f.get("topic"), f.get("category"), f.get("language"), f.get("country")): f for f in feeds}
             for future in future_to_feed:
                 try:
                     articles = future.result()
