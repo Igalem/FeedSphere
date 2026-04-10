@@ -43,7 +43,7 @@ class Generator:
                      "3. Keep it concise, maximum 3 rows/lines of text.\n"
                      "4. Output format: JSON object with 'agent_commentary' (string), 'sentiment_score' (number 0-100), and 'tags' (array of 3 high-level PascalCase strings).\n"
                      "5. Tags MUST be one-word PascalCase (e.g., 'MarchMadness', 'NFLNews', 'SportsAnalysis'). No spaces.\n\n"
-                     "IMPORTANT: Return ONLY a valid JSON object. Do NOT return a list or set of strings. Example: {{\"agent_commentary\": \"...\", \"sentiment_score\": 50, \"tags\": [\"...\", \"...\"]}}")
+                     "IMPORTANT: Return ONLY a valid JSON object. Do NOT return a list or set of strings. Be expressive with the sentiment_score (0=Extremely Critical, 50=Neutral, 100=Extremely Bullish). Example: {{\"agent_commentary\": \"...\", \"sentiment_score\": 85, \"tags\": [\"...\", \"...\"]}}")
         ])
 
         self.perspective_prompt = ChatPromptTemplate.from_messages([
@@ -57,7 +57,7 @@ class Generator:
                      "2. References the significance of the event.\n"
                      "3. Output format: JSON object with 'agent_commentary' (string), 'sentiment_score' (number 0-100), and 'tags' (array of 3 high-level PascalCase strings).\n"
                      "4. Tags MUST be one-word PascalCase (e.g., 'GlobalEconomy', 'TechInnovation', 'ClimatePulse'). No spaces.\n\n"
-                     "IMPORTANT: Return ONLY a valid JSON object. Do NOT return a list or set of strings. Example: {{\"agent_commentary\": \"...\", \"sentiment_score\": 50, \"tags\": [\"...\", \"...\"]}}")
+                     "IMPORTANT: Return ONLY a valid JSON object. Do NOT return a list or set of strings. Be expressive with the sentiment_score (0=Extremely Critical, 50=Neutral, 100=Extremely Bullish). Example: {{\"agent_commentary\": \"...\", \"sentiment_score\": 15, \"tags\": [\"...\", \"...\"]}}")
         ])
 
         self.debate_prompt = ChatPromptTemplate.from_messages([
@@ -68,13 +68,14 @@ class Generator:
                      "Agent A Persona: {persona_a}\n"
                      "Agent B Persona: {persona_b}\n\n"
                      "Rules:\n"
-                     "1. Tags MUST be one-word PascalCase (e.g., 'DebatePulse', 'TopicWar').\n\n"
+                     "1. Tags MUST be one-word PascalCase (e.g., 'DebatePulse', 'TopicWar').\n"
+                     "2. Be expressive with sentiment values (0-100). Avoid defaulting to 50 if the agent has a clear stance.\n\n"
                      "Output Format (JSON):\n"
                      "{{\n"
                      "  \"argument_a\": \"2-sentence argument from Agent A's perspective\",\n"
-                     "  \"sentiment_a\": 50,\n"
+                     "  \"sentiment_a\": 85,\n"
                      "  \"argument_b\": \"2-sentence counter-argument from Agent B using their unique voice\",\n"
-                     "  \"sentiment_b\": 50,\n"
+                     "  \"sentiment_b\": 20,\n"
                      "  \"debate_question\": \"A provocative question for the audience\",\n"
                      "  \"tags\": [\"TagA\", \"TagB\", \"TagC\"]\n"
                      "}}\n\n"
@@ -356,6 +357,7 @@ class Generator:
                 "article_image_url": article.get("article_image_url"),
                 "source_name": article["source_name"],
                 "agent_commentary": self._clean_commentary(data.get("agent_commentary", "")),
+                "sentiment_score": data.get("sentiment_score", 50),
                 "tags": tags,
                 "published_at": article.get("published_at")
             }
@@ -375,6 +377,7 @@ class Generator:
                     "article_image_url": article.get("article_image_url"),
                     "source_name": article["source_name"],
                     "agent_commentary": self._clean_commentary(commentary),
+                    "sentiment_score": 50,
                     "tags": [],
                     "published_at": article.get("published_at")
                 }
@@ -390,6 +393,7 @@ class Generator:
                 "article_image_url": article.get("article_image_url"),
                 "source_name": article["source_name"],
                 "agent_commentary": self._clean_commentary(content),
+                "sentiment_score": 50,
                 "tags": [],
                 "published_at": article.get("published_at")
             }
@@ -422,6 +426,7 @@ class Generator:
                 "article_image_url": article.get("article_image_url"),
                 "source_name": article["source_name"],
                 "agent_commentary": self._clean_commentary(data.get("agent_commentary", "")),
+                "sentiment_score": data.get("sentiment_score", 50),
                 "tags": tags,
                 "published_at": article.get("published_at")
             }
@@ -440,6 +445,7 @@ class Generator:
                     "article_image_url": article.get("article_image_url"),
                     "source_name": article["source_name"],
                     "agent_commentary": self._clean_commentary(commentary),
+                    "sentiment_score": 50,
                     "tags": [],
                     "published_at": article.get("published_at")
                 }
@@ -455,6 +461,7 @@ class Generator:
                 "article_image_url": article.get("article_image_url"),
                 "source_name": article["source_name"],
                 "agent_commentary": self._clean_commentary(content),
+                "sentiment_score": 50,
                 "tags": [],
                 "published_at": article.get("published_at")
             }
