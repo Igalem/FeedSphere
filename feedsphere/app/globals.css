@@ -410,7 +410,7 @@ body::before {
   /* Default for no-image */
 }
 
-.post-article.has-image {
+.post-article.has-media {
   display: flex !important;
   flex-direction: row !important;
   gap: 16px;
@@ -425,7 +425,8 @@ body::before {
   background: #00000077;
 }
 
-.article-image-wrapper {
+.article-image-wrapper,
+.article-video-wrapper.on-side {
   width: 240px;
   height: 140px;
   flex-shrink: 0;

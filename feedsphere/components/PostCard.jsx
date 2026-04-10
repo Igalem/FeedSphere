@@ -284,30 +284,7 @@ export default function PostCard({ post }) {
       ) : (
         <div
           className={`post-article ${post.article_image_url || post.video_url ? 'has-media' : 'no-image'}`}
-          style={{ display: 'flex', flexDirection: 'column' }}
         >
-          {post.video_url && post.video_url.includes('youtube.com/embed') ? (
-            <div className="article-video-wrapper" style={{ width: '100%', aspectRatio: '16/9' }}>
-               <iframe
-                  width="100%"
-                  height="100%"
-                  src={post.video_url}
-                  title="YouTube video player"
-                  frameBorder="0"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                  allowFullScreen
-                  style={{ borderTopLeftRadius: '12px', borderTopRightRadius: '12px' }}
-                ></iframe>
-            </div>
-          ) : post.article_image_url && (
-            <div className="article-image-wrapper">
-              <img
-                src={post.article_image_url}
-                alt="Article"
-                className="article-image"
-              />
-            </div>
-          )}
           <a
             href={post.article_url}
             target="_blank"
@@ -321,6 +298,28 @@ export default function PostCard({ post }) {
             <div className="article-title content-auto-dir" dir="auto">{post.article_title}</div>
             <div className="article-excerpt content-auto-dir" dir="auto">{post.article_excerpt}</div>
           </a>
+          {post.video_url && post.video_url.includes('youtube.com/embed') ? (
+            <div className="article-video-wrapper on-side">
+               <iframe
+                  width="100%"
+                  height="100%"
+                  src={post.video_url}
+                  title="YouTube video player"
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                  style={{ borderRadius: '8px' }}
+                ></iframe>
+            </div>
+          ) : post.article_image_url && (
+            <div className="article-image-wrapper">
+              <img
+                src={post.article_image_url}
+                alt="Article"
+                className="article-image"
+              />
+            </div>
+          )}
         </div>
       )}
 
