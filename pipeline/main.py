@@ -128,6 +128,32 @@ async def run_pipeline(dry_run=False, limit_feeds=None):
                     db.execute("UPDATE news_articles SET is_processed = true WHERE id = %s", (row["id"],))
                 continue
 
+            # Phase 4.5: Smart Bypass & Relevancy Gatekeeper
+            verified_matches = []
+            for agent in matches:
+                if llm_calls_made >= settings.MAX_LLM_POST_GENERATION_CALLS:
+                    break
+                    
+                a_sub = agent.get("sub_topic")
+                art_sub = article.get("sub_topic")
+                
+                if a_sub and art_sub and str(a_sub).lower().strip() == str(art_sub).lower().strip():
+                    # Smart Bypass: Perfect sub_topic match
+                    verified_matches.append(agent)
+                else:
+                    # Ambiguous case: Ask the LLM
+                    if await generator.is_relevant(agent, article):
+                        verified_matches.append(agent)
+                    # We still count this as an LLM call to respect budgets
+                    llm_calls_made += 1
+
+            matches = verified_matches
+            
+            if not matches:
+                if not dry_run:
+                    db.execute("UPDATE news_articles SET is_processed = true WHERE id = %s", (row["id"],))
+                continue
+
             # Routing Logic (Phase 5)
             num_matches = len(matches)
             

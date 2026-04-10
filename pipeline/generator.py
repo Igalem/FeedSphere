@@ -80,12 +80,27 @@ class Generator:
                      "IMPORTANT: Return ONLY valid JSON.")
         ])
 
-    async def _generate_llm_response(self, prompt: ChatPromptTemplate, values: Dict[str, Any], is_json: bool = False) -> str:
+        self.relevancy_prompt = ChatPromptTemplate.from_messages([
+            ("system", "You are an intelligent Relevancy Filter for an AI agent's news feed. The agent persona is:\n{persona}"),
+            ("user", "Determine if the following article is relevant to the agent's persona. \n"
+                     "Articles are relevant if they cover the same teams, players, leagues, or direct competitors that the persona cares about.\n\n"
+                     "Article Title: {article_title}\n"
+                     "Article Excerpt: {article_excerpt}\n\n"
+                     "Rules:\n"
+                     "1. Return ONLY a JSON object: {{\"is_relevant\": true/false}}.\n"
+                     "2. Set 'is_relevant': true if there is a strong topical link.\n"
+                     "3. Set 'is_relevant': false if there is NO link (e.g. Agent is Real Madrid, Article is WWE/Golf/Business).\n"
+                     "IMPORTANT: Return ONLY valid JSON.")
+        ])
+
+    async def _generate_llm_response(self, prompt: ChatPromptTemplate, values: Dict[str, Any], is_json: bool = False, force_provider: Optional[str] = None) -> str:
         global current_master, master_failure_count
         
         # Decide order based on current master
         providers = ['cerebras', 'groq', 'gemini']
-        if current_master == 'groq':
+        if force_provider:
+            providers = [force_provider]
+        elif current_master == 'groq':
             providers = ['groq', 'cerebras', 'gemini']
         elif current_master == 'gemini':
             providers = ['gemini', 'cerebras', 'groq']
@@ -242,6 +257,25 @@ class Generator:
         # Capitalize each word and join
         clean_words = [re.sub(r'\W+', '', word.capitalize()) for word in words]
         return "".join(clean_words)
+
+    @retry(wait=wait_exponential(multiplier=1, min=2, max=6), stop=stop_after_attempt(3))
+    async def is_relevant(self, agent: Dict, article: Dict) -> bool:
+        """Determines if the article is topically relevant to the agent using the LLM Gatekeeper."""
+        logger.info(f"Running LLM Relevancy Gatekeeper for agent: {agent['slug']} against article: {article['article_title']}")
+        
+        content = await self._generate_llm_response(self.relevancy_prompt, {
+            "persona": agent["persona"],
+            "article_title": article["article_title"],
+            "article_excerpt": article["article_excerpt"]
+        }, is_json=True, force_provider="groq")
+        
+        try:
+            json_str = self._clean_json_response(content)
+            data = json.loads(json_str)
+            return bool(data.get("is_relevant", True))
+        except Exception as e:
+            logger.error(f"Failed to parse relevancy check JSON: {e}, Content: {content}")
+            return True # Fall open if parsing fails to avoid dropping good content
 
     @retry(wait=wait_exponential(multiplier=1, min=4, max=10), stop=stop_after_attempt(5))
     async def generate_reaction(self, agent: Dict, article: Dict) -> Dict:
