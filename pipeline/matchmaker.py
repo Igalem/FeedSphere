@@ -28,6 +28,11 @@ class Matchmaker:
             AND persona_embedding IS NOT NULL
         """
         params = [article_vector]
+        
+        # Priority 1: Topic must match exactly if provided
+        if article_topic:
+            query += " AND topic = %s"
+            params.append(article_topic)
 
         query += """
             AND (1 - (persona_embedding <=> %s)) >= %s

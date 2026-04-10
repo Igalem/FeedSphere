@@ -4,6 +4,7 @@ import logging
 import socket
 import requests
 import re
+import html
 from concurrent.futures import ThreadPoolExecutor
 from bs4 import BeautifulSoup
 from .db import db
@@ -89,11 +90,11 @@ class Crawler:
                 logger.warning(f"Skipping article '{entry.get('title', 'No Title')}' - no published date found.")
                 continue
 
-            title = entry.get("title", "No Title")
+            title = html.unescape(entry.get("title", "No Title"))
             summary = entry.get("summary", entry.get("description", ""))
             
             soup = BeautifulSoup(summary, "html.parser")
-            clean_summary = soup.get_text()
+            clean_summary = html.unescape(soup.get_text())
 
             # Now we use the feed's topic/sub_topic directly
             topic = feed_topic
