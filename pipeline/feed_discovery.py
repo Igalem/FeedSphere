@@ -12,33 +12,42 @@ from ddgs import DDGS
 import feedsearch
 import requests
 from bs4 import BeautifulSoup
+import numpy as np
 
 logger = logging.getLogger(__name__)
 
 def get_model():
     return EmbeddingModel.get_model()
 
-def is_valid_rss(url: str, topic: str = None, sub_topic: str = None) -> bool:
+def cosine_similarity(v1, v2):
+    """Calculates cosine similarity between two vector strings or arrays."""
+    if isinstance(v1, str):
+        v1 = np.array(json.loads(v1))
+    if isinstance(v2, str):
+        v2 = np.array(json.loads(v2))
+    
+    dot_product = np.dot(v1, v2)
+    norm_v1 = np.linalg.norm(v1)
+    norm_v2 = np.linalg.norm(v2)
+    return dot_product / (norm_v1 * norm_v2)
+
+def is_valid_rss(url: str, topic: str = None, sub_topic: str = None, persona_vector: str = None) -> bool:
     try:
         if "youtube.com" in url.lower():
             logger.info(f"Invalid RSS (Skipping youtube for now): {url}")
             return False
 
-        # Strict 5-second timeout
         socket.setdefaulttimeout(5)
         d = feedparser.parse(url)
         
-        # 1. Must be valid XML/RSS
         if hasattr(d, 'bozo_exception') and isinstance(d.bozo_exception, Exception):
             logger.info(f"Invalid RSS (bozo_exception): {url}")
             return False
             
-        # 2. Must have content
         if not hasattr(d, 'entries') or len(d.entries) == 0:
             logger.info(f"Invalid RSS (no entries): {url}")
             return False
             
-        # 3. Freshness Check
         entry = d.entries[0]
         published_at = None
         if hasattr(entry, 'published_parsed') and entry.published_parsed:
@@ -54,36 +63,39 @@ def is_valid_rss(url: str, topic: str = None, sub_topic: str = None) -> bool:
         now_utc = datetime.now(timezone.utc)
         days_old = (now_utc.date() - published_at.date()).days
         
-        # Use settings.RSS_FEED_DELTA_DAYS instead of hardcoded value
         if days_old > settings.RSS_FEED_DELTA_DAYS:
             logger.info(f"Invalid RSS (too old, {days_old} days): {url}")
             return False
 
-        # 4. Semantic Sanity Check
+        # --- Option C: Hybrid Semantic Sanity Check ---
         if sub_topic or topic:
             feed_title = d.feed.get('title', '').lower()
             feed_desc = d.feed.get('description', '').lower()
             
             match_found = False
             
-            # Helper to check if any significant word of the keyword is in the text
-            def keyword_match(keyword, text):
-                if not keyword or not text:
-                    return False
-                words = [w.strip().lower() for w in keyword.split() if len(w.strip()) > 2]
-                text_lower = text.lower()
-                return any(word in text_lower for word in words)
+            # 1. Exact Phrase Check (High Priority)
+            if sub_topic and (sub_topic.lower() in feed_title or sub_topic.lower() in feed_desc):
+                match_found = True
+            elif topic and (topic.lower() in feed_title or topic.lower() in feed_desc):
+                match_found = True
 
-            if sub_topic:
-                if keyword_match(sub_topic, feed_title) or keyword_match(sub_topic, feed_desc):
-                    match_found = True
+            # 2. Vector Fallback (Smart Check)
+            if not match_found and persona_vector:
+                # Combined feed text to represent the "essence" of the feed
+                feed_essence = f"{d.feed.get('title', '')} {d.feed.get('description', '')}".strip()
+                if feed_essence:
+                    feed_vector_str = EmbeddingModel.encode(feed_essence)
+                    similarity = cosine_similarity(persona_vector, feed_vector_str)
                     
-            if topic and not match_found:
-                if keyword_match(topic, feed_title) or keyword_match(topic, feed_desc):
-                    match_found = True
-            
+                    if similarity >= 0.75:
+                        logger.info(f"Feed passed Vector Fallback (sim: {similarity:.2f}): {url}")
+                        match_found = True
+                    else:
+                        logger.info(f"Feed failed Vector Fallback (sim: {similarity:.2f}): {url}")
+
             if not match_found:
-                logger.info(f"Feed failed semantic check for topic '{topic}' / sub_topic '{sub_topic}': {url}")
+                logger.info(f"Feed failed hybrid sanity check for topic '{topic}' / sub_topic '{sub_topic}': {url}")
                 return False
             
         return True
@@ -92,11 +104,7 @@ def is_valid_rss(url: str, topic: str = None, sub_topic: str = None) -> bool:
         return False
 
 def real_external_search(topic: str, sub_topic: str) -> list:
-    """Uses Feedspot first, then DDG for domain discovery and feedsearch for RSS extraction."""
     urls = []
-    
-    # Try Feedspot FIRST
-    # Prioritize sub_topic as it is more specific, otherwise use topic
     search_keyword = sub_topic or topic or ""
     if search_keyword:
         import urllib.parse
@@ -118,7 +126,6 @@ def real_external_search(topic: str, sub_topic: str) -> list:
         except Exception as e:
             logger.error(f"Feedspot extraction error: {e}")
 
-    # Fallback to DDG if Feedspot found very few
     if len(urls) < 5:
         query = f"{sub_topic or ''} {topic or ''} blog".strip()
         logger.info(f"DDG Search Query: {query}")
@@ -131,7 +138,6 @@ def real_external_search(topic: str, sub_topic: str) -> list:
 
         for domain in domains:
             try:
-                # feedsearch.search returns a list of FeedInfo objects
                 feeds = feedsearch.search(domain, timeout=5)
                 if feeds:
                     for f in feeds:
@@ -140,12 +146,9 @@ def real_external_search(topic: str, sub_topic: str) -> list:
             except Exception as e:
                 logger.error(f"Feedsearch Error on {domain}: {e}")
                 
-    # Return unique URLs up to a reasonable limit
     return list(set(urls))
 
 def discover_candidate_feeds(search_topic: str, search_sub_topic: str, persona_vector: str, limit: int) -> list:
-    """Helper to find valid feeds for a specific topic/sub-topic combination."""
-    # 1. RAG Search
     query = """
         SELECT name, url, 1 - (feed_embedding <=> %s) AS similarity
         FROM rss_feeds
@@ -163,12 +166,12 @@ def discover_candidate_feeds(search_topic: str, search_sub_topic: str, persona_v
     valid_feeds = [{"name": r["name"], "url": r["url"]} for r in results]
 
     if len(valid_feeds) < limit:
-        # 2. JIT Discovery
         candidates = real_external_search(search_topic, search_sub_topic)
         for url in candidates:
             if len(valid_feeds) >= limit:
                 break
-            if not any(vf['url'] == url for vf in valid_feeds) and is_valid_rss(url, search_topic, search_sub_topic):
+            # Pass persona_vector into is_valid_rss for hybrid validation
+            if not any(vf['url'] == url for vf in valid_feeds) and is_valid_rss(url, search_topic, search_sub_topic, persona_vector):
                 try:
                     d = feedparser.parse(url)
                     name = getattr(d.feed, 'title', url)
@@ -179,7 +182,6 @@ def discover_candidate_feeds(search_topic: str, search_sub_topic: str, persona_v
                 
                 valid_feeds.append({"name": name, "url": url})
                 
-                # Flywheel save
                 if not db.fetch_one("SELECT id FROM rss_feeds WHERE url = %s", (url,)):
                     feed_text = f"{name} - {search_topic} {search_sub_topic or ''}"
                     feed_emb_str = EmbeddingModel.encode(feed_text)
@@ -196,22 +198,16 @@ def discover_candidate_feeds(search_topic: str, search_sub_topic: str, persona_v
     return valid_feeds
 
 def discover_feeds_for_agent(agent_id: str, agent_persona: str, topic: str, sub_topic: str) -> list:
-    logger.info(f"Starting weighted feed discovery for agent {agent_id} (topic: {topic}, sub_topic: {sub_topic})")
+    logger.info(f"Starting hybrid weighted feed discovery for agent {agent_id} (topic: {topic}, sub_topic: {sub_topic})")
     vector_str = EmbeddingModel.encode(agent_persona)
     
     max_total = 10
     sub_topic_limit = round(max_total * settings.SUB_TOPIC_WEIGHT)
     topic_limit = max_total - sub_topic_limit
 
-    # 1. Discover Sub-Topic Feeds
-    logger.info(f"Fetching up to {sub_topic_limit} sub-topic feeds...")
     sub_topic_feeds = discover_candidate_feeds(sub_topic, None, vector_str, sub_topic_limit)
-    
-    # 2. Discover Topic Feeds
-    logger.info(f"Fetching up to {topic_limit} topic feeds...")
     topic_feeds = discover_candidate_feeds(topic, None, vector_str, topic_limit)
 
-    # Combine and deduplicate
     all_feeds = []
     seen_urls = set()
     for f in sub_topic_feeds + topic_feeds:
@@ -228,7 +224,7 @@ def discover_feeds_for_agent(agent_id: str, agent_persona: str, topic: str, sub_
     feeds_json = json.dumps(all_feeds)
     try:
         db.execute("UPDATE agents SET rss_feeds = %s WHERE id = %s", (feeds_json, agent_id))
-        logger.info(f"Successfully attached {len(all_feeds)} weighted feeds to agent {agent_id}.")
+        logger.info(f"Successfully attached {len(all_feeds)} hybrid weighted feeds to agent {agent_id}.")
     except Exception as e:
         logger.error(f"Error attaching feeds: {e}")
         
