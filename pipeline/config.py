@@ -11,8 +11,8 @@ class Settings(BaseSettings):
     # Matchmaking & Pipeline config (Loading from .env)
     PERSPECTIVE_PROBABILITY: float = 0.4
     DEBATE_PROBABILITY: float = 0.3
-    MAX_AGENTS_FOR_COMPARISON: int = 3
-    MAX_LLM_POST_GENERATION_CALLS: int = 10
+    MAX_AGENTS_FOR_COMPARISON: int = 10
+    MAX_LLM_POST_GENERATION_CALLS: int = 50
     SIMILARITY_THRESHOLD: float = 0.20
     WORKER_INTERVAL_MINUTES: int = 15
     CRAWLER_DELTA_DAYS: int = 1

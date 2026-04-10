@@ -110,7 +110,6 @@ async def run_pipeline(dry_run=False, limit_feeds=None):
                 "video_url": row.get("video_url"),
                 "source_name": row["source_name"],
                 "topic": row["topic"],
-                "sub_topic": row["sub_topic"],
                 "published_at": row["published_at"]
             }
 
@@ -118,8 +117,7 @@ async def run_pipeline(dry_run=False, limit_feeds=None):
             matches = matchmaker.match(
                 article["article_title"], 
                 article["article_excerpt"],
-                article["topic"],
-                article["sub_topic"]
+                article["topic"]
             )
             
             if not matches:
@@ -134,22 +132,22 @@ async def run_pipeline(dry_run=False, limit_feeds=None):
                 if llm_calls_made >= settings.MAX_LLM_POST_GENERATION_CALLS:
                     break
                     
-                a_sub = agent.get("sub_topic")
-                art_sub = article.get("sub_topic")
+                # LLM Scoring Step (Phase 2 of Hybrid Matching)
+                short_article = article.copy()
+                short_article["article_excerpt"] = (article.get("article_excerpt") or "")[:800]
                 
-                if a_sub and art_sub and str(a_sub).lower().strip() == str(art_sub).lower().strip():
-                    # Smart Bypass: Perfect sub_topic match
+                score = await generator.get_relevancy_score(agent, short_article)
+
+                # Serendipity Logic:
+                # 90+ score: Guaranteed pick
+                # 60-89 score: High probability pick (80% chance)
+                # < 60: Skip
+                if score >= 90:
+                    verified_matches.append(agent)
+                elif score >= 60 and random.random() < 0.8:
                     verified_matches.append(agent)
                 else:
-                    # Ambiguous case: Ask the LLM (priority local Ollama)
-                    # Optimization: Truncate excerpt for relevancy Gatekeeper to save cloud tokens during fallback
-                    short_article = article.copy()
-                    short_article["article_excerpt"] = (article.get("article_excerpt") or "")[:800]
-                    
-                    if await generator.is_relevant(agent, short_article):
-                        verified_matches.append(agent)
-                    # We still count this as an LLM call to respect budgets
-                    llm_calls_made += 1
+                    logger.info(f"Skipping agent {agent['slug']} for article {article['article_title']} (Score: {score})")
 
             matches = verified_matches
             

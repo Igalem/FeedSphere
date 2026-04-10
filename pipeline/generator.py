@@ -83,15 +83,19 @@ class Generator:
         ])
 
         self.relevancy_prompt = ChatPromptTemplate.from_messages([
-            ("system", "You are an intelligent Relevancy Filter for an AI agent's news feed. The agent persona is:\n{persona}"),
-            ("user", "Determine if the following article is relevant to the agent's persona. \n"
-                     "Articles are relevant if they cover the same teams, players, leagues, or direct competitors that the persona cares about.\n\n"
+            ("system", "You are an intelligent Relevancy Filter for an AI agent's news feed. "
+                       "Agent Topic: {topic}\n"
+                       "Agent Specific Niche: {sub_topic}\n"
+                       "Agent Persona: {persona}"),
+            ("user", "Determine how relevant this article is to the agent's specific niche and persona.\n\n"
                      "Article Title: {article_title}\n"
                      "Article Excerpt: {article_excerpt}\n\n"
-                     "Rules:\n"
-                     "1. Return ONLY a JSON object: {{\"is_relevant\": true/false}}.\n"
-                     "2. Set 'is_relevant': true if there is a strong topical link.\n"
-                     "3. Set 'is_relevant': false if there is NO link (e.g. Agent is Real Madrid, Article is WWE/Golf/Business).\n"
+                     "Scoring Rules:\n"
+                     "1. 100: Perfect match (e.g. Agent niche is 'FC Barcelona' and Article is about Barca).\n"
+                     "2. 80-99: Very high relevance (e.g. Agent is Barca, Article is about Laliga rivals or transfers affecting Barca).\n"
+                     "3. 60-79: Strong topical relevance (e.g. Agent is Barca, Article is about general Spanish football).\n"
+                     "4. 0-59: Weak or no relevance (e.g. Agent is Barca, Article is about Golf or Finance).\n\n"
+                     "Output Format: JSON object with 'relevance_score' (number 0-100) and 'is_relevant' (boolean, true if score >= 60).\n"
                      "IMPORTANT: Return ONLY valid JSON.")
         ])
 
@@ -311,11 +315,13 @@ class Generator:
         return "".join(clean_words)
 
     @retry(wait=wait_exponential(multiplier=1, min=2, max=6), stop=stop_after_attempt(3))
-    async def is_relevant(self, agent: Dict, article: Dict) -> bool:
+    async def get_relevancy_score(self, agent: Dict, article: Dict) -> int:
         """Determines if the article is topically relevant to the agent using the LLM Gatekeeper."""
         logger.info(f"Running LLM Relevancy Gatekeeper for agent: {agent['slug']} against article: {article['article_title']}")
         
         content = await self._generate_llm_response(self.relevancy_prompt, {
+            "topic": agent.get("topic", "General"),
+            "sub_topic": agent.get("sub_topic", "N/A"),
             "persona": agent["persona"],
             "article_title": article["article_title"],
             "article_excerpt": article["article_excerpt"]
@@ -324,10 +330,10 @@ class Generator:
         try:
             json_str = self._clean_json_response(content)
             data = json.loads(json_str)
-            return bool(data.get("is_relevant", True))
+            return int(data.get("relevance_score", 0))
         except Exception as e:
-            logger.error(f"Failed to parse relevancy check JSON: {e}, Content: {content}")
-            return True # Fall open if parsing fails to avoid dropping good content
+            logger.error(f"Failed to parse relevancy score JSON: {e}, Content: {content}")
+            return 80 # Default to high relevance if parsing fails to avoid dropping good content
 
     @retry(wait=wait_exponential(multiplier=1, min=4, max=10), stop=stop_after_attempt(5))
     async def generate_reaction(self, agent: Dict, article: Dict) -> Dict:

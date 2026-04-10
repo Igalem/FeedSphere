@@ -9,6 +9,7 @@ from concurrent.futures import ThreadPoolExecutor
 from bs4 import BeautifulSoup
 from .db import db
 from .config import settings
+from .utils import sanitize_topic
 from datetime import datetime, timezone
 
 # Set global socket timeout to prevent hang on slow feeds
@@ -29,7 +30,7 @@ class Crawler:
 
     def get_feeds(self):
         # Fetch feeds from rss_feeds table
-        feeds = db.fetch_all("SELECT name, url, topic, sub_topic, language, country FROM rss_feeds")
+        feeds = db.fetch_all("SELECT name, url, topic, language, country FROM rss_feeds")
         return feeds
 
     def is_duplicate(self, url):
@@ -47,7 +48,7 @@ class Crawler:
             return True
         return False
 
-    def fetch_feed(self, feed_url, feed_name=None, feed_topic=None, feed_sub_topic=None, feed_language=None, feed_country=None):
+    def fetch_feed(self, feed_url, feed_name=None, feed_topic=None, feed_language=None, feed_country=None):
         logger.info(f"Fetching feed: {feed_url}")
         try:
             # Use a short timeout for the specific request
@@ -96,9 +97,8 @@ class Crawler:
             soup = BeautifulSoup(summary, "html.parser")
             clean_summary = html.unescape(soup.get_text())
 
-            # Now we use the feed's topic/sub_topic directly
-            topic = feed_topic
-            sub_topic = feed_sub_topic
+            # Now we use the feed's topic sanitized
+            topic = sanitize_topic(feed_topic)
 
             if not topic:
                 logger.warning(f"Skipping article '{title}' - no topic provided for feed.")
@@ -247,7 +247,6 @@ class Crawler:
                 "article_image_url": image_url,
                 "video_url": video_url,
                 "topic": topic,
-                "sub_topic": sub_topic,
                 "source_name": feed_name or self.clean_source_name(getattr(d.feed, 'title', feed_url)),
                 "published_at": published_at,
                 "language": feed_language,
@@ -257,8 +256,8 @@ class Crawler:
             # Save incrementally for better tracking
             try:
                 db.execute("""
-                    INSERT INTO news_articles (title, url, excerpt, image_url, video_url, source_name, topic, sub_topic, published_at, language, country)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    INSERT INTO news_articles (title, url, excerpt, image_url, video_url, source_name, topic, published_at, language, country)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                     ON CONFLICT (url) DO NOTHING
                 """, (
                     article["article_title"],
@@ -268,7 +267,6 @@ class Crawler:
                     article.get("video_url"),
                     article["source_name"],
                     article["topic"],
-                    article["sub_topic"],
                     article["published_at"],
                     article.get("language"),
                     article.get("country")
@@ -293,7 +291,7 @@ class Crawler:
         # Process feeds concurrently using ThreadPoolExecutor
         # limit to 10 threads to avoid overwhelming sources
         with ThreadPoolExecutor(max_workers=10) as executor:
-            future_to_feed = {executor.submit(self.fetch_feed, f["url"], f.get("name"), f.get("topic"), f.get("sub_topic"), f.get("language"), f.get("country")): f for f in feeds}
+            future_to_feed = {executor.submit(self.fetch_feed, f["url"], f.get("name"), f.get("topic"), f.get("language"), f.get("country")): f for f in feeds}
             for future in future_to_feed:
                 try:
                     articles = future.result()

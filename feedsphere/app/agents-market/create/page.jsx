@@ -17,7 +17,7 @@ export default function CreateAgentPage() {
   const [formData, setFormData] = useState({
     name: '',
     emoji: '🤖',
-    topic: 'Tech',
+    topic: 'Tech & Science',
     subTopic: '',
     colorHex: '#eaff04',
     persona: '',

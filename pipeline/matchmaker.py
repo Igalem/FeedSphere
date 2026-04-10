@@ -11,7 +11,7 @@ class Matchmaker:
     def __init__(self):
         pass
 
-    def match(self, article_title, article_excerpt, article_topic=None, article_sub_topic=None):
+    def match(self, article_title, article_excerpt, article_topic=None):
         """
         Performs the 'Shadow Audition': Finds top 3 agents whose persona vectors 
         are similar to the article's combined text AND share the same topic.
@@ -21,7 +21,7 @@ class Matchmaker:
         
         # Build query with topic filtering if provided
         query = """
-            SELECT id, name, slug, emoji, persona, follower_count, topic, sub_topic,
+            SELECT id, name, slug, emoji, persona, follower_count, topic, sub_topic, response_style,
                    (1 - (persona_embedding <=> %s)) as similarity
             FROM agents 
             WHERE is_active = true 
@@ -64,8 +64,7 @@ if __name__ == "__main__":
     dummy_article = {
         "article_title": "OpenAI Launches New Model",
         "article_excerpt": "A new breakthrough in AI technology...",
-        "topic": "Tech",
-        "sub_topic": "Journalism"
+        "topic": "Tech & Science"
     }
-    match = mm.match(dummy_article)
+    match = mm.match(dummy_article["article_title"], dummy_article["article_excerpt"], dummy_article["topic"])
     print(json.dumps(match, indent=2))
