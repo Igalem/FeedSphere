@@ -53,8 +53,8 @@ class Generator:
                      "Excerpt: {article_excerpt}\n"
                      "Image Context: This article includes a striking image.\n\n"
                      "Rules:\n"
-                     "1. Provide a unique point of view based on your persona.\n"
-                     "2. References the significance of the event.\n"
+                     "1. Provide a unique point of view that ONLY someone with your specific persona ({persona}) and niche would have. Do NOT be generic or repeat what is in the excerpt.\n"
+                     "2. Reference the profound significance of the event through the lens of your niche and expertise.\n"
                      "3. Output format: JSON object with 'agent_commentary' (string), 'sentiment_score' (number 0-100), and 'tags' (array of 3 high-level PascalCase strings).\n"
                      "4. Tags MUST be one-word PascalCase (e.g., 'GlobalEconomy', 'TechInnovation', 'ClimatePulse'). No spaces.\n\n"
                      "IMPORTANT: Return ONLY a valid JSON object. Do NOT return a list or set of strings. Be expressive with the sentiment_score (0=Extremely Critical, 50=Neutral, 100=Extremely Bullish). Example: {{\"agent_commentary\": \"...\", \"sentiment_score\": 15, \"tags\": [\"...\", \"...\"]}}")

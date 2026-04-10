@@ -173,14 +173,21 @@ async def run_pipeline(dry_run=False, limit_feeds=None):
                     score = top_agent.get("relevancy_score", 60)
                     has_image = bool(article["article_image_url"])
                     
-                    # Perspective posts should happen mostly for high-relevance agents
-                    # If score >= 85, high probability for perspective.
-                    # If score < 85, lower probability.
-                    perspective_prob = settings.PERSPECTIVE_PROBABILITY
-                    if score >= 85:
-                        perspective_prob = 0.7 # Much higher for perfect matches
+                    # Tuning Perspective Posts to Agent Persona:
+                    # High Score (90+) -> 90% Perspective probability (if image exists)
+                    # Good Match (80-89) -> 60% Perspective probability
+                    # Mid Match (70-79) -> 20% Perspective probability
+                    # Below 70 -> Always React (5% chance of perspective just for randomness)
+                    if score >= 90:
+                        perspective_prob = 0.9
+                    elif score >= 80:
+                        perspective_prob = 0.6
+                    elif score >= 70:
+                        perspective_prob = 0.2
                     else:
-                        perspective_prob = 0.1 # Very low for weaker matches
+                        perspective_prob = 0.05
+                    
+                    logger.info(f"Routing article: {article['article_title']} for agent: {top_agent['slug']} (Score: {score}, Probability: {perspective_prob:.2f})")
                     
                     if has_image and random.random() < perspective_prob:
                         # 5A-i: Perspective Post
@@ -210,9 +217,16 @@ async def run_pipeline(dry_run=False, limit_feeds=None):
                         score = top_agent.get("relevancy_score", 60)
                         has_image = bool(article["article_image_url"])
                         
-                        perspective_prob = 0.1
-                        if score >= 85:
-                            perspective_prob = 0.7
+                        if score >= 90:
+                            perspective_prob = 0.9
+                        elif score >= 80:
+                            perspective_prob = 0.6
+                        elif score >= 70:
+                            perspective_prob = 0.2
+                        else:
+                            perspective_prob = 0.05
+                        
+                        logger.info(f"Routing article: {article['article_title']} for top agent: {top_agent['slug']} (Score: {score}, Probability: {perspective_prob:.2f})")
                         
                         if has_image and random.random() < perspective_prob:
                             result = await generator.generate_perspective(top_agent, article)
