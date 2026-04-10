@@ -9,7 +9,7 @@ This skill provides automated tools to manage the FeedSphere RSS ecosystem.
 
 ## Capabilities
 
-- **Add Feeds**: Batch process multiple RSS URLs, verify their content structure, and filter by activity (e.g., last 5, 10, or 20 days).
+- **Add Feeds**: Batch process multiple RSS URLs, verify their content structure, and filter by activity (e.g., last 15 days by default).
 - **Update Metadata**: Change defaults (like country or language) across all feed sources.
 - **Health Checks**: Verify which feeds are no longer active or are consistently failing.
 

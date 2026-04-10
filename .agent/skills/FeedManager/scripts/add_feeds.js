@@ -1,33 +1,33 @@
+const dotenv = require('dotenv');
+const path = require('path');
+const fs = require('fs');
+const Parser = require('rss-parser');
 
-import dotenv from 'dotenv';
-import path from 'path';
-import { fileURLToPath } from 'url';
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const __dirname_local = __dirname;
 // Base directory of the project
-const baseDir = path.resolve(__dirname, '../../../../feedsphere');
+const baseDir = path.resolve(__dirname_local, '../../../../feedsphere');
 dotenv.config({ path: path.join(baseDir, '.env.local') });
 
-import Parser from 'rss-parser';
-const { db } = await import(path.join(baseDir, 'lib/db.js'));
+// Dynamically load the DB module (which might be ESM or CJS)
+// Since we are CJS, if lib/db.js is ESM, this might be tricky,
+// but lib/db.js uses 'export const db', so it's probably ESM if the environment supports it.
+// However, scrape-rss.js uses require('pg'), so let's check lib/db.js again.
+// lib/db.js uses 'import { Pool } from "pg"'.
+// Wait, if lib/db.js is ESM and we are CJS, we need dynamic import.
 
 const parser = new Parser();
 
-async function checkAndAddFeeds(feedList) {
-  const fiveDaysAgo = new Date();
-  fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5);
-  
-  const twentyDaysAgo = new Date();
-  twentyDaysAgo.setDate(twentyDaysAgo.getDate() - 20);
+async function checkAndAddFeeds(feedList, deltaDays = 15) {
+  const { db } = await import(path.join(baseDir, 'lib/db.js'));
+  const targetDeltaDate = new Date();
+  targetDeltaDate.setDate(targetDeltaDate.getDate() - deltaDays);
 
   console.log(`Processing ${feedList.length} candidate feeds...`);
+  console.log(`Verification Window: Last ${deltaDays} days (since ${targetDeltaDate.toISOString()})`);
   
   for (const feed of feedList) {
-    const isHealth = (feed.topic === 'health' || feed.sub_topic === 'health');
-    const targetDeltaDate = isHealth ? twentyDaysAgo : fiveDaysAgo;
-    
     try {
-      console.log(`Checking: ${feed.name} (${feed.url})... (Delta: ${isHealth ? 20 : 5} days)`);
+      console.log(`Checking: ${feed.name} (${feed.url})...`);
       const feedResult = await parser.parseURL(feed.url);
       
       const latestItem = feedResult.items[0];
@@ -61,5 +61,26 @@ async function checkAndAddFeeds(feedList) {
   }
 }
 
-// Export for manual usage or run directly if needed
-export { checkAndAddFeeds };
+if (require.main === module) {
+  const filePath = process.argv[2];
+  const deltaDays = parseInt(process.argv[3]) || 15;
+
+  if (!filePath) {
+    console.error('Usage: node add_feeds.js [FEED_LIST_JSON_FILE] [DELTA_DAYS]');
+    process.exit(1);
+  }
+
+  (async () => {
+    try {
+      const rawData = fs.readFileSync(filePath);
+      const feedList = JSON.parse(rawData);
+      await checkAndAddFeeds(feedList, deltaDays);
+      process.exit(0);
+    } catch (err) {
+      console.error('Error reading or parsing feed list file:', err.message);
+      process.exit(1);
+    }
+  })();
+}
+
+module.exports = { checkAndAddFeeds };
