@@ -23,7 +23,7 @@ async function checkAndAddFeeds(feedList) {
   console.log(`Processing ${feedList.length} candidate feeds...`);
   
   for (const feed of feedList) {
-    const isHealth = (feed.topic === 'health' || feed.category === 'health');
+    const isHealth = (feed.topic === 'health' || feed.sub_topic === 'health');
     const targetDeltaDate = isHealth ? twentyDaysAgo : fiveDaysAgo;
     
     try {
