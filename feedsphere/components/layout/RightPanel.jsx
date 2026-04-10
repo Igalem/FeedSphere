@@ -37,14 +37,9 @@ export default async function RightPanel() {
     });
   } catch (e) { console.error('Pulse fetch error:', e); }
 
-  // Fallback defaults if DB is empty
+  // Fallback defaults removed (stay empty if no data)
   if (PULSE_DATA.length === 0) {
-    PULSE_DATA = [
-      { topic: 'Bitcoin', score: 68, color: '#c084fc', prev: 54 },
-      { topic: 'NBA Playoffs', score: 82, color: '#ff6b6b', prev: 79 },
-      { topic: 'AI Regulation', score: 41, color: '#6bcbff', prev: 55 },
-      { topic: 'Premier League', score: 88, color: '#fbbf24', prev: 85 },
-    ];
+    // PULSE_DATA remains an empty array
   }
 
   // Fetch TRENDING Topics data
@@ -65,13 +60,7 @@ export default async function RightPanel() {
   } catch (e) { console.error('Trend fetch error:', e); }
 
   if (TRENDING.length === 0) {
-    TRENDING = [
-      { name: '#WestvsEast', count: '4.2K posts' },
-      { name: '#GPT5', count: '12.1K posts' },
-      { name: '#Crypto2025', count: '8.7K posts' },
-      { name: '#ManCityTactics', count: '2.9K posts' },
-      { name: '#ClimateReport', count: '6.3K posts' },
-    ];
+    // TRENDING remains an empty array
   }
 
   // Fetch agents data for "Discover Agents"
@@ -90,54 +79,58 @@ export default async function RightPanel() {
 
   return (
     <aside className="panel">
-      <div className="panel-section">
-        <div className="panel-title" translate="no">📡 Live Pulse</div>
-        <div>
-          {PULSE_DATA.map(p => {
-            const trend = p.score > p.prev ? '↑' : p.score < p.prev ? '↓' : '-';
-            const trendColor = p.score > p.prev ? '#4ade80' : p.score < p.prev ? '#ff6b6b' : '#9ca3af';
-            const diff = Math.abs(p.score - p.prev);
-            const percent = p.prev !== 0 ? ((diff / p.prev) * 100).toFixed(1) : '0.0';
-            const sColor = 
-              p.score > 85 ? '#a3ff33' : 
-              p.score > 65 ? '#4ade80' : 
-              p.score > 40 ? '#9ca3af' : 
-              p.score > 20 ? '#fbbf24' : 
-              '#ff6b6b';
+      {PULSE_DATA.length > 0 && (
+        <div className="panel-section">
+          <div className="panel-title" translate="no">📡 Live Pulse</div>
+          <div>
+            {PULSE_DATA.map(p => {
+              const trend = p.score > p.prev ? '↑' : p.score < p.prev ? '↓' : '-';
+              const trendColor = p.score > p.prev ? '#4ade80' : p.score < p.prev ? '#ff6b6b' : '#9ca3af';
+              const diff = Math.abs(p.score - p.prev);
+              const percent = p.prev !== 0 ? ((diff / p.prev) * 100).toFixed(1) : '0.0';
+              const sColor = 
+                p.score > 85 ? '#a3ff33' : 
+                p.score > 65 ? '#4ade80' : 
+                p.score > 40 ? '#9ca3af' : 
+                p.score > 20 ? '#fbbf24' : 
+                '#ff6b6b';
 
-            return (
-              <Link href={`/?topic=${encodeURIComponent(p.topic)}`} key={p.topic} className="pulse-widget" style={{ textDecoration: 'none' }}>
-                <span className="pulse-topic-name" translate="no">{p.topic}</span>
-                <div className="pulse-trend-box" style={{ color: trendColor }} translate="no">
-                  <span className="pulse-trend-arrow">{trend}</span>
-                  <span className="pulse-trend-percent">{percent}%</span>
-                </div>
-                <div className="pulse-sentiment-row">
-                  <SentimentFace score={p.score} color={sColor} size={14} showLabel={true} />
-                  <div className="pulse-score-pill" style={{ background: `${sColor}15`, color: sColor }} translate="no">
-                    {p.score}%
+              return (
+                <Link href={`/?topic=${encodeURIComponent(p.topic)}`} key={p.topic} className="pulse-widget" style={{ textDecoration: 'none' }}>
+                  <span className="pulse-topic-name" translate="no">{p.topic}</span>
+                  <div className="pulse-trend-box" style={{ color: trendColor }} translate="no">
+                    <span className="pulse-trend-arrow">{trend}</span>
+                    <span className="pulse-trend-percent">{percent}%</span>
                   </div>
-                </div>
-              </Link>
-            );
-          })}
+                  <div className="pulse-sentiment-row">
+                    <SentimentFace score={p.score} color={sColor} size={14} showLabel={true} />
+                    <div className="pulse-score-pill" style={{ background: `${sColor}15`, color: sColor }} translate="no">
+                      {p.score}%
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
         </div>
-      </div>
+      )}
 
-      <div className="panel-section">
-        <div className="panel-title" translate="no">🔥 Trending Topics</div>
-        <div translate="no">
-          {TRENDING.map(t => (
-            <Link href={`/?tag=${encodeURIComponent(t.name.startsWith('#') ? t.name.slice(1) : t.name)}`} key={t.name} className="topic-item" style={{ textDecoration: 'none' }}>
-              <div>
-                <div className="topic-name">{t.name}</div>
-                <div className="topic-count">{t.count} · <span translate="no">Last 24h</span></div>
-              </div>
-              <span className="topic-arrow">→</span>
-            </Link>
-          ))}
+      {TRENDING.length > 0 && (
+        <div className="panel-section">
+          <div className="panel-title" translate="no">🔥 Trending Topics</div>
+          <div translate="no">
+            {TRENDING.map(t => (
+              <Link href={`/?tag=${encodeURIComponent(t.name.startsWith('#') ? t.name.slice(1) : t.name)}`} key={t.name} className="topic-item" style={{ textDecoration: 'none' }}>
+                <div>
+                  <div className="topic-name">{t.name}</div>
+                  <div className="topic-count">{t.count} · <span translate="no">Last 24h</span></div>
+                </div>
+                <span className="topic-arrow">→</span>
+              </Link>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="panel-section">
         <div className="panel-title" translate="no">🤖 Discover Agents</div>
