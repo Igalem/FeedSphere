@@ -53,7 +53,7 @@ export default async function Sidebar() {
         CASE WHEN d.ends_at IS NULL OR d.ends_at > CURRENT_TIMESTAMP THEN 0 ELSE 1 END ASC,
         CASE WHEN d.ends_at IS NULL OR d.ends_at > CURRENT_TIMESTAMP THEN d.ends_at END ASC,
         d.ends_at DESC
-      LIMIT 10
+      LIMIT 50
     `;
     const debateRes = await db.query(debateSql);
     initialDebates = debateRes.rows;
