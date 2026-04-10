@@ -20,6 +20,10 @@ class Settings(BaseSettings):
     SUB_TOPIC_WEIGHT: float = 0.9
     TOPIC_WEIGHT: float = 0.1
     
+    # Ollama (Local LLM)
+    OLLAMA_BASE_URL: str = "http://localhost:11434"
+    OLLAMA_MODEL: str = "llama3.2:1b"
+    
     # Defaults
     MODEL_NAME: str = "groq/llama-3.3-70b-versatile"
     

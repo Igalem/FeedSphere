@@ -141,8 +141,12 @@ async def run_pipeline(dry_run=False, limit_feeds=None):
                     # Smart Bypass: Perfect sub_topic match
                     verified_matches.append(agent)
                 else:
-                    # Ambiguous case: Ask the LLM
-                    if await generator.is_relevant(agent, article):
+                    # Ambiguous case: Ask the LLM (priority local Ollama)
+                    # Optimization: Truncate excerpt for relevancy Gatekeeper to save cloud tokens during fallback
+                    short_article = article.copy()
+                    short_article["article_excerpt"] = (article.get("article_excerpt") or "")[:800]
+                    
+                    if await generator.is_relevant(agent, short_article):
                         verified_matches.append(agent)
                     # We still count this as an LLM call to respect budgets
                     llm_calls_made += 1

@@ -1,4 +1,5 @@
 import asyncio
+import httpx
 import logging
 import json
 import re
@@ -97,13 +98,18 @@ class Generator:
         global current_master, master_failure_count
         
         # Decide order based on current master
-        providers = ['cerebras', 'groq', 'gemini']
+        # Define primary and fallback providers
+        default_providers = ['ollama', 'cerebras', 'groq', 'gemini']
+        
         if force_provider:
-            providers = [force_provider]
+            # Prioritize forced provider but allow fallback to others
+            providers = [force_provider] + [p for p in default_providers if p != force_provider]
         elif current_master == 'groq':
-            providers = ['groq', 'cerebras', 'gemini']
+            providers = ['ollama', 'groq', 'cerebras', 'gemini']
         elif current_master == 'gemini':
-            providers = ['gemini', 'cerebras', 'groq']
+            providers = ['ollama', 'gemini', 'cerebras', 'groq']
+        else:
+            providers = default_providers
             
         messages = prompt.format_messages(**values)
         
@@ -111,7 +117,50 @@ class Generator:
         
         for provider in providers:
             try:
-                if provider == 'cerebras':
+                if provider == 'ollama':
+                    if not settings.OLLAMA_BASE_URL:
+                        continue
+                    try:
+                        logger.info(f"[LLM] Trying Ollama ({settings.OLLAMA_MODEL})...")
+                        async with httpx.AsyncClient(timeout=30) as client:
+                            # Map LangChain roles to Ollama roles
+                            role_map = {"system": "system", "human": "user", "ai": "assistant"}
+                            ollama_messages = [
+                                {"role": role_map.get(m.type, "user"), "content": m.content} 
+                                for m in messages
+                            ]
+                            
+                            data = {
+                                "model": settings.OLLAMA_MODEL,
+                                "messages": ollama_messages,
+                                "stream": False
+                            }
+                            if is_json:
+                                data["format"] = "json"
+                                
+                            resp = await client.post(f"{settings.OLLAMA_BASE_URL}/api/chat", json=data)
+                            resp.raise_for_status()
+                            result = resp.json()
+                            content = result.get('message', {}).get('content', '').strip()
+                            if content:
+                                return content
+                            raise Exception("Empty response from Ollama")
+                    except Exception as e:
+                        if force_provider == 'ollama':
+                            # If explicitly forced (e.g. relevancy check), we allow it to proceed to backups
+                            # unless we want a hard fail. The user's goal was volume. 
+                            # Let's log and continue to standard backups.
+                            logger.warning(f"[LLM] Ollama failed: {e}. Falling back to cloud...")
+                            # Re-add standard providers to the loop if we were forcing ollama
+                            # Actually, the loop will just continue if we don't break.
+                            # But wait, if providers = ['ollama'], it will exit.
+                            # Let's fix providers list if ollama was forced and fails.
+                            providers = ['cerebras', 'gemini', 'groq']
+                            continue
+                        logger.warning(f"[LLM] Ollama check failed or not running: {e}")
+                        continue
+
+                elif provider == 'cerebras':
                     if not settings.CEREBRAS_API_KEY:
                         continue
                     logger.info(f"[LLM] Trying Cerebras (Master: {current_master})...")
@@ -267,7 +316,7 @@ class Generator:
             "persona": agent["persona"],
             "article_title": article["article_title"],
             "article_excerpt": article["article_excerpt"]
-        }, is_json=True, force_provider="groq")
+        }, is_json=True, force_provider="ollama")
         
         try:
             json_str = self._clean_json_response(content)
