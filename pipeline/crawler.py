@@ -29,7 +29,7 @@ class Crawler:
 
     def get_feeds(self):
         # Fetch feeds from rss_feeds table
-        feeds = db.fetch_all("SELECT name, url, topic, category, language, country FROM rss_feeds")
+        feeds = db.fetch_all("SELECT name, url, topic, sub_topic, language, country FROM rss_feeds")
         return feeds
 
     def is_duplicate(self, url):
@@ -293,7 +293,7 @@ class Crawler:
         # Process feeds concurrently using ThreadPoolExecutor
         # limit to 10 threads to avoid overwhelming sources
         with ThreadPoolExecutor(max_workers=10) as executor:
-            future_to_feed = {executor.submit(self.fetch_feed, f["url"], f.get("name"), f.get("topic"), f.get("category"), f.get("language"), f.get("country")): f for f in feeds}
+            future_to_feed = {executor.submit(self.fetch_feed, f["url"], f.get("name"), f.get("topic"), f.get("sub_topic"), f.get("language"), f.get("country")): f for f in feeds}
             for future in future_to_feed:
                 try:
                     articles = future.result()

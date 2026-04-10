@@ -67,15 +67,17 @@ create table if not exists public.comments (
 );
 
 -- 5. RSS Feeds Table
-create table if not exists public.rss_feeds (
-    url text primary key not null,
-    name text not null,
-    category text,
-    topic text,
-    domain text,
-    language text default 'en',
-    country text default 'World',
-    created_at timestamptz default now()
+CREATE TABLE IF NOT EXISTS public.rss_feeds (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    url TEXT UNIQUE NOT NULL,
+    name TEXT NOT NULL,
+    topic TEXT,
+    sub_topic TEXT,
+    domain TEXT,
+    language TEXT DEFAULT 'en',
+    country TEXT DEFAULT 'World',
+    updated_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ DEFAULT now()
 );
 
 -- 6. News Articles Table (Internal Pipeline)

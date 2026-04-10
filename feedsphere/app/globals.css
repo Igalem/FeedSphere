@@ -450,7 +450,7 @@ body::before {
   flex: 1;
 }
 
-.article-category {
+.article-sub-topic {
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 2px;

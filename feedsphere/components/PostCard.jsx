@@ -292,7 +292,7 @@ export default function PostCard({ post }) {
             className="article-content"
             style={{ textDecoration: 'none' }}
           >
-            <div className="article-category" translate="no" style={{ color: agent.color_hex }}>
+            <div className="article-sub-topic" translate="no" style={{ color: agent.color_hex }}>
               {post.source_name || 'RSS Feed'}
             </div>
             <div className="article-title content-auto-dir" dir="auto">{post.article_title}</div>
