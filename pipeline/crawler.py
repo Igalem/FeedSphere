@@ -152,15 +152,40 @@ class Crawler:
                         image_url = m_url
                         break
 
-            # --- PRIORITY 5: Scrape OG Image ---
+            # --- PRIORITY 5: Scrape Meta tags (OG, Twitter, etc) ---
             if not image_url:
                 try:
                     page_res = requests.get(url, timeout=5, headers={'User-Agent': 'Mozilla/5.0'})
                     if page_res.status_code == 200:
                         page_soup = BeautifulSoup(page_res.text, "html.parser")
-                        og_image = page_soup.find("meta", property="og:image")
-                        if og_image:
-                            image_url = og_image.get("content")
+                        # Try various meta images for maximum robustness
+                        meta_candidates = [
+                            ("meta", {"property": "og:image"}),
+                            ("meta", {"name": "twitter:image"}),
+                            ("meta", {"property": "twitter:image"}),
+                            ("meta", {"name": "thumbnail"}),
+                            ("link", {"rel": "image_src"}),
+                            ("meta", {"itemprop": "image"}),
+                            ("link", {"rel": "preload", "as": "image"}),
+                            ("meta", {"name": "sailthru.image"}),
+                            ("meta", {"name": "sailthru.image.full"}),
+                            ("meta", {"name": "sailthru.image.thumb"})
+                        ]
+                        for tag_type, attrs in meta_candidates:
+                            tag = page_soup.find(tag_type, attrs=attrs)
+                            if tag:
+                                image_url = tag.get("content") or tag.get("href")
+                                if image_url and not any(v in image_url for v in ["doubleclick.net", "ads.", ".svg"]): 
+                                    break
+                        
+                        # Last ditch: Find largest image in article
+                        if not image_url:
+                            images = page_soup.find_all("img", src=True)
+                            if images:
+                                # Prioritize high-res JPG/PNG and not common ad/icon formats
+                                candidates = [i for i in images if ".jpg" in i["src"].lower() or ".png" in i["src"].lower()]
+                                if candidates:
+                                    image_url = candidates[0]["src"]
                 except Exception:
                     pass
 
@@ -182,58 +207,76 @@ class Crawler:
                     image_url = None # Let fallback logic handle it
 
             if not image_url:
-                # Fallback to topic-based images with variety
-                topic_lower = (topic or "news").lower()
-                
-                # Multiple image options per topic for variety
+                # Fallback to topic-based images with significantly more variety
+                # Mapping keys to match the core categories from sanitize_topic across the app
                 placeholder_pools = {
-                    "sports": [
+                    "Sports & Fitness": [
                         "https://images.unsplash.com/photo-1461896756913-c27eeff1d9b1?q=80&w=1000",
                         "https://images.unsplash.com/photo-1504450758481-7338eba7524a?q=80&w=1000",
                         "https://images.unsplash.com/photo-1471295253337-3ceaaedca401?q=80&w=1000",
-                        "https://images.unsplash.com/photo-1517649763962-0c623066013b?q=80&w=1000"
+                        "https://images.unsplash.com/photo-1517649763962-0c623066013b?q=80&w=1000",
+                        "https://images.unsplash.com/photo-1505751172876-fa1923c5c528?q=80&w=1000",
+                        "https://images.unsplash.com/photo-1532938911079-1b06ac7ceec7?q=80&w=1000",
+                        "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?q=80&w=1000",
+                        "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?q=80&w=1000"
                     ],
-                    "tech": [
+                    "Tech & Science": [
                         "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?q=80&w=1000",
                         "https://images.unsplash.com/photo-1518770660439-4636190af475?q=80&w=1000",
                         "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=1000",
-                        "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=1000"
+                        "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=1000",
+                        "https://images.unsplash.com/photo-1531297484001-80022131f5a1?q=80&w=1000",
+                        "https://images.unsplash.com/photo-1525547719571-a2d4ac8945e2?q=80&w=1000",
+                        "https://images.unsplash.com/photo-1519389950473-47ba0277781c?q=80&w=1000",
+                        "https://images.unsplash.com/photo-1498050108023-c5249f4df085?q=80&w=1000"
                     ],
-                    "gaming": [
+                    "Entertainment & Gaming": [
                         "https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=1000",
                         "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1000",
                         "https://images.unsplash.com/photo-1552824236-0776484ffb27?q=80&w=1000",
-                        "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=1000"
-                    ],
-                    "news": [
-                        "https://images.unsplash.com/photo-1495020689067-958852a7765e?q=80&w=1000",
-                        "https://images.unsplash.com/photo-1504711434969-e33886168f5c?q=80&w=1000",
-                        "https://images.unsplash.com/photo-1476242484419-cf5c5d4462bc?q=80&w=1000",
-                        "https://images.unsplash.com/photo-1588681664899-f142ff2dc9b1?q=80&w=1000"
-                    ],
-                    "entertainment": [
+                        "https://images.unsplash.com/photo-1531297484001-80022131f5a1?q=80&w=1000",
                         "https://images.unsplash.com/photo-1603190287605-e6ade32fa852?q=80&w=1000",
                         "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?q=80&w=1000",
                         "https://images.unsplash.com/photo-1514525253344-99a4299965d2?q=80&w=1000",
                         "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?q=80&w=1000"
                     ],
-                    "health": [
-                        "https://images.unsplash.com/photo-1505751172876-fa1923c5c528?q=80&w=1000",
-                        "https://images.unsplash.com/photo-1532938911079-1b06ac7ceec7?q=80&w=1000",
-                        "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?q=80&w=1000",
-                        "https://images.unsplash.com/photo-1498837167922-ddd27525d352?q=80&w=1000"
+                    "News & Politics": [
+                        "https://images.unsplash.com/photo-1495020689067-958852a7765e?q=80&w=1000",
+                        "https://images.unsplash.com/photo-1504711434969-e33886168f5c?q=80&w=1000",
+                        "https://images.unsplash.com/photo-1476242484419-cf5c5d4462bc?q=80&w=1000",
+                        "https://images.unsplash.com/photo-1588681664899-f142ff2dc9b1?q=80&w=1000",
+                        "https://images.unsplash.com/photo-1450101499163-c8848c66ca85?q=80&w=1000",
+                        "https://images.unsplash.com/photo-1504462385-551ad9874329?q=80&w=1000",
+                        "https://images.unsplash.com/photo-1517048676732-d65bc937f952?q=80&w=1000",
+                        "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1000"
+                    ],
+                    "Business & Money": [
+                        "https://images.unsplash.com/photo-1460925895917-afdab827c52f?q=80&w=1000",
+                        "https://images.unsplash.com/photo-1507679799987-c7377ec48696?q=80&w=1000",
+                        "https://images.unsplash.com/photo-1526303328184-c7fc2e861d9a?q=80&w=1000",
+                        "https://images.unsplash.com/photo-1554224155-16974fa9f2ec?q=80&w=1000",
+                        "https://images.unsplash.com/photo-1518186285589-2f7649de83e0?q=80&w=1000"
+                    ],
+                    "Lifestyle & Culture": [
+                        "https://images.unsplash.com/photo-1498837167922-ddd27525d352?q=80&w=1000",
+                        "https://images.unsplash.com/photo-1506126613408-eca07ce68773?q=80&w=1000",
+                        "https://images.unsplash.com/photo-1490818387583-1baba5e638af?q=80&w=1000",
+                        "https://images.unsplash.com/photo-1511733351957-46046d997851?q=80&w=1000"
+                    ],
+                    "Knowledge": [
+                        "https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?q=80&w=1000",
+                        "https://images.unsplash.com/photo-1497633762265-9d179a990aa6?q=80&w=1000",
+                        "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?q=80&w=1000"
                     ]
                 }
                 
-                # Pick a pool or default to news
-                pool = placeholder_pools.get(topic_lower, placeholder_pools["news"])
-                
                 # Deterministically pick an image from the pool based on article URL
                 import hashlib
+                pool = placeholder_pools.get(topic, placeholder_pools["News & Politics"])
                 url_hash = int(hashlib.md5(url.encode()).hexdigest(), 16)
                 image_url = pool[url_hash % len(pool)]
                 
-                logger.info(f"Using varied fallback image for topic '{topic_lower}': {image_url}")
+                logger.info(f"Using varied fallback image for category '{topic}': {image_url}")
 
             # --- Final Sanitization for all images ---
             if image_url:
