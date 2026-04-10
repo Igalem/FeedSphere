@@ -142,10 +142,17 @@ async def run_pipeline(dry_run=False, limit_feeds=None):
                 # 90+ score: Guaranteed pick
                 # 60-89 score: High probability pick (80% chance)
                 # < 60: Skip
+                is_picked = False
                 if score >= 90:
-                    verified_matches.append(agent)
+                    is_picked = True
                 elif score >= 60 and random.random() < 0.8:
-                    verified_matches.append(agent)
+                    is_picked = True
+                
+                if is_picked:
+                    # Store score with agent for routing decisions
+                    agent_with_score = agent.copy()
+                    agent_with_score["relevancy_score"] = score
+                    verified_matches.append(agent_with_score)
                 else:
                     logger.info(f"Skipping agent {agent['slug']} for article {article['article_title']} (Score: {score})")
 
@@ -155,7 +162,7 @@ async def run_pipeline(dry_run=False, limit_feeds=None):
                 if not dry_run:
                     db.execute("UPDATE news_articles SET is_processed = true WHERE id = %s", (row["id"],))
                 continue
-
+            
             # Routing Logic (Phase 5)
             num_matches = len(matches)
             
@@ -163,9 +170,19 @@ async def run_pipeline(dry_run=False, limit_feeds=None):
                 if num_matches == 1:
                     # Phase 5A: Single Match Routing
                     top_agent = matches[0]
-                    # Check for Perspective vs Reaction
+                    score = top_agent.get("relevancy_score", 60)
                     has_image = bool(article["article_image_url"])
-                    if has_image and random.random() < settings.PERSPECTIVE_PROBABILITY:
+                    
+                    # Perspective posts should happen mostly for high-relevance agents
+                    # If score >= 85, high probability for perspective.
+                    # If score < 85, lower probability.
+                    perspective_prob = settings.PERSPECTIVE_PROBABILITY
+                    if score >= 85:
+                        perspective_prob = 0.7 # Much higher for perfect matches
+                    else:
+                        perspective_prob = 0.1 # Very low for weaker matches
+                    
+                    if has_image and random.random() < perspective_prob:
                         # 5A-i: Perspective Post
                         result = await generator.generate_perspective(top_agent, article)
                         await save_post(result, dry_run=dry_run)
@@ -177,18 +194,35 @@ async def run_pipeline(dry_run=False, limit_feeds=None):
 
                 elif num_matches >= 2:
                     # Phase 5B: Multi-Agent Arena Routing
+                    # Sort by score to ensure top agent is the best match
+                    matches.sort(key=lambda x: x.get("relevancy_score", 0), reverse=True)
+                    
                     if random.random() < settings.DEBATE_PROBABILITY:
                         # 5B-i: Live Debate (Top 2 Agents)
+                        # Remove the relevancy_score from dict before passing to generator if it causes issues
                         result = await generator.generate_debate(matches[0], matches[1], article)
                         if result:
                             await save_debate(result, dry_run=dry_run)
                         llm_calls_made += 1
                     else:
-                        # 5B-ii: Pick top only (Reaction Post)
+                        # 5B-ii: Pick top only (Decision: Perspective vs Reaction)
                         top_agent = matches[0]
-                        result = await generator.generate_reaction(top_agent, article)
+                        score = top_agent.get("relevancy_score", 60)
+                        has_image = bool(article["article_image_url"])
+                        
+                        perspective_prob = 0.1
+                        if score >= 85:
+                            perspective_prob = 0.7
+                        
+                        if has_image and random.random() < perspective_prob:
+                            result = await generator.generate_perspective(top_agent, article)
+                        else:
+                            result = await generator.generate_reaction(top_agent, article)
+                        
                         await save_post(result, dry_run=dry_run)
                         llm_calls_made += 1
+
+
 
             except Exception:
                 logger.exception(f"Error generating content for article '{article['article_title']}':")
