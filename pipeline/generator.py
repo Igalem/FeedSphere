@@ -280,7 +280,13 @@ class Generator:
                 
                 json_str = re.sub(r'"(?:\\.|[^"\\])*"', escape_control_chars, json_str, flags=re.DOTALL)
 
-                # 2. Handle "set-like" notation: {"a", "b"}
+                # 2. Fix common LLM quirks: "#SentimentScore" -> "sentiment_score"
+                json_str = json_str.replace('"#SentimentScore":', '"sentiment_score":')
+                json_str = json_str.replace('"#sentiment_score":', '"sentiment_score":')
+                json_str = json_str.replace('"#tags":', '"tags":')
+                
+                # 3. Handle "set-like" notation: {"a", "b"}
+
                 temp_str = re.sub(r'"(?:\\.|[^"\\])*"', '', json_str)
                 if ":" not in temp_str:
                     parts = re.findall(r'"((?:\\.|[^"\\])*)"', json_str, re.DOTALL)
@@ -364,8 +370,8 @@ class Generator:
                 "article_excerpt": article["article_excerpt"],
                 "article_image_url": article.get("article_image_url"),
                 "source_name": article["source_name"],
-                "agent_commentary": self._clean_commentary(data.get("agent_commentary", "")),
-                "sentiment_score": data.get("sentiment_score", 50),
+                "agent_commentary": self._clean_commentary(data.get("agent_commentary", data.get("content", ""))),
+                "sentiment_score": data.get("sentiment_score", data.get("sentiment", 50)),
                 "tags": tags,
                 "published_at": article.get("published_at")
             }
@@ -374,8 +380,14 @@ class Generator:
             if "agent_commentary" in content:
                 # Use a lookahead to find the closing quote of the commentary field
                 # that is followed by the next field (tags) or the end object
-                commentary_match = re.search(r'"agent_commentary":\s*"(.*)"(?=\s*,\s*"tags"|\s*\})', content, re.DOTALL)
+                # Updated regex to be more lenient with middle quotes and missing commas
+                commentary_match = re.search(r'"agent_commentary":\s*"(.*?)"(?=\s*(?:,|\s*\}|\s*#|"))', content, re.DOTALL)
                 commentary = commentary_match.group(1) if commentary_match else content
+                # If it's still JSON-like, try to strip the outer object manually if it failed
+                if commentary.startswith('{'):
+                    commentary = re.sub(r'^{.*"agent_commentary":\s*"', '', commentary)
+                    commentary = re.sub(r'".*\}\s*$', '', commentary)
+
                 return {
                     "type": "reaction",
                     "agent_id": agent["id"],
@@ -433,8 +445,8 @@ class Generator:
                 "article_excerpt": article["article_excerpt"],
                 "article_image_url": article.get("article_image_url"),
                 "source_name": article["source_name"],
-                "agent_commentary": self._clean_commentary(data.get("agent_commentary", "")),
-                "sentiment_score": data.get("sentiment_score", 50),
+                "agent_commentary": self._clean_commentary(data.get("agent_commentary", data.get("content", ""))),
+                "sentiment_score": data.get("sentiment_score", data.get("sentiment", 50)),
                 "tags": tags,
                 "published_at": article.get("published_at")
             }
@@ -442,8 +454,14 @@ class Generator:
             if "agent_commentary" in content:
                 # Use a lookahead to find the closing quote of the commentary field
                 # that is followed by the next field (tags) or the end object
-                commentary_match = re.search(r'"agent_commentary":\s*"(.*)"(?=\s*,\s*"tags"|\s*\})', content, re.DOTALL)
+                # Updated regex to be more lenient with middle quotes and missing commas
+                commentary_match = re.search(r'"agent_commentary":\s*"(.*?)"(?=\s*(?:,|\s*\}|\s*#|"))', content, re.DOTALL)
                 commentary = commentary_match.group(1) if commentary_match else content
+                # If it's still JSON-like, try to strip the outer object manually if it failed
+                if commentary.startswith('{'):
+                    commentary = re.sub(r'^{.*"agent_commentary":\s*"', '', commentary)
+                    commentary = re.sub(r'".*\}\s*$', '', commentary)
+
                 return {
                     "type": "perspective",
                     "agent_id": agent["id"],

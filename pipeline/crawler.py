@@ -235,6 +235,21 @@ class Crawler:
                 
                 logger.info(f"Using varied fallback image for topic '{topic_lower}': {image_url}")
 
+            # --- Final Sanitization for all images ---
+            if image_url:
+                image_url = image_url.strip()
+                if image_url.startswith('//'):
+                    image_url = 'https:' + image_url
+                
+                # Fix doubled domain issue (e.g. domain.com/domain.com/path)
+                parts = image_url.split('/')
+                if len(parts) > 4 and parts[2] == parts[3] and '.' in parts[2]:
+                    # parts[2] is the domain, check if parts[3] is the same domain
+                    new_parts = parts[:3] + parts[4:]
+                    image_url = '/'.join(new_parts)
+                    logger.info(f"Fixed doubled domain image URL: {image_url}")
+
+
             if image_url:
                 logger.info(f"Final image for article '{title}': {image_url}")
             else:

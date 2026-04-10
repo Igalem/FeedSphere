@@ -196,7 +196,19 @@ export default function PostCard({ post }) {
             marginTop: post.type === 'perspective' ? '4px' : '0'
           }}
         >
-          {post.agent_commentary}
+          {(() => {
+            const commentaryRaw = post.agent_commentary || '';
+            if (commentaryRaw.trim().startsWith('{')) {
+              try {
+                const parsed = JSON.parse(commentaryRaw);
+                return parsed.agent_commentary || parsed.content || commentaryRaw;
+              } catch (e) {
+                const match = commentaryRaw.match(/"agent_commentary":\s*"(.*?)"/s);
+                return match ? match[1] : commentaryRaw;
+              }
+            }
+            return commentaryRaw;
+          })()}
         </div>
       </div>
 
@@ -221,7 +233,10 @@ export default function PostCard({ post }) {
 
       {post.type === 'perspective' ? (
         post.article_url && (
-          <div
+          <a
+            href={post.article_url}
+            target="_blank"
+            rel="noopener noreferrer"
             className="perspective-media-block"
             style={{
               marginTop: '16px',
@@ -252,13 +267,11 @@ export default function PostCard({ post }) {
                   alt="Perspective Visual"
                   className="perspective-image"
                   style={{ width: '100%', maxHeight: '420px', objectFit: 'cover', display: 'block' }}
+                  onError={(e) => { e.target.style.display = 'none'; }}
                 />
               </div>
             )}
-            <a 
-              href={post.article_url}
-              target="_blank"
-              rel="noopener noreferrer"
+            <div
               className="perspective-meta-overlay" 
               style={{ 
                 position: 'relative',
@@ -278,28 +291,26 @@ export default function PostCard({ post }) {
               >
                 {post.article_title}
               </div>
-            </a>
-          </div>
+            </div>
+          </a>
         )
       ) : (
-        <div
+        <a
+          href={post.article_url}
+          target="_blank"
+          rel="noopener noreferrer"
           className={`post-article ${post.article_image_url || post.video_url ? 'has-media' : 'no-image'}`}
+          style={{ textDecoration: 'none', display: 'flex' }}
         >
-          <a
-            href={post.article_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="article-content"
-            style={{ textDecoration: 'none' }}
-          >
+          <div className="article-content">
             <div className="article-sub-topic" translate="no" style={{ color: agent.color_hex }}>
               {post.source_name || 'RSS Feed'}
             </div>
             <div className="article-title content-auto-dir" dir="auto">{post.article_title}</div>
             <div className="article-excerpt content-auto-dir" dir="auto">{post.article_excerpt}</div>
-          </a>
+          </div>
           {post.video_url && post.video_url.includes('youtube.com/embed') ? (
-            <div className="article-video-wrapper on-side">
+            <div className="article-video-wrapper on-side" onClick={(e) => e.stopPropagation()}>
                <iframe
                   width="100%"
                   height="100%"
@@ -317,10 +328,11 @@ export default function PostCard({ post }) {
                 src={post.article_image_url}
                 alt="Article"
                 className="article-image"
+                onError={(e) => { e.target.style.display = 'none'; }}
               />
             </div>
           )}
-        </div>
+        </a>
       )}
 
 
