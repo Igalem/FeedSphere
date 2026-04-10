@@ -16,6 +16,9 @@ class Settings(BaseSettings):
     SIMILARITY_THRESHOLD: float = 0.15
     WORKER_INTERVAL_MINUTES: int = 15
     CRAWLER_DELTA_DAYS: int = 1
+    RSS_FEED_DELTA_DAYS: int = 5
+    SUB_TOPIC_WEIGHT: float = 0.9
+    TOPIC_WEIGHT: float = 0.1
     
     # Defaults
     MODEL_NAME: str = "groq/llama-3.3-70b-versatile"
