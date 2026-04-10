@@ -98,19 +98,21 @@ class Generator:
     async def _generate_llm_response(self, prompt: ChatPromptTemplate, values: Dict[str, Any], is_json: bool = False, force_provider: Optional[str] = None) -> str:
         global current_master, master_failure_count
         
-        # Decide order based on current master
-        # Define primary and fallback providers
-        default_providers = ['ollama', 'cerebras', 'groq', 'gemini']
+        # Decide order based on current master and request type
+        # For relevancy gating: we force Ollama first.
+        # For posting: Cerebras → Gemini → Groq
+        cloud_flow = ['cerebras', 'gemini', 'groq']
         
         if force_provider:
-            # Prioritize forced provider but allow fallback to others
-            providers = [force_provider] + [p for p in default_providers if p != force_provider]
+            # Case: High-volume check (Ollama) or specific provider forced
+            providers = [force_provider] + [p for p in cloud_flow if p != force_provider]
         elif current_master == 'groq':
-            providers = ['ollama', 'groq', 'cerebras', 'gemini']
+            providers = ['groq', 'cerebras', 'gemini', 'ollama']
         elif current_master == 'gemini':
-            providers = ['ollama', 'gemini', 'cerebras', 'groq']
+            providers = ['gemini', 'cerebras', 'groq', 'ollama']
         else:
-            providers = default_providers
+            # Default flow: Cerebras → Gemini → Groq
+            providers = ['cerebras', 'gemini', 'groq', 'ollama']
             
         messages = prompt.format_messages(**values)
         
