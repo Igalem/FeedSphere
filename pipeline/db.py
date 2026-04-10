@@ -1,6 +1,6 @@
 import psycopg2
 from psycopg2.extras import RealDictCursor
-from pipeline.config import settings
+from .config import settings
 
 class Database:
     def __init__(self):

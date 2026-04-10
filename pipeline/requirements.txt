@@ -13,3 +13,4 @@ beautifulsoup4
 sentence-transformers
 ddgs
 feedsearch
+httpx

@@ -17,77 +17,77 @@ async function scrape() {
     {
       name: 'Barca Blaugranes',
       url: 'https://www.barcablaugranes.com/rss/index.xml',
-      category: 'Football',
+      sub_topic: 'Football',
       topic: 'Sports',
       domain: 'www.barcablaugranes.com'
     },
     {
       name: 'Barca Universal',
       url: 'https://barcauniversal.com/feed/',
-      category: 'Football',
+      sub_topic: 'Football',
       topic: 'Sports',
       domain: 'barcauniversal.com'
     },
     {
       name: 'BarcaBlog',
       url: 'https://barcablog.com/feed',
-      category: 'Football',
+      sub_topic: 'Football',
       topic: 'Sports',
       domain: 'barcablog.com'
     },
     {
       name: 'PlayStation Blog',
       url: 'https://blog.playstation.com/feed/',
-      category: 'PlayStation',
+      sub_topic: 'PlayStation',
       topic: 'Gaming',
       domain: 'blog.playstation.com'
     },
     {
       name: 'PSU (PlayStation Universe)',
       url: 'https://www.psu.com/feed/?post_type=psu_news',
-      category: 'PlayStation',
+      sub_topic: 'PlayStation',
       topic: 'Gaming',
       domain: 'www.psu.com'
     },
     {
       name: 'PlayStation LifeStyle',
       url: 'https://www.playstationlifestyle.net/feed/',
-      category: 'PlayStation',
+      sub_topic: 'PlayStation',
       topic: 'Gaming',
       domain: 'www.playstationlifestyle.net'
     },
     {
       name: 'PS Blog (Feedburner)',
       url: 'https://feeds.feedburner.com/psblog',
-      category: 'PlayStation',
+      sub_topic: 'PlayStation',
       topic: 'Gaming',
       domain: 'feeds.feedburner.com'
     },
     {
       name: 'Gaming.News',
       url: 'https://gaming.news/feed/',
-      category: 'Gaming',
+      sub_topic: 'Gaming',
       topic: 'Gaming',
       domain: 'gaming.news'
     },
     {
       name: 'Time World',
       url: 'https://feeds.feedburner.com/time/world',
-      category: 'World',
+      sub_topic: 'World',
       topic: 'News',
       domain: 'feeds.feedburner.com'
     },
     {
       name: 'Washington Post World',
       url: 'https://feeds.washingtonpost.com/rss/world',
-      category: 'World',
+      sub_topic: 'World',
       topic: 'News',
       domain: 'feeds.washingtonpost.com'
     }
   ];
 
   const lines = text.split('\n');
-  let currentCategory = 'General';
+  let currentSubTopic = 'General';
   let currentTopic = 'General';
   
   const feeds = [...customFeeds];
@@ -97,8 +97,8 @@ async function scrape() {
     
     // Detect Category
     if (line.startsWith('## ') || line.startsWith('### ')) {
-      currentCategory = line.replace(/^#+ /, '').trim();
-      currentTopic = inferTopic(currentCategory);
+      currentSubTopic = line.replace(/^#+ /, '').trim();
+      currentTopic = inferTopic(currentSubTopic);
       continue;
     }
     
@@ -122,7 +122,7 @@ async function scrape() {
             feeds.push({
               name: name.substring(0, 255), // Sanity limit
               url,
-              category: currentCategory,
+              sub_topic: currentSubTopic,
               topic: currentTopic,
               domain
             });
@@ -145,14 +145,14 @@ async function scrape() {
   try {
     for (const feed of feeds) {
       await client.query(`
-        INSERT INTO public.rss_feeds (name, url, category, topic, domain)
+        INSERT INTO public.rss_feeds (name, url, sub_topic, topic, domain)
         VALUES ($1, $2, $3, $4, $5)
         ON CONFLICT (url) DO UPDATE SET
           name = EXCLUDED.name,
-          category = EXCLUDED.category,
+          sub_topic = EXCLUDED.sub_topic,
           topic = EXCLUDED.topic,
           domain = EXCLUDED.domain
-      `, [feed.name, feed.url, feed.category, feed.topic, feed.domain]);
+      `, [feed.name, feed.url, feed.sub_topic, feed.topic, feed.domain]);
     }
     console.log('Successfully populated rss_feeds table.');
   } catch (err) {
@@ -166,17 +166,23 @@ async function scrape() {
 function inferTopic(category) {
     const cat = category.toLowerCase();
     if (cat.includes('news')) return 'News';
-    if (cat.includes('tech') || cat.includes('programming') || cat.includes('android') || cat.includes('ios') || cat.includes('web')) return 'Tech';
+    if (cat.includes('tech') || cat.includes('android') || cat.includes('ios') || cat.includes('web')) return 'Tech';
+    if (cat.includes('programming') || cat.includes('coding') || cat.includes('dev')) return 'Programming';
     if (cat.includes('game') || cat.includes('gaming')) return 'Gaming';
     if (cat.includes('sport') || cat.includes('cricket') || cat.includes('football') || cat.includes('tennis')) return 'Sports';
-    if (cat.includes('tv') || cat.includes('movie') || cat.includes('series') || cat.includes('drama')) return 'TV Shows';
     if (cat.includes('science') || cat.includes('space')) return 'Science';
-    if (cat.includes('business') || cat.includes('finance') || cat.includes('economy')) return 'Business';
+    if (cat.includes('finance') || cat.includes('crypto')) return 'Finance'; // Note: Crypto has its own topic now, but for broad inference Finance is safe
+    if (cat.includes('business') || cat.includes('economy')) return 'Business';
+    if (cat.includes('health') || cat.includes('medical') || cat.includes('fitness')) return 'Health';
+    if (cat.includes('food') || cat.includes('cooking') || cat.includes('recipe')) return 'Food';
+    if (cat.includes('politics')) return 'Politics';
+    if (cat.includes('entertainment') || cat.includes('tv') || cat.includes('movie') || cat.includes('music')) return 'Entertainment';
+    if (cat.includes('crypto') || cat.includes('bitcoin') || cat.includes('ethereum')) return 'Crypto';
     
     // Simplified check for common country emoji patterns (flag symbols)
     if (category.includes('🇦') || category.includes('🇮') || category.includes('🇺') || category.includes('🇬') || category.includes('🇫') || category.includes('🇷') || category.includes('🇨') || category.includes('🇧')) return 'News';
     
-    return 'General';
+    return 'News'; // Default to News instead of General
 }
 
 scrape();

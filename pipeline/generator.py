@@ -1,4 +1,5 @@
 import asyncio
+import httpx
 import logging
 import json
 import re
@@ -10,7 +11,7 @@ from langchain_groq import ChatGroq
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.messages import SystemMessage, HumanMessage
-from pipeline.config import settings
+from .config import settings
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -42,7 +43,7 @@ class Generator:
                      "3. Keep it concise, maximum 3 rows/lines of text.\n"
                      "4. Output format: JSON object with 'agent_commentary' (string), 'sentiment_score' (number 0-100), and 'tags' (array of 3 high-level PascalCase strings).\n"
                      "5. Tags MUST be one-word PascalCase (e.g., 'MarchMadness', 'NFLNews', 'SportsAnalysis'). No spaces.\n\n"
-                     "IMPORTANT: Return ONLY a valid JSON object. Do NOT return a list or set of strings. Example: {{\"agent_commentary\": \"...\", \"sentiment_score\": 50, \"tags\": [\"...\", \"...\"]}}")
+                     "IMPORTANT: Return ONLY a valid JSON object. Do NOT return a list or set of strings. Be expressive with the sentiment_score (0=Extremely Critical, 50=Neutral, 100=Extremely Bullish). Example: {{\"agent_commentary\": \"...\", \"sentiment_score\": 85, \"tags\": [\"...\", \"...\"]}}")
         ])
 
         self.perspective_prompt = ChatPromptTemplate.from_messages([
@@ -52,11 +53,11 @@ class Generator:
                      "Excerpt: {article_excerpt}\n"
                      "Image Context: This article includes a striking image.\n\n"
                      "Rules:\n"
-                     "1. Provide a unique point of view based on your persona.\n"
-                     "2. References the significance of the event.\n"
+                     "1. Provide a unique point of view that ONLY someone with your specific persona ({persona}) and niche would have. Do NOT be generic or repeat what is in the excerpt.\n"
+                     "2. Reference the profound significance of the event through the lens of your niche and expertise.\n"
                      "3. Output format: JSON object with 'agent_commentary' (string), 'sentiment_score' (number 0-100), and 'tags' (array of 3 high-level PascalCase strings).\n"
                      "4. Tags MUST be one-word PascalCase (e.g., 'GlobalEconomy', 'TechInnovation', 'ClimatePulse'). No spaces.\n\n"
-                     "IMPORTANT: Return ONLY a valid JSON object. Do NOT return a list or set of strings. Example: {{\"agent_commentary\": \"...\", \"sentiment_score\": 50, \"tags\": [\"...\", \"...\"]}}")
+                     "IMPORTANT: Return ONLY a valid JSON object. Do NOT return a list or set of strings. Be expressive with the sentiment_score (0=Extremely Critical, 50=Neutral, 100=Extremely Bullish). Example: {{\"agent_commentary\": \"...\", \"sentiment_score\": 15, \"tags\": [\"...\", \"...\"]}}")
         ])
 
         self.debate_prompt = ChatPromptTemplate.from_messages([
@@ -67,28 +68,56 @@ class Generator:
                      "Agent A Persona: {persona_a}\n"
                      "Agent B Persona: {persona_b}\n\n"
                      "Rules:\n"
-                     "1. Tags MUST be one-word PascalCase (e.g., 'DebatePulse', 'TopicWar').\n\n"
+                     "1. Tags MUST be one-word PascalCase (e.g., 'DebatePulse', 'TopicWar').\n"
+                     "2. Be expressive with sentiment values (0-100). Avoid defaulting to 50 if the agent has a clear stance.\n\n"
                      "Output Format (JSON):\n"
                      "{{\n"
                      "  \"argument_a\": \"2-sentence argument from Agent A's perspective\",\n"
-                     "  \"sentiment_a\": 50,\n"
+                     "  \"sentiment_a\": 85,\n"
                      "  \"argument_b\": \"2-sentence counter-argument from Agent B using their unique voice\",\n"
-                     "  \"sentiment_b\": 50,\n"
+                     "  \"sentiment_b\": 20,\n"
                      "  \"debate_question\": \"A provocative question for the audience\",\n"
                      "  \"tags\": [\"TagA\", \"TagB\", \"TagC\"]\n"
                      "}}\n\n"
                      "IMPORTANT: Return ONLY valid JSON.")
         ])
 
-    async def _generate_llm_response(self, prompt: ChatPromptTemplate, values: Dict[str, Any], is_json: bool = False) -> str:
+        self.relevancy_prompt = ChatPromptTemplate.from_messages([
+            ("system", "You are an intelligent Relevancy Filter for an AI agent's news feed.\n"
+                       "The agent cares ONLY about their specific niche. General topics in the same category are NOT necessarily relevant.\n"
+                       "Agent Topic: {topic}\n"
+                       "Agent Niche: {sub_topic}\n"
+                       "Agent Persona: {persona}"),
+            ("user", "Determine if this article fits strictly within the agent's Niche and Persona.\n\n"
+                     "Article Title: {article_title}\n"
+                     "Article Excerpt: {article_excerpt}\n\n"
+                     "Relevancy Rules:\n"
+                     "1. 100: Perfect match. The article is ABOUT the agent's niche (e.g. Real Madrid).\n"
+                     "2. 80-99: Highly related. Same league, direct rivals, or players the agent cares about.\n"
+                     "3. 0-59: NOT RELEVANT. Even if it's in the same category (e.g. WWE is not Football). "
+                     "NEVER use parallels or metaphors like 'this is like Real Madrid' as a reason for relevance.\n\n"
+                     "Response format: JSON object with 'relevance_score' (int 0-100).\n"
+                     "IMPORTANT: Return ONLY valid JSON.")
+        ])
+
+    async def _generate_llm_response(self, prompt: ChatPromptTemplate, values: Dict[str, Any], is_json: bool = False, force_provider: Optional[str] = None) -> str:
         global current_master, master_failure_count
         
-        # Decide order based on current master
-        providers = ['cerebras', 'groq', 'gemini']
-        if current_master == 'groq':
-            providers = ['groq', 'cerebras', 'gemini']
+        # Decide order based on current master and request type
+        # For relevancy gating: we force Ollama first.
+        # For posting: Cerebras → Gemini → Groq
+        cloud_flow = ['cerebras', 'gemini', 'groq']
+        
+        if force_provider:
+            # Case: High-volume check (Ollama) or specific provider forced
+            providers = [force_provider] + [p for p in cloud_flow if p != force_provider]
+        elif current_master == 'groq':
+            providers = ['groq', 'cerebras', 'gemini', 'ollama']
         elif current_master == 'gemini':
-            providers = ['gemini', 'cerebras', 'groq']
+            providers = ['gemini', 'cerebras', 'groq', 'ollama']
+        else:
+            # Default flow: Cerebras → Gemini → Groq
+            providers = ['cerebras', 'gemini', 'groq', 'ollama']
             
         messages = prompt.format_messages(**values)
         
@@ -96,7 +125,50 @@ class Generator:
         
         for provider in providers:
             try:
-                if provider == 'cerebras':
+                if provider == 'ollama':
+                    if not settings.OLLAMA_BASE_URL:
+                        continue
+                    try:
+                        logger.info(f"[LLM] Trying Ollama ({settings.OLLAMA_MODEL})...")
+                        async with httpx.AsyncClient(timeout=30) as client:
+                            # Map LangChain roles to Ollama roles
+                            role_map = {"system": "system", "human": "user", "ai": "assistant"}
+                            ollama_messages = [
+                                {"role": role_map.get(m.type, "user"), "content": m.content} 
+                                for m in messages
+                            ]
+                            
+                            data = {
+                                "model": settings.OLLAMA_MODEL,
+                                "messages": ollama_messages,
+                                "stream": False
+                            }
+                            if is_json:
+                                data["format"] = "json"
+                                
+                            resp = await client.post(f"{settings.OLLAMA_BASE_URL}/api/chat", json=data)
+                            resp.raise_for_status()
+                            result = resp.json()
+                            content = result.get('message', {}).get('content', '').strip()
+                            if content:
+                                return content
+                            raise Exception("Empty response from Ollama")
+                    except Exception as e:
+                        if force_provider == 'ollama':
+                            # If explicitly forced (e.g. relevancy check), we allow it to proceed to backups
+                            # unless we want a hard fail. The user's goal was volume. 
+                            # Let's log and continue to standard backups.
+                            logger.warning(f"[LLM] Ollama failed: {e}. Falling back to cloud...")
+                            # Re-add standard providers to the loop if we were forcing ollama
+                            # Actually, the loop will just continue if we don't break.
+                            # But wait, if providers = ['ollama'], it will exit.
+                            # Let's fix providers list if ollama was forced and fails.
+                            providers = ['cerebras', 'gemini', 'groq']
+                            continue
+                        logger.warning(f"[LLM] Ollama check failed or not running: {e}")
+                        continue
+
+                elif provider == 'cerebras':
                     if not settings.CEREBRAS_API_KEY:
                         continue
                     logger.info(f"[LLM] Trying Cerebras (Master: {current_master})...")
@@ -209,7 +281,13 @@ class Generator:
                 
                 json_str = re.sub(r'"(?:\\.|[^"\\])*"', escape_control_chars, json_str, flags=re.DOTALL)
 
-                # 2. Handle "set-like" notation: {"a", "b"}
+                # 2. Fix common LLM quirks: "#SentimentScore" -> "sentiment_score"
+                json_str = json_str.replace('"#SentimentScore":', '"sentiment_score":')
+                json_str = json_str.replace('"#sentiment_score":', '"sentiment_score":')
+                json_str = json_str.replace('"#tags":', '"tags":')
+                
+                # 3. Handle "set-like" notation: {"a", "b"}
+
                 temp_str = re.sub(r'"(?:\\.|[^"\\])*"', '', json_str)
                 if ":" not in temp_str:
                     parts = re.findall(r'"((?:\\.|[^"\\])*)"', json_str, re.DOTALL)
@@ -243,6 +321,27 @@ class Generator:
         clean_words = [re.sub(r'\W+', '', word.capitalize()) for word in words]
         return "".join(clean_words)
 
+    @retry(wait=wait_exponential(multiplier=1, min=2, max=6), stop=stop_after_attempt(3))
+    async def get_relevancy_score(self, agent: Dict, article: Dict) -> int:
+        """Determines if the article is topically relevant to the agent using the LLM Gatekeeper."""
+        logger.info(f"Running LLM Relevancy Gatekeeper for agent: {agent['slug']} against article: {article['article_title']}")
+        
+        content = await self._generate_llm_response(self.relevancy_prompt, {
+            "topic": agent.get("topic", "General"),
+            "sub_topic": agent.get("sub_topic", "N/A"),
+            "persona": agent["persona"],
+            "article_title": article["article_title"],
+            "article_excerpt": article["article_excerpt"]
+        }, is_json=True, force_provider="ollama")
+        
+        try:
+            json_str = self._clean_json_response(content)
+            data = json.loads(json_str)
+            return int(data.get("relevance_score", 0))
+        except Exception as e:
+            logger.error(f"Failed to parse relevancy score JSON: {e}, Content: {content}")
+            return 40 # Default to non-relevant if parsing fails to avoid unrelated content
+
     @retry(wait=wait_exponential(multiplier=1, min=4, max=10), stop=stop_after_attempt(5))
     async def generate_reaction(self, agent: Dict, article: Dict) -> Dict:
         """Generates a standard short reaction post."""
@@ -272,7 +371,8 @@ class Generator:
                 "article_excerpt": article["article_excerpt"],
                 "article_image_url": article.get("article_image_url"),
                 "source_name": article["source_name"],
-                "agent_commentary": self._clean_commentary(data.get("agent_commentary", "")),
+                "agent_commentary": self._clean_commentary(data.get("agent_commentary", data.get("content", ""))),
+                "sentiment_score": data.get("sentiment_score", data.get("sentiment", 50)),
                 "tags": tags,
                 "published_at": article.get("published_at")
             }
@@ -281,8 +381,14 @@ class Generator:
             if "agent_commentary" in content:
                 # Use a lookahead to find the closing quote of the commentary field
                 # that is followed by the next field (tags) or the end object
-                commentary_match = re.search(r'"agent_commentary":\s*"(.*)"(?=\s*,\s*"tags"|\s*\})', content, re.DOTALL)
+                # Updated regex to be more lenient with middle quotes and missing commas
+                commentary_match = re.search(r'"agent_commentary":\s*"(.*?)"(?=\s*(?:,|\s*\}|\s*#|"))', content, re.DOTALL)
                 commentary = commentary_match.group(1) if commentary_match else content
+                # If it's still JSON-like, try to strip the outer object manually if it failed
+                if commentary.startswith('{'):
+                    commentary = re.sub(r'^{.*"agent_commentary":\s*"', '', commentary)
+                    commentary = re.sub(r'".*\}\s*$', '', commentary)
+
                 return {
                     "type": "reaction",
                     "agent_id": agent["id"],
@@ -292,6 +398,7 @@ class Generator:
                     "article_image_url": article.get("article_image_url"),
                     "source_name": article["source_name"],
                     "agent_commentary": self._clean_commentary(commentary),
+                    "sentiment_score": 50,
                     "tags": [],
                     "published_at": article.get("published_at")
                 }
@@ -307,6 +414,7 @@ class Generator:
                 "article_image_url": article.get("article_image_url"),
                 "source_name": article["source_name"],
                 "agent_commentary": self._clean_commentary(content),
+                "sentiment_score": 50,
                 "tags": [],
                 "published_at": article.get("published_at")
             }
@@ -338,7 +446,8 @@ class Generator:
                 "article_excerpt": article["article_excerpt"],
                 "article_image_url": article.get("article_image_url"),
                 "source_name": article["source_name"],
-                "agent_commentary": self._clean_commentary(data.get("agent_commentary", "")),
+                "agent_commentary": self._clean_commentary(data.get("agent_commentary", data.get("content", ""))),
+                "sentiment_score": data.get("sentiment_score", data.get("sentiment", 50)),
                 "tags": tags,
                 "published_at": article.get("published_at")
             }
@@ -346,8 +455,14 @@ class Generator:
             if "agent_commentary" in content:
                 # Use a lookahead to find the closing quote of the commentary field
                 # that is followed by the next field (tags) or the end object
-                commentary_match = re.search(r'"agent_commentary":\s*"(.*)"(?=\s*,\s*"tags"|\s*\})', content, re.DOTALL)
+                # Updated regex to be more lenient with middle quotes and missing commas
+                commentary_match = re.search(r'"agent_commentary":\s*"(.*?)"(?=\s*(?:,|\s*\}|\s*#|"))', content, re.DOTALL)
                 commentary = commentary_match.group(1) if commentary_match else content
+                # If it's still JSON-like, try to strip the outer object manually if it failed
+                if commentary.startswith('{'):
+                    commentary = re.sub(r'^{.*"agent_commentary":\s*"', '', commentary)
+                    commentary = re.sub(r'".*\}\s*$', '', commentary)
+
                 return {
                     "type": "perspective",
                     "agent_id": agent["id"],
@@ -357,6 +472,7 @@ class Generator:
                     "article_image_url": article.get("article_image_url"),
                     "source_name": article["source_name"],
                     "agent_commentary": self._clean_commentary(commentary),
+                    "sentiment_score": 50,
                     "tags": [],
                     "published_at": article.get("published_at")
                 }
@@ -372,6 +488,7 @@ class Generator:
                 "article_image_url": article.get("article_image_url"),
                 "source_name": article["source_name"],
                 "agent_commentary": self._clean_commentary(content),
+                "sentiment_score": 50,
                 "tags": [],
                 "published_at": article.get("published_at")
             }

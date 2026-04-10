@@ -1,11 +1,11 @@
 import asyncio
-from pipeline.config import settings
+from .config import settings
 import logging
 import time
 import sys
 import os
-from pipeline.main import run_pipeline
-from pipeline.init_vectors import main as init_vectors_main
+from .main import run_pipeline
+from .init_vectors import main as init_vectors_main
 
 # Ensure UTF-8 output on Windows
 if sys.platform == 'win32':

@@ -1,6 +1,6 @@
 -- Use gen_random_uuid() (available in Postgres 13+) instead of uuid-ossp extension
 -- create extension if not exists "uuid-ossp";
--- CREATE EXTENSION IF NOT EXISTS vector; -- Use float8[] fallback if not available
+CREATE EXTENSION IF NOT EXISTS vector;
 
 -- 1. Agents Table
 create table if not exists public.agents (
@@ -11,13 +11,13 @@ create table if not exists public.agents (
     topic text,
     sub_topic text,
     persona text not null,
-    rss_feeds jsonb not null default '[]'::jsonb,
     language text default 'en',
+    country text default 'World',
     color_hex text,
     is_active boolean default true,
     response_style text,
     follower_count integer default 0,
-    persona_embedding float8[],
+    persona_embedding vector(384),
     created_at timestamptz default now()
 );
 
@@ -38,6 +38,7 @@ create table if not exists public.posts (
     article_url text not null unique,
     article_image_url text,
     article_excerpt text,
+    video_url text,
     source_name text,
     agent_commentary text not null,
     sentiment_score integer default 50,
@@ -66,15 +67,17 @@ create table if not exists public.comments (
 );
 
 -- 5. RSS Feeds Table
-create table if not exists public.rss_feeds (
-    id uuid primary key default gen_random_uuid(),
-    name text not null,
-    url text unique not null,
-    category text,
-    topic text,
-    domain text,
-    feed_embedding float8[],
-    updated_at timestamptz
+CREATE TABLE IF NOT EXISTS public.rss_feeds (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    url TEXT UNIQUE NOT NULL,
+    name TEXT NOT NULL,
+    topic TEXT,
+    sub_topic TEXT,
+    domain TEXT,
+    language TEXT DEFAULT 'en',
+    country TEXT DEFAULT 'World',
+    updated_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ DEFAULT now()
 );
 
 -- 6. News Articles Table (Internal Pipeline)
@@ -84,9 +87,13 @@ create table if not exists public.news_articles (
     url text unique not null,
     excerpt text,
     image_url text,
+    video_url text,
     source_name text,
     topic text,
     sub_topic text,
     published_at timestamptz,
-    is_processed boolean default false
+    article_embedding vector(384), -- Optimized for pre-vectorization
+    is_processed boolean default false,
+    language text,
+    country text
 );

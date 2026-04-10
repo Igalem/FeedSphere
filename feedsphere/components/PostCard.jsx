@@ -152,8 +152,8 @@ export default function PostCard({ post }) {
       style={{
         borderColor: `${agent.color_hex}44`,
         background: post.type === 'perspective' 
-          ? `linear-gradient(to bottom right, ${agent.color_hex}0d, ${agent.color_hex}22 60%)` 
-          : `linear-gradient(to bottom right, ${agent.color_hex}0d, var(--surface) 60%)`
+          ? `linear-gradient(to bottom right, ${agent.color_hex}30, ${agent.color_hex}22 60%)` 
+          : `linear-gradient(to bottom right, ${agent.color_hex}30, var(--surface) 60%)`
       }}
     >
       <div className="post-header">
@@ -196,7 +196,19 @@ export default function PostCard({ post }) {
             marginTop: post.type === 'perspective' ? '4px' : '0'
           }}
         >
-          {post.agent_commentary}
+          {(() => {
+            const commentaryRaw = post.agent_commentary || '';
+            if (commentaryRaw.trim().startsWith('{')) {
+              try {
+                const parsed = JSON.parse(commentaryRaw);
+                return parsed.agent_commentary || parsed.content || commentaryRaw;
+              } catch (e) {
+                const match = commentaryRaw.match(/"agent_commentary":\s*"(.*?)"/s);
+                return match ? match[1] : commentaryRaw;
+              }
+            }
+            return commentaryRaw;
+          })()}
         </div>
       </div>
 
@@ -235,25 +247,38 @@ export default function PostCard({ post }) {
               position: 'relative'
             }}
           >
-            {post.article_image_url && (
+            {post.video_url && post.video_url.includes('youtube.com/embed') ? (
+              <div className="perspective-video-wrapper" style={{ width: '100%', aspectRatio: '16/9' }}>
+                <iframe
+                  width="100%"
+                  height="100%"
+                  src={post.video_url}
+                  title="YouTube video player"
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                  style={{ display: 'block' }}
+                ></iframe>
+              </div>
+            ) : post.article_image_url && (
               <div className="perspective-image-wrapper">
                 <img
                   src={post.article_image_url}
                   alt="Perspective Visual"
                   className="perspective-image"
                   style={{ width: '100%', maxHeight: '420px', objectFit: 'cover', display: 'block' }}
+                  onError={(e) => { e.target.style.display = 'none'; }}
                 />
               </div>
             )}
-            <div 
+            <div
               className="perspective-meta-overlay" 
               style={{ 
-                position: 'absolute',
-                bottom: 0,
-                left: 0,
-                right: 0,
+                position: 'relative',
+                display: 'block',
                 padding: '12px 16px', 
                 background: '#0a0a0f', // Solid dark background to match --bg
+                textDecoration: 'none'
               }}
             >
               <div className="perspective-source-name" translate="no" style={{ color: 'rgba(255,255,255,0.5)', fontSize: '10px', textTransform: 'lowercase', marginBottom: '2px', letterSpacing: '0.4px' }}>
@@ -274,24 +299,39 @@ export default function PostCard({ post }) {
           href={post.article_url}
           target="_blank"
           rel="noopener noreferrer"
-          className={`post-article ${post.article_image_url ? 'has-image' : 'no-image'}`}
+          className={`post-article ${post.article_image_url || post.video_url ? 'has-media' : 'no-image'}`}
+          style={{ textDecoration: 'none', display: 'flex' }}
         >
-          {post.article_image_url && (
-            <div className="article-image-wrapper">
-              <img
-                src={post.article_image_url}
-                alt="Article"
-                className="article-image"
-              />
-            </div>
-          )}
           <div className="article-content">
-            <div className="article-category" translate="no" style={{ color: agent.color_hex }}>
+            <div className="article-sub-topic" translate="no" style={{ color: agent.color_hex }}>
               {post.source_name || 'RSS Feed'}
             </div>
             <div className="article-title content-auto-dir" dir="auto">{post.article_title}</div>
             <div className="article-excerpt content-auto-dir" dir="auto">{post.article_excerpt}</div>
           </div>
+          {post.video_url && post.video_url.includes('youtube.com/embed') ? (
+            <div className="article-video-wrapper on-side" onClick={(e) => e.stopPropagation()}>
+               <iframe
+                  width="100%"
+                  height="100%"
+                  src={post.video_url}
+                  title="YouTube video player"
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                  style={{ borderRadius: '8px' }}
+                ></iframe>
+            </div>
+          ) : post.article_image_url && (
+            <div className="article-image-wrapper">
+              <img
+                src={post.article_image_url}
+                alt="Article"
+                className="article-image"
+                onError={(e) => { e.target.style.display = 'none'; }}
+              />
+            </div>
+          )}
         </a>
       )}
 
