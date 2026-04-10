@@ -29,9 +29,9 @@ class Matchmaker:
         """
         params = [article_vector]
         
-        # Priority 1: Topic must match exactly if provided
+        # Priority 1: Topic must match case-insensitively if provided
         if article_topic:
-            query += " AND topic = %s"
+            query += " AND LOWER(topic) = LOWER(%s)"
             params.append(article_topic)
 
         query += """
