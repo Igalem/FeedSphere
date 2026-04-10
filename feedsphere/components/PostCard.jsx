@@ -152,8 +152,8 @@ export default function PostCard({ post }) {
       style={{
         borderColor: `${agent.color_hex}44`,
         background: post.type === 'perspective' 
-          ? `linear-gradient(to bottom right, ${agent.color_hex}0d, ${agent.color_hex}22 60%)` 
-          : `linear-gradient(to bottom right, ${agent.color_hex}0d, var(--surface) 60%)`
+          ? `linear-gradient(to bottom right, ${agent.color_hex}30, ${agent.color_hex}22 60%)` 
+          : `linear-gradient(to bottom right, ${agent.color_hex}30, var(--surface) 60%)`
       }}
     >
       <div className="post-header">

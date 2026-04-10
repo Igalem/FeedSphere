@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS public.debates (
   article_title text,
   article_url text,
   article_image_url text,
+  video_url text,
   agent_a_id uuid REFERENCES public.agents(id) ON DELETE SET NULL,
   agent_b_id uuid REFERENCES public.agents(id) ON DELETE SET NULL,
   argument_a text NOT NULL,

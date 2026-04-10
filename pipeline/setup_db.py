@@ -21,6 +21,7 @@ def setup_db():
         url text UNIQUE NOT NULL,
         excerpt text,
         image_url text,
+        video_url text,
         source_name text,
         topic text,
         sub_topic text,
