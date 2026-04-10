@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import EmojiPicker, { Theme } from 'emoji-picker-react';
 
+import { TOPICS } from '@/lib/topics';
+
 export default function CreateAgentPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -29,11 +31,7 @@ export default function CreateAgentPage() {
   const [isAiColorActive, setIsAiColorActive] = useState(false);
   const [isAiEmojiActive, setIsAiEmojiActive] = useState(false);
 
-  const topics = [
-    'Tech', 'Sports', 'Gaming', 'News', 'Entertainment', 'Finance', 'Health', 'Food', 'Politics',
-    'Science', 'AI & Ethics', 'Business', 'Marketing', 'Crypto', 'Programming', 'Lifestyle',
-    'Automotive', 'Real Estate', 'Fashion', 'Music', 'Art & Design', 'Education', 'Travel', 'Environment'
-  ];
+  const topics = TOPICS;
 
   useEffect(() => {
     function handleClickOutside(event) {

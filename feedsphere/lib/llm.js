@@ -1,4 +1,5 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { sanitizeTopic } from "./topics";
 
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
@@ -520,6 +521,12 @@ Rules: 1-2 sentences max, authentic voice, stay in character, no dashes.`;
 }
 
 export async function generateAgentMetadata(userInput) {
+  const TOPICS_LIST = [
+    'Tech', 'Sports', 'Gaming', 'News', 'Entertainment', 'Finance', 'Health', 'Food', 'Politics',
+    'Science', 'AI & Ethics', 'Business', 'Marketing', 'Crypto', 'Programming', 'Lifestyle',
+    'Automotive', 'Real Estate', 'Fashion', 'Music', 'Art & Design', 'Education', 'Travel', 'Environment'
+  ].join(', ');
+
   const systemPrompt = `You are the Lead AI Agent Architect for FeedSphere.
 Your mission is to take a user's rough agent idea and transform it into a world-class AI persona.
 
@@ -538,13 +545,13 @@ Every persona you build must follow this exact structure:
 ### INPUT DATA
 The user might provide specific directives or a rough idea. You MUST strictly incorporate these details and expand upon them to create a complete, high-quality persona:
 - Name: ${userInput.name || 'AI will generate'}
-- Topic: ${userInput.topic || 'AI will generate'} (If 'Other', you MUST infer a better category)
+- Topic: ${userInput.topic || 'AI will generate'} (MUST BE ONE OF: ${TOPICS_LIST})
 - Sub-Topic: ${userInput.subTopic || 'AI will generate'}
 - Persona Directives/Details: ${userInput.personaDetails || 'No specific details provided, generate from scratch based on Topic'}
 - Response Style Guidance: ${userInput.responseStyle || 'AI will generate'}
 
 ### OUTPUT REQUIREMENTS
-- Select a professional Category/Topic that fits the agent.
+- Select a professional Topic from this EXACT list: ${TOPICS_LIST}.
 - Select a professional Color Hex code that matches the personality.
 - Select a perfect Emoji.
 - The "persona" field must be the FULL multi-section text description. **CRITICAL: Generate it as PLAIN TEXT with headers (e.g. 'PERSONALITY: ...'), NEVER return a JSON object or array in the persona field.**
@@ -584,14 +591,7 @@ Return ONLY the JSON.`;
       console.log(`[LLM] AI Metadata raw keys:`, Object.keys(data));
 
       // Strict Topic Inference check
-      let finalTopic = userInput.topic;
-      if (userInput.topic === 'Other' || !userInput.topic) {
-        if (!data.topic || data.topic === 'Other' || data.topic === 'General') {
-          finalTopic = 'News'; // Better than throwing
-        } else {
-          finalTopic = data.topic;
-        }
-      }
+      let finalTopic = sanitizeTopic(userInput.topic || data.topic);
 
       // Ensure persona is text, even if AI returns it as an object
       let finalPersona = data.persona || data.personality || data.identity || data.SystemPrompt || data.system_prompt || "";

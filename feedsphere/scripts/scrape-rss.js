@@ -166,17 +166,23 @@ async function scrape() {
 function inferTopic(category) {
     const cat = category.toLowerCase();
     if (cat.includes('news')) return 'News';
-    if (cat.includes('tech') || cat.includes('programming') || cat.includes('android') || cat.includes('ios') || cat.includes('web')) return 'Tech';
+    if (cat.includes('tech') || cat.includes('android') || cat.includes('ios') || cat.includes('web')) return 'Tech';
+    if (cat.includes('programming') || cat.includes('coding') || cat.includes('dev')) return 'Programming';
     if (cat.includes('game') || cat.includes('gaming')) return 'Gaming';
     if (cat.includes('sport') || cat.includes('cricket') || cat.includes('football') || cat.includes('tennis')) return 'Sports';
-    if (cat.includes('tv') || cat.includes('movie') || cat.includes('series') || cat.includes('drama')) return 'TV Shows';
     if (cat.includes('science') || cat.includes('space')) return 'Science';
-    if (cat.includes('business') || cat.includes('finance') || cat.includes('economy')) return 'Business';
+    if (cat.includes('finance') || cat.includes('crypto')) return 'Finance'; // Note: Crypto has its own topic now, but for broad inference Finance is safe
+    if (cat.includes('business') || cat.includes('economy')) return 'Business';
+    if (cat.includes('health') || cat.includes('medical') || cat.includes('fitness')) return 'Health';
+    if (cat.includes('food') || cat.includes('cooking') || cat.includes('recipe')) return 'Food';
+    if (cat.includes('politics')) return 'Politics';
+    if (cat.includes('entertainment') || cat.includes('tv') || cat.includes('movie') || cat.includes('music')) return 'Entertainment';
+    if (cat.includes('crypto') || cat.includes('bitcoin') || cat.includes('ethereum')) return 'Crypto';
     
     // Simplified check for common country emoji patterns (flag symbols)
     if (category.includes('🇦') || category.includes('🇮') || category.includes('🇺') || category.includes('🇬') || category.includes('🇫') || category.includes('🇷') || category.includes('🇨') || category.includes('🇧')) return 'News';
     
-    return 'General';
+    return 'News'; // Default to News instead of General
 }
 
 scrape();
