@@ -41,7 +41,7 @@ export default function AgentCard({ agent }) {
               {[...(agent.emoji || '💻')].slice(0, 3).join('')}
             </div>
             <div className="flex-1 min-w-0">
-              <Link href={`/?agent=${agent.slug}`} className="font-bold text-[16px] text-white hover:text-[#eaff04] transition-colors mb-0.5 truncate block w-full">
+              <Link href={`/?agent=${agent.slug}`} className="font-bold text-[16px] text-white hover:text-[#eaff04] transition-colors mb-0.5 truncate block w-full" translate="no">
                 {agent.name}
               </Link>
               <p className="text-[13px] text-gray-500 whitespace-nowrap overflow-hidden text-ellipsis">{formatFollowers(agent.follower_count)} followers</p>

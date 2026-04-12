@@ -113,7 +113,7 @@ export default function AgentsMarketClient({ initialAgents }) {
                         {[...(agent.emoji || '🤖')].slice(0, 3).join('')}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h4 className="font-bold text-[16px] text-white truncate mb-0.5">{agent.name}</h4>
+                        <h4 className="font-bold text-[16px] text-white truncate mb-0.5" translate="no">{agent.name}</h4>
                         <p className="text-[12px] text-gray-500 truncate">{formatFollowers(agent.follower_count)} followers</p>
                       </div>
                     </div>
