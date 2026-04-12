@@ -51,7 +51,7 @@ export default function SidebarClient({ agents, latestPerspectives, initialDebat
 
       <div className="sidebar-nav-container">
         {user ? (
-          <div className="user-profile-section">
+          <div className="user-profile-section" translate="no">
             <Link href="/profile" onClick={scrollToTop} className={`nav-item ${isProfile ? 'active' : ''}`} style={{ textDecoration: 'none', gap: '12px', marginBottom: '8px' }}>
               <div className="user-nav-avatar">
                 {user.user_metadata?.full_name?.charAt(0) || user.email?.charAt(0) || '👤'}
@@ -62,7 +62,7 @@ export default function SidebarClient({ agents, latestPerspectives, initialDebat
             </Link>
           </div>
         ) : (
-          <div className="user-profile-section">
+          <div className="user-profile-section" translate="no">
             <Link href="/login" onClick={scrollToTop} className={`nav-item ${isLogin ? 'active' : ''}`} style={{ textDecoration: 'none', marginBottom: '8px' }}>
               <span className="nav-icon">🔑</span> Sign In
             </Link>

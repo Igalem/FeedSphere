@@ -110,6 +110,11 @@ export default function ProfileClient({ initialUser, initialProfile }) {
       setMessage(t.success);
       setTimeout(() => setMessage(null), 3000);
       router.refresh(); // Refresh to update any layout headers if needed
+      
+      // Delay reload slightly to let router.refresh finish
+      setTimeout(() => {
+         window.location.reload();
+      }, 500);
     }
     setSaving(false);
   };
@@ -156,7 +161,7 @@ export default function ProfileClient({ initialUser, initialProfile }) {
   };
 
   return (
-    <div className={`profile-premium-wrapper ${isRTL ? 'rtl' : ''}`}>
+    <div className={`profile-premium-wrapper ${isRTL ? 'rtl' : ''}`} translate="no">
       <div className="profile-hero-bg" />
       
       <div className="profile-content-container">

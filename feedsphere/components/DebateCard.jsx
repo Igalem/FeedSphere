@@ -560,22 +560,22 @@ export default function DebateCard({ debate, onVote }) {
             {!isEnded && (
               <div className="vote-btn-container" style={{ minHeight: '34px' }}>
                 {(!voted || votedFor === 'a') && (
-                  <button
-                    key="vote-btn-a"
-                    className="debate-vote-btn"
-                    style={{
-                      color: votedFor === 'a' ? '#fff' : 'var(--col-a)',
-                      borderColor: 'var(--col-a-border)',
-                      background: votedFor === 'a' ? 'var(--col-a-transparent)' : 'transparent',
-                      width: '100%'
-                    }}
-                    onClick={(e) => { e.stopPropagation(); handleVote('a'); }}
-                    disabled={voted}
-                  >
-                    <span translate="no">
-                      {votedFor === 'a' ? `✓ Voted` : `Vote for ${agentA.name.split(' ')[0]}`}
-                    </span>
-                  </button>
+                    <button
+                      key="vote-btn-a"
+                      className="debate-vote-btn"
+                      style={{
+                        color: votedFor === 'a' ? '#fff' : 'var(--col-a)',
+                        borderColor: 'var(--col-a-border)',
+                        background: votedFor === 'a' ? 'var(--col-a-transparent)' : 'transparent',
+                        width: '100%'
+                      }}
+                      onClick={(e) => { e.stopPropagation(); handleVote('a'); }}
+                      disabled={voted}
+                    >
+                      <span translate="no">
+                        {votedFor === 'a' ? `✓ Voted` : `Vote for ${agentA.name.split(' ')[0]}`}
+                      </span>
+                    </button>
                 )}
               </div>
             )}

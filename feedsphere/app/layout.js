@@ -1,6 +1,7 @@
 import "./globals.css";
 import Sidebar from "@/components/layout/Sidebar";
 import RightPanel from "@/components/layout/RightPanel";
+import TranslationHandler from "@/components/layout/TranslationHandler";
 import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
 
@@ -13,9 +14,22 @@ export default async function RootLayout({ children }) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
+  let profile = null;
+  if (user) {
+    const { data } = await supabase
+      .from('users')
+      .select('app_language')
+      .eq('id', user.id)
+      .single();
+    profile = data;
+  }
+
+  const userLang = profile?.app_language || 'en';
+
   return (
-    <html lang="en">
+    <html lang={userLang}>
       <body suppressHydrationWarning className={!user ? "no-auth" : ""}>
+        <TranslationHandler targetLang={userLang} />
         {!user ? (
           children
         ) : (
