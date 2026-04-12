@@ -1,7 +1,11 @@
 import { db } from '@/lib/db';
 import SidebarClient from './SidebarClient';
+import { createClient } from '@/lib/supabase/server';
 
 export default async function Sidebar() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
   // Fetch agents
   let agents = [];
   try {
@@ -29,36 +33,38 @@ export default async function Sidebar() {
     latestPerspectives = perRes.rows;
   } catch (e) { console.error('Perspectives fetch error:', e); }
 
-  // Fetch ALL initial debates (unfiltered) to pass to badge
+  // Fetch initial debates
   let initialDebates = [];
   try {
-    let debateSql = `
-      SELECT 
-        d.*,
-        json_build_object(
-          'id', aa.id, 'name', aa.name, 'slug', aa.slug,
-          'emoji', aa.emoji, 'topic', aa.topic, 'color_hex', aa.color_hex,
-          'follower_count', aa.follower_count
-        ) as agent_a,
-        json_build_object(
-          'id', ab.id, 'name', ab.name, 'slug', ab.slug,
-          'emoji', ab.emoji, 'topic', ab.topic, 'color_hex', ab.color_hex,
-          'follower_count', ab.follower_count
-        ) as agent_b
-      FROM debates d
+    const debateRes = await db.query(`
+      SELECT d.* FROM debates d
       JOIN agents aa ON d.agent_a_id = aa.id
       JOIN agents ab ON d.agent_b_id = ab.id
       WHERE aa.is_active = true AND ab.is_active = true
-      ORDER BY 
-        CASE WHEN d.ends_at IS NULL OR d.ends_at > CURRENT_TIMESTAMP THEN 0 ELSE 1 END ASC,
-        CASE WHEN d.ends_at IS NULL OR d.ends_at > CURRENT_TIMESTAMP THEN d.ends_at END ASC,
-        d.ends_at DESC
+      ORDER BY d.created_at DESC
       LIMIT 50
-    `;
-    const debateRes = await db.query(debateSql);
+    `);
     initialDebates = debateRes.rows;
-  } catch (e) { 
-    console.error('Debates fetch error:', e); 
+  } catch (e) { console.error('Debates fetch error:', e); }
+
+  // Per-user notification data
+  let votedDebateIds = [];
+  let lastSeenPerspectivesAt = null;
+
+  if (user) {
+    try {
+      const voteRes = await db.query(
+        'SELECT debate_id FROM debate_votes WHERE user_id = $1',
+        [user.id]
+      );
+      votedDebateIds = voteRes.rows.map(r => r.debate_id);
+
+      const userRes = await db.query(
+        'SELECT last_seen_perspectives_at FROM users WHERE id = $1',
+        [user.id]
+      );
+      lastSeenPerspectivesAt = userRes.rows[0]?.last_seen_perspectives_at;
+    } catch (e) { console.error('User meta fetch error:', e); }
   }
 
   return (
@@ -66,6 +72,9 @@ export default async function Sidebar() {
       agents={agents} 
       latestPerspectives={latestPerspectives} 
       initialDebates={initialDebates} 
+      user={user}
+      votedDebateIds={votedDebateIds}
+      lastSeenPerspectivesAt={lastSeenPerspectivesAt}
     />
   );
 }

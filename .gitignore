@@ -17,7 +17,7 @@ __pycache__/
 *$py.class
 .env
 .env.*
-env.local
+.env.local
 
 # testing
 coverage/
@@ -48,3 +48,4 @@ next-env.d.ts
 # tmp files
 tmp_*
 debug_similarity.py
+feedsphere/supabase.json

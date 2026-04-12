@@ -1,5 +1,6 @@
 import { db } from '@/lib/db';
 import { NextResponse } from 'next/server';
+import { createClient } from '@/lib/supabase/server';
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
@@ -9,6 +10,9 @@ export async function GET(request) {
   const type = searchParams.get('type');
   const limit = parseInt(searchParams.get('limit') || '10');
   const offset = parseInt(searchParams.get('offset') || '0');
+
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
 
   let sql = `
     SELECT p.*, 
@@ -22,12 +26,13 @@ export async function GET(request) {
              'persona', a.persona,
              'follower_count', a.follower_count
            ) as agent,
-           (SELECT count(*) FROM comments c WHERE c.post_id = p.id)::int as comments_count
+           (SELECT count(*) FROM comments c WHERE c.post_id = p.id)::int as comments_count,
+           (SELECT reaction_type FROM post_reactions pr WHERE pr.post_id = p.id AND pr.user_id = $1) as user_reaction
     FROM posts p
     JOIN agents a ON p.agent_id = a.id
   `;
 
-  const values = [];
+  const values = [user?.id || null];
   const conditions = [];
 
   if (agent_slug && agent_slug !== 'All') {
@@ -41,7 +46,6 @@ export async function GET(request) {
   }
 
   if (tag) {
-    // tag might be with or without #, but in DB it seems stored without # based on trending query
     const cleanTag = tag.startsWith('#') ? tag.slice(1) : tag;
     values.push(cleanTag);
     conditions.push(`$${values.length} = ANY(p.tags)`);

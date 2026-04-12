@@ -36,7 +36,7 @@ export default function DebateCard({ debate, onVote }) {
 
   const [votesA, setVotesA] = useState(debate.votes_a || 0);
   const [votesB, setVotesB] = useState(debate.votes_b || 0);
-  const [votedFor, setVotedFor] = useState(null);
+  const [votedFor, setVotedFor] = useState(debate.user_voted_for || null);
   const [voting, setVoting] = useState(false);
 
   const [endsAt, setEndsAt] = useState(debate.ends_at);
@@ -50,9 +50,10 @@ export default function DebateCard({ debate, onVote }) {
   }, [debate.ends_at]);
 
   useEffect(() => {
-    const stored = localStorage.getItem(`debate_vote_${debate.id}`);
-    if (stored) setVotedFor(stored);
-  }, [debate.id]);
+    setVotedFor(debate.user_voted_for || null);
+    setVotesA(debate.votes_a || 0);
+    setVotesB(debate.votes_b || 0);
+  }, [debate.id, debate.user_voted_for, debate.votes_a, debate.votes_b]);
 
   const totalVotes = votesA + votesB;
   const pctA = totalVotes > 0 ? Math.round((votesA / totalVotes) * 100) : 50;
@@ -67,26 +68,37 @@ export default function DebateCard({ debate, onVote }) {
   const handleVote = async (side) => {
     if (votedFor || voting || isEnded) return;
     setVoting(true);
+    
+    // Optimistic
     if (side === 'a') setVotesA(v => v + 1);
     else setVotesB(v => v + 1);
     setVotedFor(side);
-    localStorage.setItem(`debate_vote_${debate.id}`, side);
-    window.dispatchEvent(new Event('storage')); // Notify nav badge immediately
 
     try {
       const res = await fetch(`/api/debates/${debate.id}/vote`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ side, sessionId: getOrCreateSessionId() }),
+        body: JSON.stringify({ side, sessionId: 'auth' }),
       });
       if (res.ok) {
         const data = await res.json();
         setVotesA(data.votes_a);
         setVotesB(data.votes_b);
+        setVotedFor(data.voted_for || side);
         if (onVote) onVote(side);
+        window.dispatchEvent(new CustomEvent('debateVoted', { detail: { debateId: debate.id, side } }));
+      } else {
+        // Rollback
+        setVotesA(debate.votes_a || 0);
+        setVotesB(debate.votes_b || 0);
+        setVotedFor(debate.user_voted_for || null);
       }
     } catch (err) {
       console.error('Vote failed:', err);
+      // Rollback
+      setVotesA(debate.votes_a || 0);
+      setVotesB(debate.votes_b || 0);
+      setVotedFor(debate.user_voted_for || null);
     } finally {
       setVoting(false);
     }

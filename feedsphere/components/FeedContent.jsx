@@ -12,24 +12,11 @@ export default function FeedContent({ initialPosts, activeAgent, activeTopic, ac
   const [hasMore, setHasMore] = useState(
     activeType === 'debate' ? (initialDebates?.length >= 10) : (initialPosts?.length >= 10)
   );
-  const [votedIds, setVotedIds] = useState(new Set());
   const loadingRef = useRef(false);
 
   useEffect(() => {
-    const ids = new Set();
-    const allDebates = debates || initialDebates || [];
-    allDebates.forEach(d => {
-      if (localStorage.getItem(`debate_vote_${d.id}`)) {
-        ids.add(d.id);
-      }
-    });
-    setVotedIds(ids);
-  }, [debates, initialDebates]);
-
-  useEffect(() => {
     if (activeType === 'debate') {
-      localStorage.setItem('debates_last_viewed_at', new Date().toISOString());
-      window.dispatchEvent(new Event('storage')); // Trigger update for NavBadge
+      fetch('/api/users/seen-perspectives', { method: 'POST' }).catch(console.error);
     }
   }, [activeType]);
 
@@ -39,8 +26,8 @@ export default function FeedContent({ initialPosts, activeAgent, activeTopic, ac
   const sortDebates = (list) => {
     if (!list) return [];
     return [...list].sort((a, b) => {
-      const votedA = typeof window !== 'undefined' ? !!localStorage.getItem(`debate_vote_${a.id}`) : false;
-      const votedB = typeof window !== 'undefined' ? !!localStorage.getItem(`debate_vote_${b.id}`) : false;
+      const votedA = !!a.user_voted_for;
+      const votedB = !!b.user_voted_for;
       
       const now = new Date();
       const endsA = a.ends_at ? new Date(a.ends_at) : new Date(Date.now() + 3600000);
@@ -87,7 +74,8 @@ export default function FeedContent({ initialPosts, activeAgent, activeTopic, ac
         setDebates(sortDebates(uniqueDebates));
       }
     }
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    const feedEl = document.querySelector('.feed');
+    if (feedEl) feedEl.scrollTo({ top: 0, behavior: 'smooth' });
   }, [initialPosts, initialDebates, activeAgent, activeTopic, activeTag, activeType]);
 
   const loadMore = async () => {
@@ -135,13 +123,17 @@ export default function FeedContent({ initialPosts, activeAgent, activeTopic, ac
   };
 
   useEffect(() => {
+    const feedEl = document.querySelector('.feed');
+    if (!feedEl) return;
+
     const handleScroll = () => {
-      if (window.innerHeight + document.documentElement.scrollTop + 100 >= document.documentElement.offsetHeight) {
+      if (feedEl.scrollTop + feedEl.clientHeight + 100 >= feedEl.scrollHeight) {
         loadMore();
       }
     };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    
+    feedEl.addEventListener('scroll', handleScroll);
+    return () => feedEl.removeEventListener('scroll', handleScroll);
   }, [offset, debateOffset, hasMore, activeAgent, activeTopic, activeTag, activeType]);
 
   if (isDebateMode) {
@@ -166,8 +158,16 @@ export default function FeedContent({ initialPosts, activeAgent, activeTopic, ac
     return (
       <div className="feed-container">
         {displayDebates.map(debate => (
-          <DebateCard key={`debate-${debate.id}`} debate={debate} onVote={() => {
-            setVotedIds(prev => new Set([...prev, debate.id]));
+          <DebateCard key={`debate-${debate.id}`} debate={debate} onVote={(side) => {
+            setDebates(prev => prev.map(d => {
+              if (d.id !== debate.id) return d;
+              return { 
+                ...d, 
+                user_voted_for: side,
+                votes_a: side === 'a' ? (d.votes_a || 0) + 1 : d.votes_a,
+                votes_b: side === 'b' ? (d.votes_b || 0) + 1 : d.votes_b
+              };
+            }));
           }} />
         ))}
         <div className="loading-status-area" style={{ minHeight: '60px' }}>
@@ -200,7 +200,7 @@ export default function FeedContent({ initialPosts, activeAgent, activeTopic, ac
     // 2. "Your Feed" logic: remove voted posts
     // We consider "Your Feed" to be the home view with no specific filters
     const isYourFeed = !activeAgent && !activeTag && !activeTopic && !activeType;
-    if (isYourFeed && votedIds.has(d.id)) {
+    if (isYourFeed && !!d.user_voted_for) {
       return false;
     }
 
@@ -225,8 +225,16 @@ export default function FeedContent({ initialPosts, activeAgent, activeTopic, ac
     <div className="feed-container">
       {feedItems.map((item) =>
         item.type === 'debate'
-          ? <DebateCard key={`debate-${item.data.id}`} debate={item.data} onVote={() => {
-              setVotedIds(prev => new Set([...prev, item.data.id]));
+          ? <DebateCard key={`debate-${item.data.id}`} debate={item.data} onVote={(side) => {
+              setDebates(prev => prev.map(d => {
+                if (d.id !== item.data.id) return d;
+                return { 
+                  ...d, 
+                  user_voted_for: side,
+                  votes_a: side === 'a' ? (d.votes_a || 0) + 1 : d.votes_a,
+                  votes_b: side === 'b' ? (d.votes_b || 0) + 1 : d.votes_b
+                };
+              }));
             }} />
           : <PostCard key={`post-${item.data.id}`} post={item.data} />
       )}

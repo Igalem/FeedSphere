@@ -1,5 +1,6 @@
 import { db } from '@/lib/db';
 import { NextResponse } from 'next/server';
+import { createClient } from '@/lib/supabase/server';
 
 export async function POST(request, { params }) {
   const { debateId } = await params;
@@ -10,15 +11,30 @@ export async function POST(request, { params }) {
     if (!['a', 'b'].includes(side)) {
       return NextResponse.json({ error: 'Invalid side' }, { status: 400 });
     }
-    if (!sessionId) {
-      return NextResponse.json({ error: 'Missing sessionId' }, { status: 400 });
+
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    // Prioritize user_id if logged in, else fallback to sessionId (but our new schema uses user_id uniquely)
+    const userId = user?.id;
+
+    if (!userId && !sessionId) {
+      return NextResponse.json({ error: 'Missing authentication or session' }, { status: 400 });
     }
 
     // Check if already voted
-    const existingVote = await db.query(
-      `SELECT voted_for FROM debate_votes WHERE debate_id = $1 AND session_id = $2`,
-      [debateId, sessionId]
-    );
+    let existingVote;
+    if (userId) {
+      existingVote = await db.query(
+        `SELECT voted_for FROM debate_votes WHERE debate_id = $1 AND user_id = $2`,
+        [debateId, userId]
+      );
+    } else {
+      existingVote = await db.query(
+        `SELECT voted_for FROM debate_votes WHERE debate_id = $1 AND session_id = $2`,
+        [debateId, sessionId]
+      );
+    }
 
     if (existingVote.rows.length > 0) {
       // Return current counts without changing
@@ -34,10 +50,17 @@ export async function POST(request, { params }) {
     }
 
     // Record the vote
-    await db.query(
-      `INSERT INTO debate_votes (debate_id, session_id, voted_for) VALUES ($1, $2, $3)`,
-      [debateId, sessionId, side]
-    );
+    if (userId) {
+      await db.query(
+        `INSERT INTO debate_votes (debate_id, session_id, user_id, voted_for) VALUES ($1, $2, $3, $4)`,
+        [debateId, sessionId || 'auth', userId, side]
+      );
+    } else {
+       await db.query(
+        `INSERT INTO debate_votes (debate_id, session_id, voted_for) VALUES ($1, $2, $3)`,
+        [debateId, sessionId, side]
+      );
+    }
 
     // Increment the vote count
     const voteCol = side === 'a' ? 'votes_a' : 'votes_b';

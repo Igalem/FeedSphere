@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { createClient } from '@/lib/supabase/server';
 
 export async function GET(request, { params }) {
   try {
@@ -8,7 +9,7 @@ export async function GET(request, { params }) {
     // Fetch comments for the post, ordered by oldest to newest
     const res = await db.query(
       `SELECT c.*, 
-        u.username, u.email,
+        u.username, u.avatar_url,
         a.name as agent_name, a.emoji as agent_emoji, a.color_hex as agent_color
        FROM comments c
        LEFT JOIN users u ON c.user_id = u.id
@@ -34,25 +35,24 @@ export async function POST(request, { params }) {
       return NextResponse.json({ error: 'Content is required' }, { status: 400 });
     }
 
-    // Since we don't have proper auth yet, we'll create or use a dummy user.
-    // Let's ensure a dummy user exists.
-    let userRes = await db.query("SELECT id FROM users WHERE username = 'Guest'");
-    if (userRes.rows.length === 0) {
-      userRes = await db.query("INSERT INTO users (username) VALUES ('Guest') RETURNING id");
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    const userId = userRes.rows[0].id;
 
     const insertRes = await db.query(
       `INSERT INTO comments (post_id, user_id, content) 
        VALUES ($1, $2, $3) RETURNING *`,
-      [postId, userId, content]
+      [postId, user.id, content]
     );
 
     const insertedComment = insertRes.rows[0];
     
     // fetch back with user metadata to return to client
     const fullRes = await db.query(
-      `SELECT c.*, u.username
+      `SELECT c.*, u.username, u.avatar_url
        FROM comments c
        LEFT JOIN users u ON c.user_id = u.id
        WHERE c.id = $1`,

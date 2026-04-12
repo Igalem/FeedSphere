@@ -3,6 +3,7 @@ import PostCard from '@/components/PostCard';
 import FeedContent from '@/components/FeedContent';
 import Link from 'next/link';
 import DraggableScrollContainer from '@/components/DraggableScrollContainer';
+import { createClient } from '@/lib/supabase/server';
 
 export const revalidate = 60;
 
@@ -12,9 +13,11 @@ export default async function Home({ searchParams }) {
   const activeTopic = topic || null;
   const activeTag = tag || null;
   const activeType = type || null;
-  const isDebateMode = activeType === 'debate';
 
-  // Fetch all agents for the filters and sidebar
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  // Fetch all agents
   let agents = [];
   try {
     const res = await db.query(`
@@ -40,12 +43,13 @@ export default async function Home({ searchParams }) {
              'persona', a.persona,
              'follower_count', a.follower_count
            ) as agent,
-           (SELECT count(*) FROM comments c WHERE c.post_id = p.id)::int as comments_count
+           (SELECT count(*) FROM comments c WHERE c.post_id = p.id)::int as comments_count,
+           (SELECT reaction_type FROM post_reactions pr WHERE pr.post_id = p.id AND pr.user_id = $1) as user_reaction
   FROM posts p
   JOIN agents a ON p.agent_id = a.id
 `;
 
-const values = [];
+const values = [user?.id || null];
 const conditions = ['a.is_active = true'];
 if (activeAgentSlug !== 'All') {
   values.push(activeAgentSlug);
@@ -73,19 +77,18 @@ if (conditions.length > 0) {
       date_trunc('hour', p.created_at) DESC, 
       row_number() OVER (PARTITION BY p.agent_id, date_trunc('hour', p.created_at) ORDER BY p.created_at DESC) ASC,
       p.created_at DESC 
-    LIMIT 10`;
+    LIMIT $${values.length + 1}`;
+  values.push(10); // Limit
 
   let initialPosts = [];
   try {
-    console.log(`[Server] Fetching posts for agent: ${activeAgentSlug}`);
     const res = await db.query(sql, values);
     initialPosts = res.rows;
-    console.log(`[Server] Found ${initialPosts.length} posts`);
   } catch (error) {
     console.error("DB Fetch Error:", error);
   }
 
-  // Fetch initial debates (for home feed interleaving + debate mode)
+  // Fetch initial debates
   let initialDebates = [];
   try {
     let debateSql = `
@@ -100,13 +103,14 @@ if (conditions.length > 0) {
           'id', ab.id, 'name', ab.name, 'slug', ab.slug,
           'emoji', ab.emoji, 'topic', ab.topic, 'color_hex', ab.color_hex,
           'follower_count', ab.follower_count
-        ) as agent_b
+        ) as agent_b,
+        (SELECT voted_for FROM debate_votes dv WHERE dv.debate_id = d.id AND dv.user_id = $1) as user_voted_for
       FROM debates d
       JOIN agents aa ON d.agent_a_id = aa.id
       JOIN agents ab ON d.agent_b_id = ab.id
     `;
     const debateConditions = ['aa.is_active = true', 'ab.is_active = true'];
-    const debateParams = [];
+    const debateParams = [user?.id || null];
 
     if (activeAgentSlug !== 'All') {
       debateParams.push(activeAgentSlug);
@@ -130,8 +134,8 @@ if (conditions.length > 0) {
         CASE WHEN d.ends_at IS NULL OR d.ends_at > CURRENT_TIMESTAMP THEN 0 ELSE 1 END ASC,
         CASE WHEN d.ends_at IS NULL OR d.ends_at > CURRENT_TIMESTAMP THEN d.ends_at END ASC,
         d.ends_at DESC
-      LIMIT 10`;
-
+      LIMIT $${debateParams.length + 1}`;
+    debateParams.push(10); // Limit
 
     const debateRes = await db.query(debateSql, debateParams);
     initialDebates = debateRes.rows;
@@ -150,7 +154,7 @@ if (conditions.length > 0) {
             Your Feed
           </Link>
           <DraggableScrollContainer className="agents-scroll-container">
-            {agents.map(agent => (
+            {agents.slice(1).map((agent) => (
               <Link
                 key={agent.slug}
                 href={`/?agent=${agent.slug}`}

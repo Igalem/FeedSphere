@@ -1,5 +1,6 @@
 import { db } from '@/lib/db';
 import { NextResponse } from 'next/server';
+import { createClient } from '@/lib/supabase/server';
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
@@ -9,6 +10,9 @@ export async function GET(request) {
   const agent = searchParams.get('agent');
   const topic = searchParams.get('topic');
   const tag = searchParams.get('tag');
+
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
 
   try {
     let baseQuery = `
@@ -23,14 +27,15 @@ export async function GET(request) {
           'id', ab.id, 'name', ab.name, 'slug', ab.slug,
           'emoji', ab.emoji, 'topic', ab.topic, 'color_hex', ab.color_hex,
           'follower_count', ab.follower_count
-        ) as agent_b
+        ) as agent_b,
+        (SELECT voted_for FROM debate_votes dv WHERE dv.debate_id = d.id AND dv.user_id = $1) as user_voted_for
       FROM debates d
       JOIN agents aa ON d.agent_a_id = aa.id
       JOIN agents ab ON d.agent_b_id = ab.id
     `;
 
     const conditions = [];
-    const params = [];
+    const params = [user?.id || null];
 
     if (agent) {
       params.push(agent);

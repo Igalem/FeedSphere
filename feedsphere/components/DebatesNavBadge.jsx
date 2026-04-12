@@ -2,28 +2,21 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
-export default function DebatesNavBadge({ debates, activeType }) {
+export default function DebatesNavBadge({ debates, activeType, votedDebateIds = [] }) {
   const [unvotedCount, setUnvotedCount] = useState(0);
 
   useEffect(() => {
-    const updateCount = () => {
-      if (!debates || debates.length === 0) {
-        setUnvotedCount(0);
-        return;
-      }
-      const count = debates.filter(d => {
-        const isVoted = localStorage.getItem(`debate_vote_${d.id}`);
-        const isActive = !d.ends_at || new Date(d.ends_at) > new Date();
-        // Debate is unvoted if there's no vote in localStorage AND it's still active
-        return !isVoted && isActive;
-      }).length;
-      setUnvotedCount(count);
-    };
-
-    updateCount();
-    window.addEventListener('storage', updateCount);
-    return () => window.removeEventListener('storage', updateCount);
-  }, [debates]);
+    if (!debates || debates.length === 0) {
+      setUnvotedCount(0);
+      return;
+    }
+    const count = debates.filter(d => {
+      const isVoted = votedDebateIds.includes(d.id);
+      const isActive = !d.ends_at || new Date(d.ends_at) > new Date();
+      return !isVoted && isActive;
+    }).length;
+    setUnvotedCount(count);
+  }, [debates, votedDebateIds]);
 
   return (
     <Link

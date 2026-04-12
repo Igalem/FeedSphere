@@ -7,7 +7,7 @@ export default function PostCard({ post }) {
   if (!agent) return null;
 
   const [reactions, setReactions] = useState(post.reaction_counts || { fire: 0, brain: 0, cold: 0, spot_on: 0 });
-  const [userReaction, setUserReaction] = useState(null); // Track the single reaction the user has clicked
+  const [userReaction, setUserReaction] = useState(post.user_reaction || null); // Track individual user reaction
   const [bookmarked, setBookmarked] = useState(false);
   const [commentsOpen, setCommentsOpen] = useState(false);
   const [comments, setComments] = useState([]);
@@ -72,15 +72,22 @@ export default function PostCard({ post }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           postId: post.id,
-          reactionType: newReaction,
-          oldReactionType: oldReaction
+          reactionType: type // Send the type clicked, server handles the toggle
         })
       });
-      if (!res.ok) {
-        console.error('Failed to react');
+      if (res.ok) {
+        const data = await res.json();
+        setReactions(data.reaction_counts);
+        setUserReaction(data.userReaction);
+      } else {
+        // Revert optimistic update on failure
+        setReactions(post.reaction_counts);
+        setUserReaction(post.user_reaction);
       }
     } catch (err) {
       console.error(err);
+      setReactions(post.reaction_counts);
+      setUserReaction(post.user_reaction);
     }
   };
 
@@ -180,11 +187,6 @@ export default function PostCard({ post }) {
       </div>
 
       <div className="post-commentary">
-        {post.type === 'perspective' && (
-          <svg className="quote-icon" style={{ fill: agent.color_hex }} viewBox="0 0 24 24">
-            <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z" />
-          </svg>
-        )}
         <div
           className="content-auto-dir"
           dir="auto"
@@ -196,6 +198,23 @@ export default function PostCard({ post }) {
             marginTop: post.type === 'perspective' ? '4px' : '0'
           }}
         >
+          {post.type === 'perspective' && (
+            <svg 
+              className="quote-icon" 
+              style={{ 
+                fill: agent.color_hex, 
+                width: '18px', 
+                height: '18px', 
+                display: 'inline-block', 
+                verticalAlign: 'text-bottom',
+                marginRight: '8px',
+                marginBottom: '2px'
+              }} 
+              viewBox="0 0 24 24"
+            >
+              <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z" />
+            </svg>
+          )}
           {(() => {
             const commentaryRaw = post.agent_commentary || '';
             if (commentaryRaw.trim().startsWith('{')) {
@@ -212,24 +231,6 @@ export default function PostCard({ post }) {
         </div>
       </div>
 
-      <div className="post-source">
-        {post.tags && post.tags.length > 0 && (
-          <div className="post-tags" translate="no">
-            {post.tags
-              .filter(tag => !(post.type === 'perspective' && tag.toLowerCase() === 'perspective'))
-              .map((tag) => (
-                <span key={tag} className="post-tag" style={{ background: '#ffffff0a', color: 'var(--muted)', fontSize: '10px', padding: '2px 8px', borderRadius: '20px' }}>
-                  #{tag.replace(/^#/, '')}
-                </span>
-              ))}
-          </div>
-        )}
-        {(!post.tags || post.tags.length === 0) && post.type !== 'perspective' && (
-          <span className="agent-tag" translate="no" style={{ background: '#ffffff0a', color: 'var(--muted)', fontSize: '10px', padding: '2px 8px', borderRadius: '20px' }}>
-            {agent.sub_topic || agent.topic}
-          </span>
-        )}
-      </div>
 
       {post.type === 'perspective' ? (
         post.article_url && (
@@ -240,6 +241,7 @@ export default function PostCard({ post }) {
             className="perspective-media-block"
             style={{
               marginTop: '16px',
+              marginBottom: '20px',
               borderRadius: '12px',
               overflow: 'hidden',
               display: 'block',
