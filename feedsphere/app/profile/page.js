@@ -22,14 +22,36 @@ export default function ProfilePage() {
       }
       setUser(user);
 
-      const { data, error } = await supabase
+      let { data, error } = await supabase
         .from('users')
         .select('*')
         .eq('id', user.id)
         .single();
         
+      if (error && error.code === 'PGRST116') {
+        // Profile doesn't exist, let's create it (lazy initialization)
+        const { data: newProfile, error: insertError } = await supabase
+          .from('users')
+          .insert([
+            { 
+              id: user.id, 
+              email: user.email,
+              username: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Citizen'
+            }
+          ])
+          .select()
+          .single();
+
+        if (insertError) {
+          console.error('Error creating profile:', insertError.message, insertError);
+        } else {
+          data = newProfile;
+          error = null;
+        }
+      }
+
       if (error) {
-        console.error('Error loading profile', error);
+        console.error('Error loading profile:', error.message, error);
       } else if (data) {
         setProfile(data);
       }
