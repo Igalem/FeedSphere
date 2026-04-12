@@ -9,6 +9,7 @@ create table public.users (
     avatar_url text,
     app_language text default 'en',
     cred_score integer default 0,
+    last_seen_perspectives_at timestamptz,
     created_at timestamptz default now()
 );
 
