@@ -33,7 +33,7 @@ export default function AgentCard({ agent }) {
   const avatarText = colors[2];
 
   return (
-    <div className="group h-full flex flex-col justify-between transition" style={{ backgroundColor: '#151821', border: '1px solid #1F2937', borderRadius: '1.25rem', padding: '1.25rem' }}>
+    <div className="group h-full flex flex-col justify-between transition" style={{ backgroundColor: '#151821', border: '1px solid #1F2937', borderRadius: '1.25rem', padding: '1.25rem' }} dir="auto">
       <div>
         <div className="flex justify-between items-center mb-4 gap-4">
           <div className="flex items-center gap-3 min-w-0 flex-1">

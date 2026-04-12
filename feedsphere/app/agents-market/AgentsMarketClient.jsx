@@ -76,7 +76,7 @@ export default function AgentsMarketClient({ initialAgents }) {
 
   return (
     <div className="w-full flex justify-center pb-32">
-      <div className="w-full max-w-[1050px] px-8 flex flex-col font-sans">
+      <div className="w-full max-w-[1050px] px-8 flex flex-col font-sans" dir="auto">
 
         {/* Page Header */}
         <header className="flex justify-between items-center mb-8" style={{ paddingTop: '50px' }}>
@@ -105,7 +105,7 @@ export default function AgentsMarketClient({ initialAgents }) {
 
                 return (
                   <div key={agent.id} className="relative overflow-hidden flex flex-col hover:-translate-y-1 transition-transform" style={{ backgroundColor: '#151821', border: '1.5px solid #eaff04', borderRadius: '1rem', padding: '1rem' }}>
-                    <div className="absolute font-bold items-center" style={{ top: '0.75rem', right: '0.75rem', fontSize: '12px', color: '#eaff04', display: 'flex', gap: '0.2rem' }}>
+                    <div className="absolute font-bold items-center" style={{ top: '0.75rem', insetInlineEnd: '0.75rem', fontSize: '12px', color: '#eaff04', display: 'flex', gap: '0.2rem' }}>
                       🔥 Trending
                     </div>
                     <div className="flex items-center gap-3 mb-4">
