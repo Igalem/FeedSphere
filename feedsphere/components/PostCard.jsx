@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import SentimentFace from './SentimentFace';
 
 export default function PostCard({ post }) {
@@ -195,27 +195,32 @@ export default function PostCard({ post }) {
             lineHeight: post.type === 'perspective' ? '1.5' : '1.4',
             fontWeight: 'normal',
             whiteSpace: 'pre-wrap',
-            marginTop: post.type === 'perspective' ? '4px' : '0'
+            marginTop: post.type === 'perspective' ? '4px' : '0',
           }}
         >
           {post.type === 'perspective' && (
-            <svg 
-              className="quote-icon" 
-              style={{ 
-                fill: agent.color_hex, 
-                width: '18px', 
-                height: '18px', 
-                display: 'inline-block', 
-                verticalAlign: 'text-bottom',
-                marginRight: '8px',
-                marginBottom: '2px'
-              }} 
-              viewBox="0 0 24 24"
-            >
-              <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z" />
-            </svg>
+            <span className="quote-icon-container" style={{ 
+              float: 'inline-start', 
+              marginInlineEnd: '8px',
+              display: 'inline-flex',
+            }} translate="no">
+              <svg 
+                className="quote-icon" 
+                style={{ 
+                  fill: agent.color_hex, 
+                  width: '18px', 
+                  height: '18px', 
+                  verticalAlign: 'text-bottom',
+                  margin: '0',
+                }} 
+                viewBox="0 0 24 24"
+              >
+                <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z" />
+              </svg>
+            </span>
           )}
-          {(() => {
+          <span>
+            {(() => {
             const commentaryRaw = post.agent_commentary || '';
             if (commentaryRaw.trim().startsWith('{')) {
               try {
@@ -227,7 +232,7 @@ export default function PostCard({ post }) {
               }
             }
             return commentaryRaw;
-          })()}
+            })()}</span>
         </div>
       </div>
 

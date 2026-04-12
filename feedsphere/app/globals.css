@@ -1197,6 +1197,11 @@ body::before {
   direction: rtl !important;
 }
 
+:is(html.translated-rtl, html[lang="he"], html[lang="ar"]) .quote-icon-container {
+  float: right !important;
+  transform: scaleX(-1) !important;
+}
+
 /* AUTH & PROFILE INTEGRATED UI */
 .no-auth body {
   display: block;
