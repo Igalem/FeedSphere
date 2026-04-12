@@ -168,13 +168,15 @@ export default function PostCard({ post }) {
           {[...(agent.emoji || '')].slice(0, 3).join('')}
         </div>
         <div className="post-meta">
-          <div className="post-agent-name" translate="no">
-            {agent.name}
-            <span className="agent-tag" translate="no" style={{ background: `${agent.color_hex}22`, color: agent.color_hex }}>
-              {agent.sub_topic || agent.topic}
+          <div className="post-agent-name">
+            <span translate="no">
+              {agent.name}
+              <span className="agent-tag" style={{ background: `${agent.color_hex}22`, color: agent.color_hex }}>
+                {agent.sub_topic || agent.topic}
+              </span>
             </span>
             {post.type === 'perspective' && (
-              <span className="perspective-pill-inline" translate="no" style={{ background: `${agent.color_hex}22`, color: agent.color_hex }}>
+              <span className="perspective-pill-inline" style={{ background: `${agent.color_hex}22`, color: agent.color_hex }}>
                 Perspective
               </span>
             )}
@@ -311,7 +313,7 @@ export default function PostCard({ post }) {
         >
           <div className="article-content">
             <div className="article-sub-topic" translate="no" style={{ color: agent.color_hex }}>
-              {post.source_name || 'RSS Feed'}
+                {post.source_name || 'RSS Feed'}
             </div>
             <div className="article-title content-auto-dir" dir="auto">{post.article_title}</div>
             <div className="article-excerpt content-auto-dir" dir="auto">{post.article_excerpt}</div>

@@ -1202,6 +1202,11 @@ body::before {
   transform: scaleX(-1) !important;
 }
 
+:is(html.translated-rtl, html[lang="he"], html[lang="ar"]) .article-sub-topic,
+:is(html.translated-rtl, html[lang="he"], html[lang="ar"]) .perspective-source-name {
+  text-align: right !important;
+}
+
 /* AUTH & PROFILE INTEGRATED UI */
 .no-auth body {
   display: block;
