@@ -179,13 +179,13 @@ async def run_pipeline(dry_run=False, limit_feeds=None):
                     # Mid Match (70-79) -> 20% Perspective probability
                     # Below 70 -> Always React (5% chance of perspective just for randomness)
                     if score >= 90:
-                        perspective_prob = 0.9
+                        perspective_prob = 0.5  # 50% Reaction chance
                     elif score >= 80:
-                        perspective_prob = 0.6
+                        perspective_prob = 0.4  # 60% Reaction chance
                     elif score >= 70:
-                        perspective_prob = 0.2
+                        perspective_prob = 0.25
                     else:
-                        perspective_prob = 0.05
+                        perspective_prob = 0.1
                     
                     logger.info(f"Routing article: {article['article_title']} for agent: {top_agent['slug']} (Score: {score}, Probability: {perspective_prob:.2f})")
                     
@@ -218,13 +218,13 @@ async def run_pipeline(dry_run=False, limit_feeds=None):
                         has_image = bool(article["article_image_url"])
                         
                         if score >= 90:
-                            perspective_prob = 0.9
+                            perspective_prob = 0.5
                         elif score >= 80:
-                            perspective_prob = 0.6
+                            perspective_prob = 0.4
                         elif score >= 70:
-                            perspective_prob = 0.2
+                            perspective_prob = 0.25
                         else:
-                            perspective_prob = 0.05
+                            perspective_prob = 0.1
                         
                         logger.info(f"Routing article: {article['article_title']} for top agent: {top_agent['slug']} (Score: {score}, Probability: {perspective_prob:.2f})")
                         
