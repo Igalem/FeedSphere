@@ -4,6 +4,7 @@ import FeedContent from '@/components/FeedContent';
 import Link from 'next/link';
 import DraggableScrollContainer from '@/components/DraggableScrollContainer';
 import { createClient } from '@/lib/supabase/server';
+import FeedHeader from '@/components/FeedHeader';
 
 export const revalidate = 60;
 
@@ -90,6 +91,18 @@ if (conditions.length > 0) {
 
   // Fetch initial debates
   let initialDebates = [];
+  let followedAgentIds = [];
+  
+  if (user) {
+    try {
+      const followRes = await db.query(
+        'SELECT agent_id FROM user_follows WHERE user_id = $1',
+        [user.id]
+      );
+      followedAgentIds = followRes.rows.map(r => r.agent_id);
+    } catch (e) { console.error(e); }
+  }
+
   try {
     let debateSql = `
       SELECT 
@@ -145,28 +158,14 @@ if (conditions.length > 0) {
 
   return (
     <>
-      <div className="feed-header">
-        <div className="feed-filters" translate="no">
-          <Link
-            href="/"
-            className={`filter-btn ${activeAgentSlug === 'All' && !activeTopic && !activeTag && !activeType ? 'active' : ''}`}
-          >
-            Your Feed
-          </Link>
-          <DraggableScrollContainer className="agents-scroll-container">
-            {agents.slice(1).map((agent) => (
-              <Link
-                key={agent.slug}
-                href={`/?agent=${agent.slug}`}
-                className={`filter-btn ${activeAgentSlug === agent.slug ? 'active' : ''}`}
-                draggable="false"
-              >
-                {agent.emoji} {agent.name}
-              </Link>
-            ))}
-          </DraggableScrollContainer>
-        </div>
-      </div>
+      <FeedHeader 
+        agents={agents} 
+        initialFollowedIds={followedAgentIds}
+        activeAgentSlug={activeAgentSlug}
+        activeTopic={activeTopic}
+        activeTag={activeTag}
+        activeType={activeType}
+      />
 
       <div id="feedContent">
         <FeedContent 

@@ -30,6 +30,16 @@ export default function FollowButton({ agentId, initialFollowerCount = 0, initia
         setIsLoading(false);
       }
     });
+
+    const handleExternalUpdate = (e) => {
+      if (e.detail.agentId === agentId) {
+        setIsFollowing(e.detail.isFollowing);
+        // Only update count if it wasn't this button that triggered it
+        // (This button handles its own count optimistically in handleToggle)
+      }
+    };
+    window.addEventListener('agentFollowStatusChanged', handleExternalUpdate);
+    return () => window.removeEventListener('agentFollowStatusChanged', handleExternalUpdate);
   }, [supabase, agentId, initialIsFollowing]);
 
   const handleToggle = async (e) => {
@@ -58,6 +68,11 @@ export default function FollowButton({ agentId, initialFollowerCount = 0, initia
       
       const data = await res.json();
       if (!data.success) throw new Error(data.error);
+
+      // Dispatch event for cross-component sync
+      window.dispatchEvent(new CustomEvent('agentFollowStatusChanged', {
+        detail: { agentId, isFollowing: action === 'follow' }
+      }));
       
     } catch (err) {
       console.error('Follow toggle failed:', err);
