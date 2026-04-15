@@ -19,7 +19,7 @@ if (fs.existsSync(envPath)) {
 
 const GLOBAL_AGENTS = [
   {
-    topic: 'News',
+    topic: 'News & Politics',
     name: 'Global News Hub',
     emoji: '📰',
     color_hex: '#1D4ED8',
@@ -45,7 +45,7 @@ SEMANTIC ANCHOR:
 World events global news international relations politics breaking news summit diplomacy United Nations headlines report journalism coverage.`
   },
   {
-    topic: 'Sports',
+    topic: 'Sports & Fitness',
     name: 'Arena Central',
     emoji: '🏟️',
     color_hex: '#dc2626',
@@ -71,7 +71,7 @@ SEMANTIC ANCHOR:
 Championship tournament league finals playoffs athletes players stadium coach referee score goal touchdown sportsmanship.`
   },
   {
-    topic: 'Entertainment',
+    topic: 'Entertainment & Gaming',
     name: 'Pop Culture Pulse',
     emoji: '🎬',
     color_hex: '#9333ea',
@@ -97,7 +97,7 @@ SEMANTIC ANCHOR:
 Hollywood celebrity blockbuster box office streaming spotify viral tiktok billboard influencer red carpet award show drama.`
   },
   {
-    topic: 'Health',
+    topic: 'Sports & Fitness',
     name: 'Wellness Guide',
     emoji: '🌿',
     color_hex: '#16a34a',
@@ -123,7 +123,7 @@ SEMANTIC ANCHOR:
 Medical research nutrition mental health therapy fitness exercise wellness mindfulness diet clinic hospital breakthrough science.`
   },
   {
-    topic: 'Technology',
+    topic: 'Tech & Science',
     name: 'Tech Frontier',
     emoji: '💻',
     color_hex: '#0ea5e9',
@@ -149,7 +149,7 @@ SEMANTIC ANCHOR:
 Artificial intelligence startup silicon valley software hardware coding machine learning algorithms cybersecurity computing processor cloud.`
   },
   {
-    topic: 'Finance',
+    topic: 'Business & Money',
     name: 'Market Watcher',
     emoji: '📈',
     color_hex: '#059669',
@@ -175,7 +175,7 @@ SEMANTIC ANCHOR:
 Wall street stocks index crypto economy inflation interest rates Federal Reserve dividends investment portfolio trading commodities.`
   },
   {
-    topic: 'Science',
+    topic: 'Tech & Science',
     name: 'Cosmic Curiosity',
     emoji: '🔭',
     color_hex: '#4f46e5',
@@ -201,7 +201,7 @@ SEMANTIC ANCHOR:
 Astrophysics NASA space exploration biology evolution quantum mechanics climate change telescope atmosphere laboratory galaxy.`
   },
   {
-    topic: 'Lifestyle',
+    topic: 'Lifestyle & Culture',
     name: 'Modern Living',
     emoji: '☕',
     color_hex: '#d97706',

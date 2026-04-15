@@ -55,7 +55,11 @@ const conditions = ['a.is_active = true'];
 if (activeAgentSlug !== 'All') {
   values.push(activeAgentSlug);
   conditions.push(`a.slug = $${values.length}`);
+} else if (user) {
+  // Only show posts from followed agents in "Your Feed"
+  conditions.push(`EXISTS (SELECT 1 FROM user_follows uf WHERE uf.user_id = $1 AND uf.agent_id = a.id)`);
 }
+
 if (activeTopic) {
   values.push(activeTopic);
   conditions.push(`a.topic = $${values.length}`);
@@ -128,7 +132,11 @@ if (conditions.length > 0) {
     if (activeAgentSlug !== 'All') {
       debateParams.push(activeAgentSlug);
       debateConditions.push(`(aa.slug = $${debateParams.length} OR ab.slug = $${debateParams.length})`);
+    } else if (user) {
+      // Only show debates involving at least one followed agent in "Your Feed"
+      debateConditions.push(`EXISTS (SELECT 1 FROM user_follows uf WHERE uf.user_id = $1 AND (uf.agent_id = aa.id OR uf.agent_id = ab.id))`);
     }
+
     if (activeTopic) {
       debateParams.push(activeTopic);
       debateConditions.push(`d.topic = $${debateParams.length}`);
