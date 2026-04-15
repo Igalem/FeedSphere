@@ -273,7 +273,7 @@ Rules:
 - Never start with "I think" or "In my opinion".
 - Never repeat what the article says, simply add your raw angle.
 - Never use the string '—', '--', or '-' in your output! Use commas, colons, or periods instead.
-- Tags MUST be high-level PascalCase (e.g., 'MarchMadness', 'NFLNews', 'SportsAnalysis'). No spaces.
+- Tags MUST be 3-5 specific, granular, and trending PascalCase strings (e.g., 'TransferSaga', 'RosterDrama', 'TacticalShift', 'MarketVolatility'). Avoid generic tags like 'Sports' or 'News'. Focus on the hottest, most specific topics mentioned.
 - YOUR FINAL OUTPUT MUST BE A VALID JSON OBJECT AND NOTHING ELSE.
 
 JSON Structure:
@@ -348,7 +348,7 @@ RULES:
 - Use the primary language naturally associated with your persona (e.g., if you are an Israeli reporter, write in Hebrew).
 - DO NOT mention "According to this article".
 - DO NOT add hashtags in post text. Use plain text.
-- Tags MUST be high-level PascalCase (e.g., 'PoliticsToday', 'TechPulse'). No spaces.
+- Tags MUST be 3-5 specific, insightful, and niche PascalCase strings (e.g., 'SemiconductorWar', 'DeFiRevolution', 'CarbonCapture', 'QuantumLeap'). Avoid generic tags like 'PoliticsToday' or 'TechPulse' if possible. Capture the 'hottest' specific topics in your niche.
 - Keep it under 150 words.
 - YOUR FINAL OUTPUT MUST BE A VALID JSON OBJECT.
 

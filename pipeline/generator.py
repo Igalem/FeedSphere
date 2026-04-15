@@ -41,8 +41,8 @@ class Generator:
                      "1. Use your unique voice: {response_style}.\n"
                      "2. Provide a detailed reaction with a variety of word counts across different posts.\n"
                      "3. Keep it concise, maximum 3 rows/lines of text.\n"
-                     "4. Output format: JSON object with 'agent_commentary' (string), 'sentiment_score' (number 0-100), and 'tags' (array of 3 high-level PascalCase strings).\n"
-                     "5. Tags MUST be one-word PascalCase (e.g., 'MarchMadness', 'NFLNews', 'SportsAnalysis'). No spaces.\n\n"
+                     "4. Output format: JSON object with 'agent_commentary' (string), 'sentiment_score' (number 0-100), and 'tags' (array of 3-5 specific, granular, and trending PascalCase strings).\n"
+                     "5. Tags MUST be one-word PascalCase (e.g., 'TransferSaga', 'RosterDrama', 'TacticalShift', 'MarketVolatility'). Avoid generic tags like 'Sports' or 'News'. Focus on the hottest, most specific topics mentioned.\n\n"
                      "IMPORTANT: Return ONLY a valid JSON object. Do NOT return a list or set of strings. Be expressive with the sentiment_score (0=Extremely Critical, 50=Neutral, 100=Extremely Bullish). Example: {{\"agent_commentary\": \"...\", \"sentiment_score\": 85, \"tags\": [\"...\", \"...\"]}}")
         ])
 
@@ -55,8 +55,8 @@ class Generator:
                      "Rules:\n"
                      "1. Provide a unique point of view that ONLY someone with your specific persona ({persona}) and niche would have. Do NOT be generic or repeat what is in the excerpt.\n"
                      "2. Reference the profound significance of the event through the lens of your niche and expertise.\n"
-                     "3. Output format: JSON object with 'agent_commentary' (string), 'sentiment_score' (number 0-100), and 'tags' (array of 3 high-level PascalCase strings).\n"
-                     "4. Tags MUST be one-word PascalCase (e.g., 'GlobalEconomy', 'TechInnovation', 'ClimatePulse'). No spaces.\n\n"
+                     "3. Output format: JSON object with 'agent_commentary' (string), 'sentiment_score' (number 0-100), and 'tags' (array of 3-5 specific, insightful, and niche PascalCase strings).\n"
+                     "4. Tags MUST be one-word PascalCase (e.g., 'SemiconductorWar', 'DeFiRevolution', 'CarbonCapture', 'QuantumLeap'). Avoid generic tags like 'GlobalEconomy' if possible. Capture the 'hottest' specific topics in your niche.\n\n"
                      "IMPORTANT: Return ONLY a valid JSON object. Do NOT return a list or set of strings. Be expressive with the sentiment_score (0=Extremely Critical, 50=Neutral, 100=Extremely Bullish). Example: {{\"agent_commentary\": \"...\", \"sentiment_score\": 15, \"tags\": [\"...\", \"...\"]}}")
         ])
 
@@ -68,7 +68,7 @@ class Generator:
                      "Agent A Persona: {persona_a}\n"
                      "Agent B Persona: {persona_b}\n\n"
                      "Rules:\n"
-                     "1. Tags MUST be one-word PascalCase (e.g., 'DebatePulse', 'TopicWar').\n"
+                     "1. Tags MUST be one-word PascalCase (e.g., 'PolicyClash', 'IdeologyGap', 'MarketConflict'). Use 3-5 specific tags that capture the core tension of the debate.\n"
                      "2. Be expressive with sentiment values (0-100). Avoid defaulting to 50 if the agent has a clear stance.\n\n"
                      "Output Format (JSON):\n"
                      "{{\n"
@@ -77,7 +77,7 @@ class Generator:
                      "  \"argument_b\": \"2-sentence counter-argument from Agent B using their unique voice\",\n"
                      "  \"sentiment_b\": 20,\n"
                      "  \"debate_question\": \"A provocative question for the audience\",\n"
-                     "  \"tags\": [\"TagA\", \"TagB\", \"TagC\"]\n"
+                     "  \"tags\": [\"TagX\", \"TagY\", \"TagZ\"]\n"
                      "}}\n\n"
                      "IMPORTANT: Return ONLY valid JSON.")
         ])

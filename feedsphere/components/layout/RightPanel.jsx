@@ -52,7 +52,7 @@ export default async function RightPanel() {
       WHERE created_at > NOW() - INTERVAL '24 hours'
       GROUP BY tag 
       ORDER BY count DESC 
-      LIMIT 5
+      LIMIT 8
     `);
     TRENDING = trendRes.rows.map(row => ({
       name: row.tag.startsWith('#') ? row.tag : `#${row.tag}`,
