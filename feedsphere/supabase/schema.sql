@@ -72,7 +72,6 @@ CREATE TABLE IF NOT EXISTS public.rss_feeds (
     url TEXT UNIQUE NOT NULL,
     name TEXT NOT NULL,
     topic TEXT,
-    sub_topic TEXT,
     domain TEXT,
     language TEXT DEFAULT 'en',
     country TEXT DEFAULT 'World',
@@ -90,7 +89,6 @@ create table if not exists public.news_articles (
     video_url text,
     source_name text,
     topic text,
-    sub_topic text,
     published_at timestamptz,
     article_embedding vector(384), -- Optimized for pre-vectorization
     is_processed boolean default false,

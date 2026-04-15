@@ -46,11 +46,30 @@ async function checkAndAddFeeds(feedList, deltaDays = 15) {
       if (pubDate >= targetDeltaDate) {
         console.log(`✅ ${feed.name} is up to date (Latest item: ${pubDate.toISOString()}). Adding to database...`);
         
-        const { error } = await db.from('rss_feeds').upsert(feed, 'url');
+        // Remove sub_topic as it's no longer in the schema
+        const { sub_topic, ...sanitizedFeed } = feed;
+        
+        // Extract domain from URL if missing
+        if (!sanitizedFeed.domain && sanitizedFeed.url) {
+          try {
+            sanitizedFeed.domain = new URL(sanitizedFeed.url).hostname;
+          } catch (e) {
+            console.warn(`⚠️ Could not parse domain for ${sanitizedFeed.url}`);
+          }
+        }
+
+        // Sanitize name: remove content after common separators (—, :, |, etc)
+        if (sanitizedFeed.name) {
+          sanitizedFeed.name = sanitizedFeed.name.split(/ [—–:\|>!]/)[0].trim();
+          sanitizedFeed.name = sanitizedFeed.name.replace(/^Articles on /, '');
+          // If name is just a URL/domain, keep it, but ensure it's not a full http string if possible
+        }
+
+        const { error } = await db.from('rss_feeds').upsert(sanitizedFeed, 'url');
         if (error) {
           console.error(`❌ Error inserting ${feed.name}:`, error.message);
         } else {
-          console.log(`🚀 ${feed.name} added!`);
+          console.log(`🚀 ${sanitizedFeed.name} added!`);
         }
       } else {
         console.log(`⏭️ ${feed.name} is too old (Latest item: ${pubDate.toISOString()}).`);
@@ -75,6 +94,20 @@ if (require.main === module) {
       const rawData = fs.readFileSync(filePath);
       const feedList = JSON.parse(rawData);
       await checkAndAddFeeds(feedList, deltaDays);
+      
+      console.log('\n📸 Updating seed SQL snapshot...');
+      try {
+        const { execSync } = require('child_process');
+        const dumpScript = path.join(baseDir, 'scripts/dump_seed_feeds.js');
+        execSync(`export NODE_PATH=${baseDir}/node_modules && /usr/local/bin/node ${dumpScript}`, {
+          cwd: baseDir,
+          env: { ...process.env, DATABASE_URL: process.env.DATABASE_URL },
+          stdio: 'inherit'
+        });
+      } catch (e) {
+        console.warn('⚠️ Could not update seed SQL snapshot:', e.message);
+      }
+
       process.exit(0);
     } catch (err) {
       console.error('Error reading or parsing feed list file:', err.message);

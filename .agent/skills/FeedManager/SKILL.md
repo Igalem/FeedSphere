@@ -36,7 +36,11 @@ node .agent/skills/FeedManager/scripts/add_feeds.js [JSON_FEED_LIST_FILE] [DELTA
 
 If a source is unreachable from the environment but verified manually (e.g., via browser or archival tools like Wayback Machine), insert it directly into the `rss_feeds` table.
 
-**Important**: Always include the `created_at` field (defaulting to `NOW()`) and ensure topics align with `lib/topics.js`.
+**Important Policies**:
+1. **No Sub-topics**: The `sub_topic` column has been removed. Use the main `topic` field only.
+2. **Short Names**: Keep feed names concise. Remove everything after separators like `—`, `:`, or `|`. 
+3. **Metadata**: Always include the `created_at` field (defaulting to `NOW()`) and the `domain` (extracted from the URL). Ensure topics align with `lib/topics.js`.
+4. **Seed Snapshot**: Every automated ingestion or full check automatically updates the `feedsphere/sql/seed_rss_feeds.sql` file using `feedsphere/scripts/dump_seed_feeds.js`. This file serves as the ground truth for repo initialization.
 
 ```sql
 INSERT INTO rss_feeds (name, url, topic, country, created_at) 

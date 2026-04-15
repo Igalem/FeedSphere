@@ -66,28 +66,24 @@ async function scrape() {
     {
       name: 'Gaming.News',
       url: 'https://gaming.news/feed/',
-      sub_topic: 'Gaming',
       topic: 'Gaming',
       domain: 'gaming.news'
     },
     {
       name: 'Time World',
       url: 'https://feeds.feedburner.com/time/world',
-      sub_topic: 'World',
       topic: 'News',
       domain: 'feeds.feedburner.com'
     },
     {
       name: 'Washington Post World',
       url: 'https://feeds.washingtonpost.com/rss/world',
-      sub_topic: 'World',
       topic: 'News',
       domain: 'feeds.washingtonpost.com'
     }
   ];
 
   const lines = text.split('\n');
-  let currentSubTopic = 'General';
   let currentTopic = 'General';
   
   const feeds = [...customFeeds];
@@ -97,8 +93,8 @@ async function scrape() {
     
     // Detect Category
     if (line.startsWith('## ') || line.startsWith('### ')) {
-      currentSubTopic = line.replace(/^#+ /, '').trim();
-      currentTopic = inferTopic(currentSubTopic);
+      const category = line.replace(/^#+ /, '').trim();
+      currentTopic = inferTopic(category);
       continue;
     }
     
@@ -122,7 +118,6 @@ async function scrape() {
             feeds.push({
               name: name.substring(0, 255), // Sanity limit
               url,
-              sub_topic: currentSubTopic,
               topic: currentTopic,
               domain
             });
@@ -145,14 +140,13 @@ async function scrape() {
   try {
     for (const feed of feeds) {
       await client.query(`
-        INSERT INTO public.rss_feeds (name, url, sub_topic, topic, domain)
-        VALUES ($1, $2, $3, $4, $5)
+        INSERT INTO public.rss_feeds (name, url, topic, domain)
+        VALUES ($1, $2, $3, $4)
         ON CONFLICT (url) DO UPDATE SET
           name = EXCLUDED.name,
-          sub_topic = EXCLUDED.sub_topic,
           topic = EXCLUDED.topic,
           domain = EXCLUDED.domain
-      `, [feed.name, feed.url, feed.sub_topic, feed.topic, feed.domain]);
+      `, [feed.name, feed.url, feed.topic, feed.domain]);
     }
     console.log('Successfully populated rss_feeds table.');
   } catch (err) {
