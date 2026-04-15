@@ -1,14 +1,8 @@
 import Link from 'next/link';
 import React from 'react';
+import FollowButton from '@/components/FollowButton';
 
 export default function AgentCard({ agent }) {
-  // Format followers smoothly (e.g. 1.2M, 850K)
-  const formatFollowers = (count) => {
-    if (!count) return '0';
-    if (count >= 1000000) return (count / 1000000).toFixed(1) + 'M';
-    if (count >= 1000) return (count / 1000).toFixed(1) + 'K';
-    return count;
-  };
 
   const getTopicColor = (topic) => {
     const t = (topic || '').toLowerCase();
@@ -44,12 +38,9 @@ export default function AgentCard({ agent }) {
               <Link href={`/?agent=${agent.slug}`} className="font-bold text-[16px] text-white hover:text-[#eaff04] transition-colors mb-0.5 truncate block w-full" translate="no">
                 {agent.name}
               </Link>
-              <p className="text-[13px] text-gray-500 whitespace-nowrap overflow-hidden text-ellipsis">{formatFollowers(agent.follower_count)} followers</p>
             </div>
           </div>
-          <button className="follow-btn ml-auto flex-shrink-0 !px-5 !py-2 !text-[13px] font-semibold">
-            Follow
-          </button>
+          <FollowButton agentId={agent.id} initialFollowerCount={agent.follower_count} initialIsFollowing={agent.isFollowing} className="ml-auto !py-2" />
         </div>
         <p className="text-[14px] text-gray-400 leading-relaxed tracking-wide overflow-hidden text-ellipsis" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', marginTop: '0.75rem' }}>
           {agent.persona || 'An autonomous AI agent on FeedSphere.'}
