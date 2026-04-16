@@ -18,6 +18,18 @@ socket.setdefaulttimeout(10)
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+BROWSER_HEADERS = {
+    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+    'Accept-Language': 'en-US,en;q=0.9',
+    'Cache-Control': 'no-cache',
+    'Pragma': 'no-cache',
+    'Sec-Fetch-Dest': 'document',
+    'Sec-Fetch-Mode': 'navigate',
+    'Sec-Fetch-Site': 'none',
+    'Upgrade-Insecure-Requests': '1'
+}
+
 class Crawler:
     def __init__(self):
         pass
@@ -156,43 +168,86 @@ class Crawler:
                     if m_type.startswith('image') or m_url.lower().endswith(('.jpg', '.jpeg', '.png', '.webp', '.gif')):
                         image_url = m_url
                         break
+            
+            # --- PRIORITY 4.5: Find image tags in summary/description ---
+            if not image_url and summary:
+                s_soup = BeautifulSoup(summary, "html.parser")
+                img_tag = s_soup.find("img")
+                if img_tag:
+                    image_url = img_tag.get("src") or img_tag.get("data-src")
+                    if image_url:
+                        logger.info(f"Found image in RSS summary: {image_url}")
 
             # --- PRIORITY 5: Scrape Meta tags (OG, Twitter, etc) ---
-            if not image_url:
+            scraped_excerpt = None
+            if not image_url or len(clean_summary) < 200:
                 try:
-                    page_res = requests.get(url, timeout=5, headers={'User-Agent': 'Mozilla/5.0'})
+                    # Use BROWSER_HEADERS to avoid 403s
+                    page_res = requests.get(url, timeout=10, headers=BROWSER_HEADERS)
                     if page_res.status_code == 200:
                         page_soup = BeautifulSoup(page_res.text, "html.parser")
-                        # Try various meta images for maximum robustness
-                        meta_candidates = [
-                            ("meta", {"property": "og:image"}),
-                            ("meta", {"name": "twitter:image"}),
-                            ("meta", {"property": "twitter:image"}),
-                            ("meta", {"name": "thumbnail"}),
-                            ("link", {"rel": "image_src"}),
-                            ("meta", {"itemprop": "image"}),
-                            ("link", {"rel": "preload", "as": "image"}),
-                            ("meta", {"name": "sailthru.image"}),
-                            ("meta", {"name": "sailthru.image.full"}),
-                            ("meta", {"name": "sailthru.image.thumb"})
-                        ]
-                        for tag_type, attrs in meta_candidates:
-                            tag = page_soup.find(tag_type, attrs=attrs)
-                            if tag:
-                                image_url = tag.get("content") or tag.get("href")
-                                if image_url and not any(v in image_url for v in ["doubleclick.net", "ads.", ".svg"]): 
-                                    break
                         
-                        # Last ditch: Find largest image in article
+                        # 5a. Robust Image Extraction
                         if not image_url:
-                            images = page_soup.find_all("img", src=True)
-                            if images:
-                                # Prioritize high-res JPG/PNG and not common ad/icon formats
-                                candidates = [i for i in images if ".jpg" in i["src"].lower() or ".png" in i["src"].lower()]
-                                if candidates:
-                                    image_url = candidates[0]["src"]
-                except Exception:
+                            # Try various meta images for maximum robustness
+                            meta_candidates = [
+                                ("meta", {"property": "og:image"}),
+                                ("meta", {"name": "twitter:image"}),
+                                ("meta", {"property": "twitter:image"}),
+                                ("meta", {"name": "thumbnail"}),
+                                ("link", {"rel": "image_src"}),
+                                ("meta", {"itemprop": "image"}),
+                                ("link", {"rel": "preload", "as": "image"}),
+                                ("meta", {"name": "sailthru.image"}),
+                                ("meta", {"name": "sailthru.image.full"}),
+                                ("meta", {"name": "sailthru.image.thumb"})
+                            ]
+                            for tag_type, attrs in meta_candidates:
+                                tag = page_soup.find(tag_type, attrs=attrs)
+                                if tag:
+                                    candidate = tag.get("content") or tag.get("href")
+                                    if candidate and not any(v in candidate for v in ["doubleclick.net", "ads.", ".svg", "logo", "icon"]): 
+                                        image_url = candidate
+                                        break
+                            
+                            # Last ditch: Find largest image in article
+                            if not image_url:
+                                images = page_soup.find_all("img", src=True)
+                                if images:
+                                    # Prioritize high-res JPG/PNG and not common ad/icon formats
+                                    candidates = [i for i in images if (".jpg" in i["src"].lower() or ".png" in i["src"].lower()) and "logo" not in i["src"].lower()]
+                                    if candidates:
+                                        image_url = candidates[0]["src"]
+
+                        # 5b. Robust Excerpt Extraction (if RSS summary is poor)
+                        if len(clean_summary) < 200:
+                            og_desc = page_soup.find("meta", property="og:description")
+                            if og_desc:
+                                scraped_excerpt = og_desc.get("content")
+                            
+                            if not scraped_excerpt:
+                                tw_desc = page_soup.find("meta", attrs={"name": "twitter:description"})
+                                if tw_desc:
+                                    scraped_excerpt = tw_desc.get("content")
+                                    
+                            if not scraped_excerpt:
+                                # Look for typical article content blocks
+                                for selector in ['article', '.article-content', '.post-content', '.entry-content', '.content']:
+                                    block = page_soup.select_one(selector)
+                                    if block:
+                                        paragraphs = block.find_all('p')
+                                        text = " ".join([p.get_text(strip=True) for p in paragraphs if len(p.get_text()) > 30])
+                                        if len(text) > 100:
+                                            scraped_excerpt = text
+                                            break
+                except Exception as e:
+                    logger.debug(f"Scraping failed for {url}: {e}")
                     pass
+
+            # Combine summaries if needed
+            final_excerpt = clean_summary
+            if scraped_excerpt and len(scraped_excerpt) > len(clean_summary):
+                final_excerpt = scraped_excerpt
 
             # 3. Fallback/Transformation Logic
             # If we have a video but NO image, use the video thumbnail as the image
@@ -210,6 +265,23 @@ class Crawler:
                     image_url = f"https://img.youtube.com/vi/{video_id}/maxresdefault.jpg"
                 else:
                     image_url = None # Let fallback logic handle it
+
+            # --- Pre-Fallback Sanitization to Reject Bad Images / Fix Res ---
+            if image_url:
+                image_url = image_url.strip()
+                # Reject known generic stubs, logos, and tiny thumbnails
+                bad_keywords = ['genric_yahoo', 'default-thumbnail', 'placeholder', 'w=240;h=56', 'w=56;h=56', 'yahoo-sports-logo']
+                if '108x81' in image_url.lower() and 'investing.com' not in image_url.lower():
+                    # Reject standard tiny thumbnails
+                    image_url = None
+                elif any(k in image_url.lower() for k in bad_keywords):
+                    logger.info(f"Rejecting bad/generic image URL before fallback: {image_url}")
+                    image_url = None
+                
+                # Fix Investing.com thumbnail sizing 
+                if image_url and "investing.com" in image_url and re.search(r'_\d+x\d+', image_url):
+                    image_url = re.sub(r'_\d+x\d+', '', image_url)
+                    logger.info(f"Upgraded investing.com image resolution: {image_url}")
 
             if not image_url:
                 # Fallback to topic-based images with significantly more variety
@@ -306,7 +378,7 @@ class Crawler:
             article = {
                 "article_title": title,
                 "article_url": url,
-                "article_excerpt": clean_summary[:500],
+                "article_excerpt": final_excerpt[:1500],
                 "article_image_url": image_url,
                 "video_url": video_url,
                 "topic": topic,
