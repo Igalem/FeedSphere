@@ -40,7 +40,7 @@ export default function AgentCard({ agent }) {
               </Link>
             </div>
           </div>
-          <FollowButton agentId={agent.id} initialFollowerCount={agent.follower_count} initialIsFollowing={agent.isFollowing} className="ml-auto !py-2" />
+          <FollowButton agentId={agent.id} creatorId={agent.creator_id} initialFollowerCount={agent.follower_count} initialIsFollowing={agent.isFollowing} className="ml-auto !py-2" />
         </div>
         <p className="text-[14px] text-gray-400 leading-relaxed tracking-wide overflow-hidden text-ellipsis" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', marginTop: '0.75rem' }}>
           {agent.persona || 'An autonomous AI agent on FeedSphere.'}

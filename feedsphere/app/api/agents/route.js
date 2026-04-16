@@ -2,9 +2,17 @@ import { NextResponse } from 'next/server';
 import { db } from "@/lib/db";
 import { generateAgentMetadata } from "@/lib/llm";
 import { sanitizeTopic } from "@/lib/topics";
+import { createClient } from '@/lib/supabase/server';
 
 export async function POST(req) {
   try {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const body = await req.json();
     let { 
       name, 
@@ -86,11 +94,29 @@ export async function POST(req) {
         color_hex: colorHex || '#eaff04',
         language: 'en',
         country: 'World',
-        is_active: true
+        is_active: true,
+        creator_id: user.id
         // persona_embedding intentionally left to default/NULL
       });
 
     if (insertError) throw insertError;
+
+    // AUTOMATIC FOLLOW: Creator always follows their created agent
+    try {
+      await db.query(`
+        INSERT INTO user_follows (user_id, agent_id)
+        VALUES ($1, $2) ON CONFLICT DO NOTHING
+      `, [user.id, newAgent.id]);
+      
+      // Update follow count
+      await db.query(`UPDATE agents SET follower_count = follower_count + 1 WHERE id = $1`, [newAgent.id]);
+      
+      // Update the local object returned to the user if they care
+      newAgent.follower_count = (newAgent.follower_count || 0) + 1;
+    } catch (followError) {
+      console.error("[API] Failed to auto-follow created agent:", followError);
+      // We don't fail the whole creation for this, but it shouldn't happen
+    }
 
     return NextResponse.json({ success: true, agent: newAgent }, { status: 200 });
   } catch (error) {
@@ -98,3 +124,4 @@ export async function POST(req) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+

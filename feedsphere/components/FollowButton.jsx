@@ -3,12 +3,14 @@
 import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 
-export default function FollowButton({ agentId, initialFollowerCount = 0, initialIsFollowing = null, className = '' }) {
+export default function FollowButton({ agentId, creatorId, initialFollowerCount = 0, initialIsFollowing = null, className = '' }) {
   const [user, setUser] = useState(null);
   const [isFollowing, setIsFollowing] = useState(initialIsFollowing === null ? false : initialIsFollowing);
   const [isLoading, setIsLoading] = useState(initialIsFollowing === null);
   const [followerCount, setFollowerCount] = useState(initialFollowerCount);
   const [supabase] = useState(() => createClient());
+
+  const isCreator = user && creatorId && user.id === creatorId;
 
   const formatFollowers = (count) => {
     if (count == null) return '0';
@@ -20,7 +22,12 @@ export default function FollowButton({ agentId, initialFollowerCount = 0, initia
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
       setUser(data.user);
-      if (data.user && initialIsFollowing === null) {
+      const currentUser = data.user;
+
+      if (currentUser && creatorId && currentUser.id === creatorId) {
+        setIsFollowing(true);
+        setIsLoading(false);
+      } else if (currentUser && initialIsFollowing === null) {
         setIsLoading(true);
         fetch(`/api/agents/${agentId}/follow`)
           .then(res => res.json())
@@ -34,13 +41,11 @@ export default function FollowButton({ agentId, initialFollowerCount = 0, initia
     const handleExternalUpdate = (e) => {
       if (e.detail.agentId === agentId) {
         setIsFollowing(e.detail.isFollowing);
-        // Only update count if it wasn't this button that triggered it
-        // (This button handles its own count optimistically in handleToggle)
       }
     };
     window.addEventListener('agentFollowStatusChanged', handleExternalUpdate);
     return () => window.removeEventListener('agentFollowStatusChanged', handleExternalUpdate);
-  }, [supabase, agentId, initialIsFollowing]);
+  }, [supabase, agentId, initialIsFollowing, creatorId]);
 
   const handleToggle = async (e) => {
     e.preventDefault();
@@ -51,6 +56,7 @@ export default function FollowButton({ agentId, initialFollowerCount = 0, initia
       return;
     }
 
+    if (isCreator) return;
     if (isLoading) return;
 
     const prevFollowing = isFollowing;
@@ -78,6 +84,7 @@ export default function FollowButton({ agentId, initialFollowerCount = 0, initia
       console.error('Follow toggle failed:', err);
       setIsFollowing(prevFollowing);
       setFollowerCount(prev => action === 'follow' ? prev - 1 : prev + 1);
+      if (err.message) alert(err.message);
     }
   };
 
@@ -86,12 +93,14 @@ export default function FollowButton({ agentId, initialFollowerCount = 0, initia
       <p className="text-[12px] text-gray-500 mb-1">{formatFollowers(followerCount)} followers</p>
       <button 
         onClick={handleToggle}
-        disabled={isLoading}
-        className={`follow-btn flex-shrink-0 !px-5 !py-1 !text-[13px] font-semibold ${isFollowing ? 'following bg-gray-700' : ''} ${className}`}
+        disabled={isLoading || isCreator}
+        className={`follow-btn flex-shrink-0 !px-5 !py-1 !text-[13px] font-semibold ${isFollowing ? 'following bg-gray-700' : ''} ${isCreator ? 'opacity-80 cursor-default' : ''} ${className}`}
         translate="no"
+        title={isCreator ? "You are the creator of this agent" : ""}
       >
-        {isFollowing ? 'Following' : 'Follow'}
+        {isCreator ? 'Your Agent' : (isFollowing ? 'Following' : 'Follow')}
       </button>
     </div>
   );
 }
+

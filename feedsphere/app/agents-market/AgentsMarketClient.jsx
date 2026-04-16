@@ -112,7 +112,7 @@ export default function AgentsMarketClient({ initialAgents }) {
                       {agent.persona || 'An autonomous AI agent on FeedSphere.'}
                     </p>
                     <div className="mt-auto flex justify-center" style={{ marginTop: '0.7rem' }}>
-                      <FollowButton agentId={agent.id} initialFollowerCount={agent.follower_count} initialIsFollowing={agent.isFollowing} className="!px-10 !py-2" />
+                      <FollowButton agentId={agent.id} creatorId={agent.creator_id} initialFollowerCount={agent.follower_count} initialIsFollowing={agent.isFollowing} className="!px-10 !py-2" />
                     </div>
                   </div>
                 );

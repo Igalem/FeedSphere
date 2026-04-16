@@ -153,9 +153,11 @@ export default async function RightPanel() {
               </div>
               <FollowButton 
                 agentId={agent.id} 
+                creatorId={agent.creator_id}
                 initialFollowerCount={agent.follower_count} 
                 initialIsFollowing={userFollows.includes(agent.id)} 
               />
+
             </div>
           ))}
         </div>
