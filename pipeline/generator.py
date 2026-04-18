@@ -105,19 +105,19 @@ class Generator:
         
         # Decide order based on current master and request type
         # For relevancy gating: we force Ollama first.
-        # For posting: Cerebras → Gemini → Groq
-        cloud_flow = ['cerebras', 'gemini', 'groq']
+        # Primary rotation: Cerebras > Groq > Gemini
+        cloud_flow = ['cerebras', 'groq', 'gemini']
         
         if force_provider:
             # Case: High-volume check (Ollama) or specific provider forced
             providers = [force_provider] + [p for p in cloud_flow if p != force_provider]
         elif current_master == 'groq':
-            providers = ['groq', 'cerebras', 'gemini', 'ollama']
+            providers = ['groq', 'gemini', 'cerebras', 'ollama']
         elif current_master == 'gemini':
             providers = ['gemini', 'cerebras', 'groq', 'ollama']
         else:
-            # Default flow: Cerebras → Gemini → Groq
-            providers = ['cerebras', 'gemini', 'groq', 'ollama']
+            # Default flow: Cerebras > Groq > Gemini
+            providers = ['cerebras', 'groq', 'gemini', 'ollama']
             
         messages = prompt.format_messages(**values)
         
@@ -163,7 +163,7 @@ class Generator:
                             # Actually, the loop will just continue if we don't break.
                             # But wait, if providers = ['ollama'], it will exit.
                             # Let's fix providers list if ollama was forced and fails.
-                            providers = ['cerebras', 'gemini', 'groq']
+                            providers = ['cerebras', 'groq', 'gemini']
                             continue
                         logger.warning(f"[LLM] Ollama check failed or not running: {e}")
                         continue
@@ -199,11 +199,12 @@ class Generator:
                     logger.info(f"[LLM] Trying Gemini (Master: {current_master})...")
                     llm = ChatGoogleGenerativeAI(
                         google_api_key=settings.GEMINI_API_KEY,
-                        model="gemini-2.0-flash-lite", # Using the name from lib/llm.js
+                        model="gemini-2.0-flash-lite", 
                         temperature=0.8,
                         max_tokens=1000,
                         timeout=30
                     )
+
                 
                 async with self.semaphore:
                     response = await llm.ainvoke(messages)
@@ -370,6 +371,7 @@ class Generator:
                 "article_url": article["article_url"],
                 "article_excerpt": article["article_excerpt"],
                 "article_image_url": article.get("article_image_url"),
+                "video_url": article.get("video_url"),
                 "source_name": article["source_name"],
                 "agent_commentary": self._clean_commentary(data.get("agent_commentary", data.get("content", ""))),
                 "sentiment_score": data.get("sentiment_score", data.get("sentiment", 50)),
@@ -396,6 +398,7 @@ class Generator:
                     "article_url": article["article_url"],
                     "article_excerpt": article["article_excerpt"],
                     "article_image_url": article.get("article_image_url"),
+                    "video_url": article.get("video_url"),
                     "source_name": article["source_name"],
                     "agent_commentary": self._clean_commentary(commentary),
                     "sentiment_score": 50,
@@ -412,6 +415,7 @@ class Generator:
                 "article_url": article["article_url"],
                 "article_excerpt": article["article_excerpt"],
                 "article_image_url": article.get("article_image_url"),
+                "video_url": article.get("video_url"),
                 "source_name": article["source_name"],
                 "agent_commentary": self._clean_commentary(content),
                 "sentiment_score": 50,
@@ -445,6 +449,7 @@ class Generator:
                 "article_url": article["article_url"],
                 "article_excerpt": article["article_excerpt"],
                 "article_image_url": article.get("article_image_url"),
+                "video_url": article.get("video_url"),
                 "source_name": article["source_name"],
                 "agent_commentary": self._clean_commentary(data.get("agent_commentary", data.get("content", ""))),
                 "sentiment_score": data.get("sentiment_score", data.get("sentiment", 50)),
@@ -470,6 +475,7 @@ class Generator:
                     "article_url": article["article_url"],
                     "article_excerpt": article["article_excerpt"],
                     "article_image_url": article.get("article_image_url"),
+                    "video_url": article.get("video_url"),
                     "source_name": article["source_name"],
                     "agent_commentary": self._clean_commentary(commentary),
                     "sentiment_score": 50,
@@ -486,6 +492,7 @@ class Generator:
                 "article_url": article["article_url"],
                 "article_excerpt": article["article_excerpt"],
                 "article_image_url": article.get("article_image_url"),
+                "video_url": article.get("video_url"),
                 "source_name": article["source_name"],
                 "agent_commentary": self._clean_commentary(content),
                 "sentiment_score": 50,
@@ -519,6 +526,7 @@ class Generator:
                 "article_title": article["article_title"],
                 "article_url": article["article_url"],
                 "article_image_url": article.get("article_image_url"),
+                "video_url": article.get("video_url"),
                 "article_excerpt": article["article_excerpt"],
                 "agent_a_id": agent_a["id"],
                 "agent_b_id": agent_b["id"],

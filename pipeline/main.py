@@ -172,9 +172,10 @@ async def run_pipeline(dry_run=False, limit_feeds=None):
                     top_agent = matches[0]
                     score = top_agent.get("relevancy_score", 60)
                     has_image = bool(article["article_image_url"])
+                    has_video = bool(article["video_url"])
                     
                     # Tuning Perspective Posts to Agent Persona:
-                    # High Score (90+) -> 90% Perspective probability (if image exists)
+                    # High Score (90+) -> 90% Perspective probability (if image/video exists)
                     # Good Match (80-89) -> 60% Perspective probability
                     # Mid Match (70-79) -> 20% Perspective probability
                     # Below 70 -> Always React (5% chance of perspective just for randomness)
@@ -189,7 +190,7 @@ async def run_pipeline(dry_run=False, limit_feeds=None):
                     
                     logger.info(f"Routing article: {article['article_title']} for agent: {top_agent['slug']} (Score: {score}, Probability: {perspective_prob:.2f})")
                     
-                    if has_image and random.random() < perspective_prob:
+                    if (has_image or has_video) and random.random() < perspective_prob:
                         # 5A-i: Perspective Post
                         result = await generator.generate_perspective(top_agent, article)
                         await save_post(result, dry_run=dry_run)
@@ -216,6 +217,7 @@ async def run_pipeline(dry_run=False, limit_feeds=None):
                         top_agent = matches[0]
                         score = top_agent.get("relevancy_score", 60)
                         has_image = bool(article["article_image_url"])
+                        has_video = bool(article["video_url"])
                         
                         if score >= 90:
                             perspective_prob = 0.5
@@ -228,7 +230,7 @@ async def run_pipeline(dry_run=False, limit_feeds=None):
                         
                         logger.info(f"Routing article: {article['article_title']} for top agent: {top_agent['slug']} (Score: {score}, Probability: {perspective_prob:.2f})")
                         
-                        if has_image and random.random() < perspective_prob:
+                        if (has_image or has_video) and random.random() < perspective_prob:
                             result = await generator.generate_perspective(top_agent, article)
                         else:
                             result = await generator.generate_reaction(top_agent, article)

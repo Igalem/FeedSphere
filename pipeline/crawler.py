@@ -134,9 +134,20 @@ class Crawler:
                 # Check for YouTube links in the entry or content
                 for link in entry.get('links', []):
                     l_href = link.get('href', '')
-                    if "youtube.com/embed/" in l_href:
+                    if "youtube.com" in l_href:
                         video_url = l_href
                         break
+
+            # Helper to convert youtube to embed
+            def to_embed(url):
+                if not url: return None
+                if "youtube.com/watch?v=" in url:
+                    return url.replace("youtube.com/watch?v=", "youtube.com/embed/").split('&')[0]
+                if "youtu.be/" in url:
+                    return url.replace("youtu.be/", "youtube.com/embed/").split('?')[0]
+                return url
+
+            video_url = to_embed(video_url)
 
             # 2. Extract best possible Image (Prioritizing static images/thumbnails)
             image_url = None
@@ -229,7 +240,6 @@ class Crawler:
                                 tw_desc = page_soup.find("meta", attrs={"name": "twitter:description"})
                                 if tw_desc:
                                     scraped_excerpt = tw_desc.get("content")
-                                    
                             if not scraped_excerpt:
                                 # Look for typical article content blocks
                                 for selector in ['article', '.article-content', '.post-content', '.entry-content', '.content']:
@@ -240,6 +250,18 @@ class Crawler:
                                         if len(text) > 100:
                                             scraped_excerpt = text
                                             break
+                        
+                        # 5c. Robust Video Extraction
+                        if not video_url:
+                            # Search for YouTube embeds or links in the page
+                            yt_match = re.search(r'youtube\.com/(?:embed/|watch\?v=)([a-zA-Z0-9_-]{11})', page_res.text)
+                            if not yt_match:
+                                yt_match = re.search(r'youtu\.be/([a-zA-Z0-9_-]{11})', page_res.text)
+                            
+                            if yt_match:
+                                video_id = yt_match.group(1)
+                                video_url = f"https://www.youtube.com/embed/{video_id}"
+                                logger.info(f"Scraped YouTube video ID from page: {video_id}")
                 except Exception as e:
                     logger.debug(f"Scraping failed for {url}: {e}")
                     pass

@@ -25,8 +25,8 @@ export function resetLLMMaster() {
 }
 
 /**
- * Enhanced LLM response generator with Gemini as master and Groq as backup.
- * If Gemini fails 3 times, Groq becomes the master for the rest of the run.
+ * Enhanced LLM response generator with failover priority: Cerebras > Groq > Gemini.
+ * If a master fails 3 times, the system swaps to the next provider in the chain for the session.
  */
 export async function generateLLMResponse(systemPrompt, userMessages, options = {}) {
   const geminiModel = getGeminiModel();
@@ -38,7 +38,7 @@ export async function generateLLMResponse(systemPrompt, userMessages, options = 
   let providers = ['cerebras', 'groq', 'gemini'];
   
   if (currentMaster === 'groq') {
-    providers = ['groq', 'cerebras', 'gemini'];
+    providers = ['groq', 'gemini', 'cerebras'];
   } else if (currentMaster === 'gemini') {
     providers = ['gemini', 'cerebras', 'groq'];
   }
@@ -93,6 +93,7 @@ export async function generateLLMResponse(systemPrompt, userMessages, options = 
           console.warn(`⚠️ [LLM] Master (Cerebras) failure count: ${masterFailureCount}/3`);
           if (masterFailureCount >= 3) {
             currentMaster = 'groq';
+            masterFailureCount = 0;
             console.error('🚨 [LLM] Master failed 3 times. SWAPPING MASTER TO GROQ for the rest of this session.');
           }
         }
@@ -158,13 +159,14 @@ export async function generateLLMResponse(systemPrompt, userMessages, options = 
         masterFailureCount++;
         console.warn(`⚠️ [LLM] Master (Gemini) failure count: ${masterFailureCount}/3`);
         if (masterFailureCount >= 3) {
-          currentMaster = 'groq';
-          console.error('🚨 [LLM] Master failed 3 times. SWAPPING MASTER TO GROQ for the rest of this session.');
+          currentMaster = 'cerebras';
+          masterFailureCount = 0;
+          console.error('🚨 [LLM] Master failed 3 times. SWAPPING MASTER TO CEREBRAS for the rest of this session.');
         }
       }
       
       console.warn(`[LLM] Falling back to next available provider...`);
-      continue; // Move to Groq
+      continue; // Move to next
     } 
     
     // --- GROQ PROVIDER (Backups) ---
@@ -221,10 +223,15 @@ export async function generateLLMResponse(systemPrompt, userMessages, options = 
       if (currentMaster === 'groq') {
         masterFailureCount++;
         console.warn(`⚠️ [LLM] Master (Groq) failure count: ${masterFailureCount}/3`);
+        if (masterFailureCount >= 3) {
+          currentMaster = 'gemini';
+          masterFailureCount = 0;
+          console.error('🚨 [LLM] Master failed 3 times. SWAPPING MASTER TO GEMINI for the rest of this session.');
+        }
       }
       
       console.warn(`[LLM] Falling back to next available provider...`);
-      continue; // Move to Gemini if Groq was master and failed
+      continue; // Move to next
     }
   }
 
@@ -522,9 +529,9 @@ Rules: 1-2 sentences max, authentic voice, stay in character, no dashes.`;
 
 export async function generateAgentMetadata(userInput) {
   const TOPICS_LIST = [
-    'Tech', 'Sports', 'Gaming', 'News', 'Entertainment', 'Finance', 'Health', 'Food', 'Politics',
-    'Science', 'AI & Ethics', 'Business', 'Marketing', 'Crypto', 'Programming', 'Lifestyle',
-    'Automotive', 'Real Estate', 'Fashion', 'Music', 'Art & Design', 'Education', 'Travel', 'Environment'
+    'News & Politics', 'Tech & Science', 'Sports & Fitness', 
+    'Entertainment & Gaming', 'Business & Money', 
+    'Lifestyle & Culture', 'Knowledge'
   ].join(', ');
 
   const systemPrompt = `You are the Lead AI Agent Architect for FeedSphere.

@@ -227,7 +227,7 @@ SEMANTIC ANCHOR:
 Architecture interior design travel culinary coffee fashion slow living minimalist home decor vacation aesthetic destination.`
   },
   {
-    topic: 'Gaming',
+    topic: 'Entertainment & Gaming',
     name: 'Gamer 365',
     emoji: '🎮',
     color_hex: '#ec4899',
@@ -253,7 +253,7 @@ SEMANTIC ANCHOR:
 Playstation Xbox Nintendo Steam Unreal Engine frame rate hitbox speedrun multiplayer esports patch notes graphics gameplay.`
   },
   {
-    topic: 'Science',
+    topic: 'Tech & Science',
     name: 'Quantum Quest',
     emoji: '🧬',
     color_hex: '#10b981',
