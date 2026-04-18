@@ -33,7 +33,7 @@ class Generator:
         self.semaphore = asyncio.Semaphore(2)
         
         self.reaction_prompt = ChatPromptTemplate.from_messages([
-            ("system", "You are an AI agent with the following persona: {persona}"),
+            ("system", "You are an AI agent with the following persona: {persona}\nYour main topic is '{topic}' and your specific niche is '{sub_topic}'."),
             ("user", "Write a reactive post to this news.\n\n"
                      "Title: {article_title}\n"
                      "Excerpt: {article_excerpt}\n\n"
@@ -42,21 +42,23 @@ class Generator:
                      "2. Provide a detailed reaction with a variety of word counts across different posts.\n"
                      "3. Keep it concise, maximum 3 rows/lines of text.\n"
                      "4. Output format: JSON object with 'agent_commentary' (string), 'sentiment_score' (number 0-100), and 'tags' (array of 3-5 specific, granular, and trending PascalCase strings).\n"
-                     "5. Tags MUST be one-word PascalCase (e.g., 'TransferSaga', 'RosterDrama', 'TacticalShift', 'MarketVolatility'). Avoid generic tags like 'Sports' or 'News'. Focus on the hottest, most specific topics mentioned.\n\n"
+                     "5. Tags MUST be one-word PascalCase (e.g., 'TransferSaga', 'RosterDrama', 'TacticalShift', 'MarketVolatility'). Avoid generic tags like 'Sports' or 'News'. Focus on the hottest, most specific topics mentioned.\n"
+                     "6. STICK TO YOUR NICHE: If your niche is '{sub_topic}' and it's not 'N/A', relate your reaction back strictly to this niche.\n\n"
                      "IMPORTANT: Return ONLY a valid JSON object. Do NOT return a list or set of strings. Be expressive with the sentiment_score (0=Extremely Critical, 50=Neutral, 100=Extremely Bullish). Example: {{\"agent_commentary\": \"...\", \"sentiment_score\": 85, \"tags\": [\"...\", \"...\"]}}")
         ])
 
         self.perspective_prompt = ChatPromptTemplate.from_messages([
-            ("system", "You are an AI agent with the following persona: {persona}"),
+            ("system", "You are an AI agent with the following persona: {persona}\nYour main topic is '{topic}' and your specific niche is '{sub_topic}'."),
             ("user", "Write a deep, insightful perspective on this news item.\n\n"
                      "Title: {article_title}\n"
                      "Excerpt: {article_excerpt}\n"
                      "Image Context: This article includes a striking image.\n\n"
                      "Rules:\n"
-                     "1. Provide a unique point of view that ONLY someone with your specific persona ({persona}) and niche would have. Do NOT be generic or repeat what is in the excerpt.\n"
+                     "1. Provide a unique point of view that ONLY someone with your specific persona ({persona}) and niche ('{sub_topic}') would have. Do NOT be generic or repeat what is in the excerpt.\n"
                      "2. Reference the profound significance of the event through the lens of your niche and expertise.\n"
                      "3. Output format: JSON object with 'agent_commentary' (string), 'sentiment_score' (number 0-100), and 'tags' (array of 3-5 specific, insightful, and niche PascalCase strings).\n"
-                     "4. Tags MUST be one-word PascalCase (e.g., 'SemiconductorWar', 'DeFiRevolution', 'CarbonCapture', 'QuantumLeap'). Avoid generic tags like 'GlobalEconomy' if possible. Capture the 'hottest' specific topics in your niche.\n\n"
+                     "4. Tags MUST be one-word PascalCase (e.g., 'SemiconductorWar', 'DeFiRevolution', 'CarbonCapture', 'QuantumLeap'). Avoid generic tags like 'GlobalEconomy' if possible. Capture the 'hottest' specific topics in your niche.\n"
+                     "5. ENFORCE YOUR PERSONA: Never stray outside your niche. Find a way to tie the news directly to '{sub_topic}', interpreting it uniquely.\n\n"
                      "IMPORTANT: Return ONLY a valid JSON object. Do NOT return a list or set of strings. Be expressive with the sentiment_score (0=Extremely Critical, 50=Neutral, 100=Extremely Bullish). Example: {{\"agent_commentary\": \"...\", \"sentiment_score\": 15, \"tags\": [\"...\", \"...\"]}}")
         ])
 
@@ -84,24 +86,25 @@ class Generator:
 
         self.relevancy_prompt = ChatPromptTemplate.from_messages([
             ("system", "You are an intelligent Relevancy Filter for an AI agent's news feed.\n"
-                       "The agent cares ONLY about their specific niche. General topics in the same category are NOT necessarily relevant.\n"
                        "Agent Topic: {topic}\n"
                        "Agent Niche: {sub_topic}\n"
-                       "Agent Persona: {persona}"),
-            ("user", "Determine if this article fits strictly within the agent's Niche and Persona.\n\n"
+                       "Agent Persona: {persona}\n\n"
+                       "Relevancy rules:\n"
+                       "1. If Agent Niche is 'N/A' or 'None', the agent is a GENERALIST in their topic. They should match any significant or trending news within the '{topic}' category.\n"
+                       "2. If Agent Niche is a specific subject, they care ONLY about that niche and direct impacts on it. General news in the same category is NOT relevant unless it directly affects their niche."),
+            ("user", "Determine if this article is relevant to the agent based on the rules above.\n\n"
                      "Article Title: {article_title}\n"
                      "Article Excerpt: {article_excerpt}\n\n"
-                     "Relevancy Rules:\n"
-                     "1. 100: Perfect match. The article is specifically ABOUT the agent's niche (e.g. {sub_topic}).\n"
-                     "2. 80-99: Highly related. Direct impact on the niche, or involving key players/rivals the agent MUST care about.\n"
-                     "3. 60-79: Tangentially related. Same sport or narrow field, but not about the agent's specific team/niche. Be cautious.\n"
-                     "4. 0-59: NOT RELEVANT. This includes different sports even in same category, general news in same region, or metaphors.\n"
-                     "NEVER use parallels or metaphors like 'this is like {sub_topic}' as a reason for relevance.\n\n"
-                     "Response format: JSON object with 'relevance_score' (int 0-100) and 'reasoning' (string explaining why).\n"
+                     "Scoring:\n"
+                     "- 100: Perfect match. Specific to the niche (if any) or a major story in their general topic.\n"
+                     "- 80-99: Highly related. Involves key players, rivals, or significant sectoral shifts.\n"
+                     "- 60-79: Tangentially related. Same category, but low priority or generic.\n"
+                     "- 0-59: NOT RELEVANT. Wrong category, or completely outside the specific niche.\n\n"
+                     "Response format: JSON object with 'relevance_score' (int 0-100) and 'reasoning' (string).\n"
                      "IMPORTANT: Return ONLY valid JSON.")
         ])
 
-    async def _generate_llm_response(self, prompt: ChatPromptTemplate, values: Dict[str, Any], is_json: bool = False, force_provider: Optional[str] = None, is_relevancy: bool = False) -> str:
+    async def _generate_llm_response(self, prompt: ChatPromptTemplate, values: Dict[str, Any], is_json: bool = False, force_provider: Optional[str] = None, is_relevancy: bool = False) -> tuple[str, str, str]:
         global current_master, master_failure_count
         
         # Decide order based on current master and request type
@@ -152,7 +155,7 @@ class Generator:
                             result = resp.json()
                             content = result.get('message', {}).get('content', '').strip()
                             if content:
-                                return content
+                                return content, provider, settings.OLLAMA_MODEL
                             raise Exception("Empty response from Ollama")
                     except Exception as e:
                         if force_provider == 'ollama':
@@ -179,6 +182,7 @@ class Generator:
                         timeout=30,
                         max_retries=0
                     )
+                    model_used = "Llama 3.1 8B"
                     
                 elif provider == 'groq':
                     if not settings.GROQ_API_KEY:
@@ -192,6 +196,7 @@ class Generator:
                         timeout=30,
                         max_retries=0
                     )
+                    model_used = "Llama-3.3-70b-Versatile"
                     
                 elif provider == 'gemini':
                     if not settings.GEMINI_API_KEY:
@@ -205,13 +210,18 @@ class Generator:
                         timeout=30,
                         max_retries=0
                     )
+                    model_used = "Gemini 2.0 Flash Lite"
 
                 
+                    
+                # Indentation fixed: logic now inside provider blocks
+                pass
+
                 async with self.semaphore:
                     response = await llm.ainvoke(messages)
                     content = response.content.strip()
                     if content:
-                        return content
+                        return content, provider, model_used
                     raise Exception(f"Empty response from {provider}")
                     
             except Exception as e:
@@ -328,7 +338,7 @@ class Generator:
         """Determines if the article is topically relevant to the agent using the LLM Gatekeeper."""
         logger.info(f"Running LLM Relevancy Gatekeeper for agent: {agent['slug']} against article: {article['article_title']}")
         
-        content = await self._generate_llm_response(self.relevancy_prompt, {
+        content, _, _ = await self._generate_llm_response(self.relevancy_prompt, {
             "topic": agent.get("topic", "General"),
             "sub_topic": agent.get("sub_topic", "N/A"),
             "persona": agent["persona"],
@@ -349,8 +359,10 @@ class Generator:
         """Generates a standard short reaction post."""
         logger.info(f"Generating reaction for agent: {agent['slug']}")
         
-        content = await self._generate_llm_response(self.reaction_prompt, {
+        content, provider, model = await self._generate_llm_response(self.reaction_prompt, {
             "persona": agent["persona"],
+            "topic": agent.get("topic", "General"),
+            "sub_topic": agent.get("sub_topic", "N/A"),
             "response_style": agent.get("response_style", "Punchy and direct"),
             "article_title": article["article_title"],
             "article_excerpt": article["article_excerpt"]
@@ -377,6 +389,8 @@ class Generator:
                 "agent_commentary": self._clean_commentary(data.get("agent_commentary", data.get("content", ""))),
                 "sentiment_score": data.get("sentiment_score", data.get("sentiment", 50)),
                 "tags": tags,
+                "llm": provider,
+                "model": model,
                 "published_at": article.get("published_at")
             }
         except Exception as e:
@@ -404,6 +418,8 @@ class Generator:
                     "agent_commentary": self._clean_commentary(commentary),
                     "sentiment_score": 50,
                     "tags": [],
+                    "llm": provider,
+                    "model": model,
                     "published_at": article.get("published_at")
                 }
             
@@ -429,8 +445,10 @@ class Generator:
         """Generates a deeper perspective post."""
         logger.info(f"Generating perspective for agent: {agent['slug']}")
         
-        content = await self._generate_llm_response(self.perspective_prompt, {
+        content, provider, model = await self._generate_llm_response(self.perspective_prompt, {
             "persona": agent["persona"],
+            "topic": agent.get("topic", "General"),
+            "sub_topic": agent.get("sub_topic", "N/A"),
             "article_title": article["article_title"],
             "article_excerpt": article["article_excerpt"]
         })
@@ -455,6 +473,8 @@ class Generator:
                 "agent_commentary": self._clean_commentary(data.get("agent_commentary", data.get("content", ""))),
                 "sentiment_score": data.get("sentiment_score", data.get("sentiment", 50)),
                 "tags": tags,
+                "llm": provider,
+                "model": model,
                 "published_at": article.get("published_at")
             }
         except Exception as e:
@@ -481,6 +501,8 @@ class Generator:
                     "agent_commentary": self._clean_commentary(commentary),
                     "sentiment_score": 50,
                     "tags": [],
+                    "llm": provider,
+                    "model": model,
                     "published_at": article.get("published_at")
                 }
             
@@ -498,6 +520,8 @@ class Generator:
                 "agent_commentary": self._clean_commentary(content),
                 "sentiment_score": 50,
                 "tags": [],
+                "llm": provider,
+                "model": model,
                 "published_at": article.get("published_at")
             }
 
@@ -506,7 +530,7 @@ class Generator:
         """Generates a debate between two agents."""
         logger.info(f"Generating debate between {agent_a['slug']} and {agent_b['slug']}")
         
-        content = await self._generate_llm_response(self.debate_prompt, {
+        content, provider, model = await self._generate_llm_response(self.debate_prompt, {
             "article_title": article["article_title"],
             "article_excerpt": article["article_excerpt"],
             "persona_a": agent_a["persona"],
@@ -537,6 +561,8 @@ class Generator:
                 "sentiment_b": data.get("sentiment_b", 50),
                 "debate_question": self._clean_commentary(data["debate_question"]),
                 "tags": tags,
+                "llm": provider,
+                "model": model,
                 "published_at": article.get("published_at")
             }
         except Exception as e:

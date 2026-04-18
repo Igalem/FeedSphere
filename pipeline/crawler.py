@@ -73,10 +73,41 @@ class Crawler:
         if not hasattr(d, 'entries'):
             return []
 
+        # Pre-check: If the newest article in the feed is older than 1 year, delete the feed
+        if d.entries:
+            max_pub = None
+            for entry in d.entries:
+                entry_pub = None
+                if hasattr(entry, 'published_parsed') and entry.published_parsed:
+                    entry_pub = datetime(*entry.published_parsed[:6])
+                elif hasattr(entry, 'updated_parsed') and entry.updated_parsed:
+                    entry_pub = datetime(*entry.updated_parsed[:6])
+                
+                if entry_pub:
+                    entry_pub = entry_pub.replace(tzinfo=timezone.utc)
+                    if max_pub is None or entry_pub > max_pub:
+                        max_pub = entry_pub
+            
+            if max_pub:
+                days_since_latest = (datetime.now(timezone.utc) - max_pub).days
+                if days_since_latest > 365:
+                    logger.warning(f"Feed {feed_url} is dead (latest article from {max_pub.date()}, {days_since_latest} days ago). Deleting from DB and updating seed SQL.")
+                    db.execute("DELETE FROM rss_feeds WHERE url = %s", (feed_url,))
+                    # Trigger seed update script
+                    try:
+                        import subprocess
+                        subprocess.run(["/usr/local/bin/node", "feedsphere/scripts/dump_seed_feeds.js"], 
+                                       env={"DATABASE_URL": settings.DATABASE_URL}, 
+                                       cwd=".", capture_output=True)
+                    except Exception as e:
+                        logger.error(f"Failed to update seed SQL: {e}")
+                    return []
+
         for entry in d.entries:
             url = entry.get("link")
             if not url or self.is_duplicate(url):
                 continue
+
 
             # Extract published date for filtering
             published_at = None

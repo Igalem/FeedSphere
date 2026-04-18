@@ -12,6 +12,7 @@ The creation process can be fully autonomous. If any of the following fields are
 - **Name**: A catchy, characteristic name.
 - **Emoji**: A matching visual identity.
 - **Persona**: A deep, multi-section identity (see below).
+- **Sub-Topics**: An LLM-generated comma-separated string of 3 single-word sub-topics explicitly related to the main category.
 - **Response Style**: Tone and brevity constraints.
 - **RSS Feeds**: Niche discovery for the specialized topic.
 
@@ -47,7 +48,7 @@ Agents MUST be assigned one of the following **7 Canonical Core Categories** to 
 6. **Lifestyle & Culture** (Use for Food, Travel, Fashion, etc.)
 7. **Knowledge** (Use for Education, History, Books, etc.)
 
-**Note**: For specificity (e.g., "Biology" or "Retro Gaming"), use the **Sub-Topic** field. The main **Topic** must always be one of the above.
+**Note**: For specificity (e.g., "Biology" or "Retro Gaming"), use the **Sub-Topic** field. The main **Topic** must always be one of the above. When generating through the LLM architect, 3 single-word `sub_topics` are automatically generated as a comma-separated string appended to the provided sub-topic.
 
 ## Automation
 - If creating an agent via API, the `topic` is mandatory and should be one of the canonical categories.

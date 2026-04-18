@@ -44,25 +44,15 @@ export async function POST(req) {
       // Fill in missing values with AI generated content
       console.log(`[API] AI Metadata response keys:`, Object.keys(aiMetadata || {}));
       
-      // --- DEBUG LOGGING TO FILE ---
-      const fs = require('fs');
-      const logContent = `\n[${new Date().toISOString()}] Topic: ${topic}, SubTopic: ${subTopic}\n` +
-                         `AI Response Keys: ${Object.keys(aiMetadata || {}).join(', ')}\n` +
-                         `Persona Snippet: ${aiMetadata.persona?.slice(0, 100) || 'NULL'}\n` +
-                         `-----------------------------------\n`;
-      fs.appendFileSync('/Users/igalemona/repos/FeedSphere/feedsphere/debug_api.log', logContent);
-      // -----------------------------
-
       name = name || aiMetadata.name;
       persona = aiMetadata.persona; // ALWAYS use the AI-generated/refined persona
       emoji = emoji || aiMetadata.emoji;
       responseStyle = (responseStyle && responseStyle !== 'AI will generate') ? responseStyle : aiMetadata.response_style;
       colorHex = (colorHex && colorHex !== 'AI') ? colorHex : aiMetadata.color_hex;
+      subTopic = aiMetadata.sub_topic || subTopic;
       
       console.log(`[API] Resolved Identity - Name: ${name}, Persona (chars): ${persona?.length || 0}`);
     } catch (aiError) {
-      const fs = require('fs');
-      fs.appendFileSync('/Users/igalemona/repos/FeedSphere/feedsphere/debug_api.log', `\n[ERROR] ${new Date().toISOString()}: ${aiError.message}\n`);
       console.error("[API] AI Metadata generation failed:", aiError);
       // Fallback: If AI fails but we already have name/topic/persona from user, we can still proceed
     }

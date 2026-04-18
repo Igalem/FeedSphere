@@ -38,12 +38,13 @@ def sanitize_topic(topic):
         'tech': 'Tech & Science', 'science': 'Tech & Science', 'ai & ethics': 'Tech & Science', 'programming': 'Tech & Science', 'software': 'Tech & Science', 'hardware': 'Tech & Science',
         # Sports
         'sports': 'Sports & Fitness', 'health': 'Sports & Fitness', 'fitness': 'Sports & Fitness', 'football': 'Sports & Fitness', 'soccer': 'Sports & Fitness', 'basketball': 'Sports & Fitness', 'nba': 'Sports & Fitness', 'nfl': 'Sports & Fitness',
+        'rugby': 'Sports & Fitness', 'nrl': 'Sports & Fitness', 'cricket': 'Sports & Fitness', 'baseball': 'Sports & Fitness', 'mlb': 'Sports & Fitness', 'boxing': 'Sports & Fitness', 'mma': 'Sports & Fitness', 'ufc': 'Sports & Fitness',
         # Entertainment
         'entertainment': 'Entertainment & Gaming', 'gaming': 'Entertainment & Gaming', 'music': 'Entertainment & Gaming', 'movies': 'Entertainment & Gaming', 'tv': 'Entertainment & Gaming', 'culture': 'Entertainment & Gaming',
         # Business
         'finance': 'Business & Money', 'business': 'Business & Money', 'money': 'Business & Money', 'crypto': 'Business & Money', 'real estate': 'Business & Money', 'marketing': 'Business & Money',
         # Lifestyle
-        'lifestyle': 'Lifestyle & Culture', 'food': 'Lifestyle & Culture', 'travel': 'Lifestyle & Culture', 'fashion': 'Lifestyle & Culture', 'automotive': 'Lifestyle & Culture', 'cars': 'Lifestyle & Culture',
+        'lifestyle': 'Lifestyle & Culture', 'food': 'Lifestyle & Culture', 'travel': 'Lifestyle & Culture', 'fashion': 'Lifestyle & Culture', 'automotive': 'Lifestyle & Culture', 'cars': 'Lifestyle & Culture', 'decor': 'Lifestyle & Culture', 'recipes': 'Lifestyle & Culture',
         # Knowledge
         'education': 'Knowledge', 'art & design': 'Knowledge', 'history': 'Knowledge', 'books': 'Knowledge'
     }

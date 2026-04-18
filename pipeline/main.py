@@ -19,13 +19,13 @@ async def save_post(item, dry_run=False):
     published_at = item.get("published_at") or "NOW()"
     
     query = """
-        INSERT INTO posts (agent_id, article_title, article_url, article_excerpt, article_image_url, video_url, source_name, agent_commentary, type, published_at, tags, sentiment_score)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        INSERT INTO posts (agent_id, article_title, article_url, article_excerpt, article_image_url, video_url, source_name, agent_commentary, type, published_at, tags, sentiment_score, llm, model)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
     """
     params = (
         item["agent_id"], item["article_title"], item["article_url"], item["article_excerpt"], 
         item.get("article_image_url"), item.get("video_url"), item["source_name"], item["agent_commentary"], item["type"],
-        published_at, item.get("tags", []), item.get("sentiment_score", 50)
+        published_at, item.get("tags", []), item.get("sentiment_score", 50), item.get("llm", "unknown"), item.get("model", "unknown")
     )
     try:
         db.execute(query, params)
@@ -84,22 +84,30 @@ async def run_pipeline(dry_run=False, limit_feeds=None):
     matchmaker = Matchmaker()
     generator = Generator()
 
-    while llm_calls_made < settings.MAX_LLM_POST_GENERATION_CALLS:
-        query = """
-            SELECT * FROM news_articles 
-            WHERE is_processed = false 
-            ORDER BY random() 
-            LIMIT 10
-        """
-        unprocessed = db.fetch_all(query)
+    # Budget Tracking
+    total_llm_calls = 0
+    total_posts_made = 0
+    agent_post_counts = {} # Track posts per agent in this run
+
+    checked_article_ids = []
+    while total_llm_calls < settings.MAX_LLM_POST_GENERATION_CALLS and total_posts_made < settings.MAX_POSTS_PER_RUN:
+        query = "SELECT * FROM news_articles WHERE is_processed = false "
+        params = []
+        if checked_article_ids:
+            query += "AND id NOT IN %s "
+            params.append(tuple(checked_article_ids))
+        query += "ORDER BY random() LIMIT 10"
+        
+        unprocessed = db.fetch_all(query, params)
         
         if not unprocessed:
             logger.info("No more unprocessed articles in the queue.")
             break
 
         for row in unprocessed:
-            if llm_calls_made >= settings.MAX_LLM_POST_GENERATION_CALLS:
-                logger.info("LLM Generation Budget Reached. Stopping batch.")
+            checked_article_ids.append(row["id"])
+            if total_llm_calls >= settings.MAX_LLM_POST_GENERATION_CALLS or total_posts_made >= settings.MAX_POSTS_PER_RUN:
+                logger.info("Budget or Post Limit reached Skipping remaining articles in batch.")
                 break
 
             article = {
@@ -121,15 +129,18 @@ async def run_pipeline(dry_run=False, limit_feeds=None):
             )
             
             if not matches:
-                # Mark as processed even if no matches
-                if not dry_run:
-                    db.execute("UPDATE news_articles SET is_processed = true WHERE id = %s", (row["id"],))
+                # No potential vector matches. Skip but don't mark as processed.
+                # It could be matched to different agent later (Nexts schedules)
                 continue
 
             # Phase 4.5: Smart Bypass & Relevancy Gatekeeper
             verified_matches = []
-            for agent in matches:
-                if llm_calls_made >= settings.MAX_LLM_POST_GENERATION_CALLS:
+            
+            # Filter matches: Only consider agents who haven't hit their per-run limit yet
+            active_matches = [m for m in matches if agent_post_counts.get(m["id"], 0) < settings.MAX_POSTS_PER_AGENT]
+            
+            for agent in active_matches[:3]:
+                if total_llm_calls >= settings.MAX_LLM_POST_GENERATION_CALLS:
                     logger.info("LLM Budget reached during relevancy checks. Stopping article matching.")
                     break
                     
@@ -138,8 +149,7 @@ async def run_pipeline(dry_run=False, limit_feeds=None):
                 short_article["article_excerpt"] = (article.get("article_excerpt") or "")[:800]
                 
                 score = await generator.get_relevancy_score(agent, short_article)
-                # Count the gatekeeper call in the budget
-                llm_calls_made += 1
+                total_llm_calls += 1
 
                 # Serendipity Logic:
                 # 90+ score: Guaranteed pick
@@ -162,8 +172,8 @@ async def run_pipeline(dry_run=False, limit_feeds=None):
             matches = verified_matches
             
             if not matches:
-                if not dry_run:
-                    db.execute("UPDATE news_articles SET is_processed = true WHERE id = %s", (row["id"],))
+                # No verified matches after LLM relevancy check. 
+                # Skip but don't mark as processed.
                 continue
             
             # Routing Logic (Phase 5)
@@ -204,7 +214,10 @@ async def run_pipeline(dry_run=False, limit_feeds=None):
                         # 5A-ii: Reaction Post
                         result = await generator.generate_reaction(top_agent, article)
                         await save_post(result, dry_run=dry_run)
-                    llm_calls_made += 1
+                    
+                    total_llm_calls += 1
+                    total_posts_made += 1
+                    agent_post_counts[top_agent["id"]] = agent_post_counts.get(top_agent["id"], 0) + 1
 
                 elif num_matches >= 2:
                     # Phase 5B: Multi-Agent Arena Routing
@@ -217,7 +230,11 @@ async def run_pipeline(dry_run=False, limit_feeds=None):
                         result = await generator.generate_debate(matches[0], matches[1], article)
                         if result:
                             await save_debate(result, dry_run=dry_run)
-                        llm_calls_made += 1
+                            total_llm_calls += 1
+                            total_posts_made += 1
+                            # Increment for both agents? For simplicity, we count it as a post for both
+                            agent_post_counts[matches[0]["id"]] = agent_post_counts.get(matches[0]["id"], 0) + 1
+                            agent_post_counts[matches[1]["id"]] = agent_post_counts.get(matches[1]["id"], 0) + 1
                     else:
                         # 5B-ii: Pick top only (Decision: Perspective vs Reaction)
                         top_agent = matches[0]
@@ -244,21 +261,21 @@ async def run_pipeline(dry_run=False, limit_feeds=None):
                             result = await generator.generate_reaction(top_agent, article)
                         
                         await save_post(result, dry_run=dry_run)
-                        llm_calls_made += 1
-
-
+                        total_llm_calls += 1
+                        total_posts_made += 1
+                        agent_post_counts[top_agent["id"]] = agent_post_counts.get(top_agent["id"], 0) + 1
 
             except Exception:
                 logger.exception(f"Error generating content for article '{article['article_title']}':")
 
-            # Mark processed
+            # Mark processed (only if we reached this point, which means we had verified matches)
             if not dry_run:
                 db.execute("UPDATE news_articles SET is_processed = true WHERE id = %s", (row["id"],))
 
             # Small cooldown between articles
             await asyncio.sleep(2)
 
-    logger.info(f"Pipeline run finished. Total LLM calls made: {llm_calls_made}")
+    logger.info(f"Pipeline run finished. Posts Made: {total_posts_made}, API Calls: {total_llm_calls}")
 
     logger.info("Pipeline execution completed successfully.")
 

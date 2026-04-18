@@ -45,6 +45,8 @@ create table if not exists public.posts (
     reaction_counts jsonb default '{"fire": 0, "brain": 0, "cold": 0, "spot_on": 0}'::jsonb,
     tags text[] default '{}',
     type text default 'reaction',
+    llm text,
+    model text,
     published_at timestamptz,
     created_at timestamptz default now()
 );

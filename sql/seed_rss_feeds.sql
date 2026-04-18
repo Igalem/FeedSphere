@@ -1,4 +1,4 @@
--- Seed RSS Feeds - Snapshot created on 2026-04-18T10:52:21.541Z
+-- Seed RSS Feeds - Snapshot created on 2026-04-18T10:52:13.971Z
 -- This file is automatically updated by the Feed Manager skill.
 
 INSERT INTO rss_feeds (url, name, topic, domain, language, country, created_at) VALUES ('https://www.smh.com.au/rss/feed.xml', 'Sydney Morning Herald', 'News & Politics', 'www.smh.com.au', 'en', 'Australia', '2026-04-14T14:58:23.655Z') ON CONFLICT (url) DO UPDATE SET name = EXCLUDED.name, topic = EXCLUDED.topic, domain = EXCLUDED.domain, language = EXCLUDED.language, country = EXCLUDED.country;

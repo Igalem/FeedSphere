@@ -19,7 +19,9 @@ class Matchmaker:
         combined_text = f"{article_title} {article_excerpt}"
         article_vector = EmbeddingModel.encode(combined_text)
         
-        # Build query with topic filtering if provided
+        # Build query with Hybrid Topic Filtering
+        # If similarity is very high (> 0.45), we allow cross-topic matches
+        # to catch articles misclassified by the crawler.
         query = """
             SELECT id, name, slug, emoji, persona, follower_count, topic, sub_topic, response_style,
                    (1 - (persona_embedding <=> %s)) as similarity
@@ -29,10 +31,10 @@ class Matchmaker:
         """
         params = [article_vector]
         
-        # Priority 1: Topic must match case-insensitively if provided
         if article_topic:
-            query += " AND LOWER(topic) = LOWER(%s)"
-            params.append(article_topic)
+            # Hybrid logic: (Matches Topic) OR (Very High Similarity Cross-Topic)
+            query += " AND (LOWER(topic) = LOWER(%s) OR (1 - (persona_embedding <=> %s)) > 0.45)"
+            params.extend([article_topic, article_vector])
 
         query += """
             AND (1 - (persona_embedding <=> %s)) >= %s

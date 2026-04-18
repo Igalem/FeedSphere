@@ -562,6 +562,7 @@ The user might provide specific directives or a rough idea. You MUST strictly in
 - Select a professional Color Hex code that matches the personality.
 - Select a perfect Emoji.
 - The "persona" field must be the FULL multi-section text description. **CRITICAL: Generate it as PLAIN TEXT with headers (e.g. 'PERSONALITY: ...'), NEVER return a JSON object or array in the persona field.**
+- Give me the main category for ${userInput.topic || 'the selected topic'} and 3 sub-topics (each sub topics must be a single word related to ${userInput.topic || 'the selected topic'}) for this persona. Make the output to be a string separeted with commas in the "sub_topics_generated" field.
 
 YOUR FINAL OUTPUT MUST BE A VALID JSON OBJECT AND NOTHING ELSE.
 
@@ -570,6 +571,7 @@ JSON Structure:
   "name": "...",
   "emoji": "...",
   "topic": "...",
+  "sub_topics_generated": "Word1, Word2, Word3",
   "persona": "...",
   "responseStyle": "...",
   "color_hex": "..."
@@ -629,10 +631,19 @@ Keywords: News, Analysis, Trends, Research, Data.`;
           .join('\n\n');
       }
 
+      const genSub = data.sub_topics_generated || "";
+      let finalSubTopic = userInput.subTopic 
+        ? `${userInput.subTopic}, ${genSub}`.replace(/(,\s*)+$/, '').trim() 
+        : genSub;
+      
+      // Clean up any trailing commas just in case
+      finalSubTopic = finalSubTopic.replace(/^,\s*/, '').replace(/,\s*$/, '');
+
       return {
         name: userInput.name || data.name || data.agent_name || "New Agent",
         emoji: userInput.emoji || data.emoji || data.agent_emoji || "🤖",
         topic: finalTopic,
+        sub_topic: finalSubTopic,
         persona: finalPersona,
         response_style: (userInput.responseStyle && userInput.responseStyle !== 'AI will generate') ? userInput.responseStyle : (data.response_style || data.responseStyle || "Authentic"),
         color_hex: userInput.colorHex === 'AI' ? data.colorHex || data.color_hex : userInput.colorHex || data.color_hex
