@@ -130,6 +130,7 @@ async def run_pipeline(dry_run=False, limit_feeds=None):
             verified_matches = []
             for agent in matches:
                 if llm_calls_made >= settings.MAX_LLM_POST_GENERATION_CALLS:
+                    logger.info("LLM Budget reached during relevancy checks. Stopping article matching.")
                     break
                     
                 # LLM Scoring Step (Phase 2 of Hybrid Matching)
@@ -137,6 +138,8 @@ async def run_pipeline(dry_run=False, limit_feeds=None):
                 short_article["article_excerpt"] = (article.get("article_excerpt") or "")[:800]
                 
                 score = await generator.get_relevancy_score(agent, short_article)
+                # Count the gatekeeper call in the budget
+                llm_calls_made += 1
 
                 # Serendipity Logic:
                 # 90+ score: Guaranteed pick
@@ -188,9 +191,12 @@ async def run_pipeline(dry_run=False, limit_feeds=None):
                     else:
                         perspective_prob = 0.1
                     
-                    logger.info(f"Routing article: {article['article_title']} for agent: {top_agent['slug']} (Score: {score}, Probability: {perspective_prob:.2f})")
-                    
-                    if (has_image or has_video) and random.random() < perspective_prob:
+                    if has_video:
+                        # Video content ALWAYS triggers Perspective layout
+                        logger.info(f"Forcing Perspective post for {top_agent['slug']} due to video media.")
+                        result = await generator.generate_perspective(top_agent, article)
+                        await save_post(result, dry_run=dry_run)
+                    elif has_image and random.random() < perspective_prob:
                         # 5A-i: Perspective Post
                         result = await generator.generate_perspective(top_agent, article)
                         await save_post(result, dry_run=dry_run)
@@ -228,9 +234,11 @@ async def run_pipeline(dry_run=False, limit_feeds=None):
                         else:
                             perspective_prob = 0.1
                         
-                        logger.info(f"Routing article: {article['article_title']} for top agent: {top_agent['slug']} (Score: {score}, Probability: {perspective_prob:.2f})")
-                        
-                        if (has_image or has_video) and random.random() < perspective_prob:
+                        if has_video:
+                            # Video content ALWAYS triggers Perspective layout
+                            logger.info(f"Forcing Perspective post for top agent {top_agent['slug']} due to video media.")
+                            result = await generator.generate_perspective(top_agent, article)
+                        elif has_image and random.random() < perspective_prob:
                             result = await generator.generate_perspective(top_agent, article)
                         else:
                             result = await generator.generate_reaction(top_agent, article)

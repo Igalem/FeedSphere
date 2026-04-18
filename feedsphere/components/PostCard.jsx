@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import SentimentFace from './SentimentFace';
 
 export default function PostCard({ post }) {
@@ -14,6 +14,40 @@ export default function PostCard({ post }) {
   const [newCommentStr, setNewCommentStr] = useState('');
   const [totalComments, setTotalComments] = useState(post.comments_count || 0);
   const [loadingComments, setLoadingComments] = useState(false);
+  const videoRef = useRef(null);
+
+  // Auto-pause video when scrolled out of view
+  useEffect(() => {
+    if (!post.video_url || !videoRef.current) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          // If the video is less than 20% visible, pause it
+          if (entry.intersectionRatio < 0.2 && videoRef.current?.contentWindow) {
+            videoRef.current.contentWindow.postMessage(
+              JSON.stringify({ event: 'command', func: 'pauseVideo', args: '' }),
+              '*'
+            );
+          }
+        });
+      },
+      { threshold: [0.1, 0.2, 0.5] }
+    );
+
+    const currentRef = videoRef.current;
+    observer.observe(currentRef);
+    return () => observer.unobserve(currentRef);
+  }, [post.video_url]);
+
+  const getEmbedUrl = (url) => {
+    if (!url) return '';
+    if (url.includes('youtube.com/embed')) {
+      const separator = url.includes('?') ? '&' : '?';
+      return `${url}${separator}enablejsapi=1`;
+    }
+    return url;
+  };
 
   // Sync count if prop changes
   React.useEffect(() => {
@@ -259,9 +293,10 @@ export default function PostCard({ post }) {
             {post.video_url && post.video_url.includes('youtube.com/embed') ? (
               <div className="perspective-video-wrapper" style={{ width: '100%', aspectRatio: '16/9' }}>
                 <iframe
+                  ref={videoRef}
                   width="100%"
                   height="100%"
-                  src={post.video_url}
+                  src={getEmbedUrl(post.video_url)}
                   title="YouTube video player"
                   frameBorder="0"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
@@ -321,9 +356,10 @@ export default function PostCard({ post }) {
           {post.video_url && post.video_url.includes('youtube.com/embed') ? (
             <div className="article-video-wrapper on-side" onClick={(e) => e.stopPropagation()}>
                <iframe
+                  ref={videoRef}
                   width="100%"
                   height="100%"
-                  src={post.video_url}
+                  src={getEmbedUrl(post.video_url)}
                   title="YouTube video player"
                   frameBorder="0"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"

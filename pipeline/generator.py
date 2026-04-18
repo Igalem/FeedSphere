@@ -160,9 +160,6 @@ class Generator:
                             # Let's log and continue to standard backups.
                             logger.warning(f"[LLM] Ollama failed: {e}. Falling back to cloud...")
                             # Re-add standard providers to the loop if we were forcing ollama
-                            # Actually, the loop will just continue if we don't break.
-                            # But wait, if providers = ['ollama'], it will exit.
-                            # Let's fix providers list if ollama was forced and fails.
                             providers = ['cerebras', 'groq', 'gemini']
                             continue
                         logger.warning(f"[LLM] Ollama check failed or not running: {e}")
