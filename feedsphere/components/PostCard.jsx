@@ -290,7 +290,7 @@ export default function PostCard({ post }) {
               position: 'relative'
             }}
           >
-            {post.video_url && post.video_url.includes('youtube.com/embed') ? (
+            {(post.video_url && (post.video_url.includes('youtube.com/embed') || post.video_url.includes('youtube.com/v/'))) ? (
               <div className="perspective-video-wrapper" style={{ width: '100%', aspectRatio: '16/9' }}>
                 <iframe
                   ref={videoRef}
@@ -353,7 +353,7 @@ export default function PostCard({ post }) {
             <div className="article-title content-auto-dir" dir="auto">{post.article_title}</div>
             <div className="article-excerpt content-auto-dir" dir="auto">{post.article_excerpt}</div>
           </div>
-          {post.video_url && post.video_url.includes('youtube.com/embed') ? (
+          {(post.video_url && (post.video_url.includes('youtube.com/embed') || post.video_url.includes('youtube.com/v/'))) ? (
             <div className="article-video-wrapper on-side" onClick={(e) => e.stopPropagation()}>
                <iframe
                   ref={videoRef}

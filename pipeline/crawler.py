@@ -78,13 +78,23 @@ class Crawler:
             max_pub = None
             for entry in d.entries:
                 entry_pub = None
-                if hasattr(entry, 'published_parsed') and entry.published_parsed:
-                    entry_pub = datetime(*entry.published_parsed[:6])
-                elif hasattr(entry, 'updated_parsed') and entry.updated_parsed:
-                    entry_pub = datetime(*entry.updated_parsed[:6])
+                # Check multiple potential date fields
+                date_fields = ['published_parsed', 'updated_parsed', 'created_parsed']
+                for field in date_fields:
+                    if hasattr(entry, field) and getattr(entry, field):
+                        entry_pub = datetime(*getattr(entry, field)[:6])
+                        break
                 
+                if not entry_pub and 'published' in entry:
+                    try:
+                        from dateutil import parser as date_parser
+                        entry_pub = date_parser.parse(entry.published)
+                    except:
+                        pass
+
                 if entry_pub:
-                    entry_pub = entry_pub.replace(tzinfo=timezone.utc)
+                    if not entry_pub.tzinfo:
+                        entry_pub = entry_pub.replace(tzinfo=timezone.utc)
                     if max_pub is None or entry_pub > max_pub:
                         max_pub = entry_pub
             
@@ -96,7 +106,8 @@ class Crawler:
                     # Trigger seed update script
                     try:
                         import subprocess
-                        subprocess.run(["/usr/local/bin/node", "feedsphere/scripts/dump_seed_feeds.js"], 
+                        # Ensure we use the full path to node if needed, or just node
+                        subprocess.run(["node", "feedsphere/scripts/dump_seed_feeds.js"], 
                                        env={"DATABASE_URL": settings.DATABASE_URL}, 
                                        cwd=".", capture_output=True)
                     except Exception as e:
@@ -132,11 +143,14 @@ class Crawler:
                 days_old = (now_utc.date() - published_at.date()).days
                 
                 if days_old > settings.CRAWLER_DELTA_DAYS:
-                    logger.info(f"Skipping article '{entry.get('title', 'No Title')}' from {published_at.date()} ({days_old} days old, > {settings.CRAWLER_DELTA_DAYS} delta)")
+                    if days_old > 365:
+                        logger.debug(f"Skipping very old article '{entry.get('title', 'No Title')}' from {published_at.date()}")
+                    else:
+                        logger.info(f"Skipping article '{entry.get('title', 'No Title')}' from {published_at.date()} ({days_old} days old, > {settings.CRAWLER_DELTA_DAYS} delta)")
                     continue
             else:
                 # If no date found, skip to ensure we handle things correctly
-                logger.warning(f"Skipping article '{entry.get('title', 'No Title')}' - no published date found.")
+                logger.debug(f"Skipping article '{entry.get('title', 'No Title')}' - no published date found.")
                 continue
 
             title = html.unescape(entry.get("title", "No Title"))
@@ -165,13 +179,15 @@ class Crawler:
                 # Check for YouTube links in the entry or content
                 for link in entry.get('links', []):
                     l_href = link.get('href', '')
-                    if "youtube.com" in l_href:
+                    if "youtube.com" in l_href or "youtu.be" in l_href:
                         video_url = l_href
                         break
 
             # Helper to convert youtube to embed
             def to_embed(url):
                 if not url: return None
+                if "youtube.com/shorts/" in url:
+                    return url.replace("youtube.com/shorts/", "youtube.com/embed/").split('?')[0]
                 if "youtube.com/watch?v=" in url:
                     return url.replace("youtube.com/watch?v=", "youtube.com/embed/").split('&')[0]
                 if "youtu.be/" in url:
@@ -284,15 +300,43 @@ class Crawler:
                         
                         # 5c. Robust Video Extraction
                         if not video_url:
-                            # Search for YouTube embeds or links in the page
-                            yt_match = re.search(r'youtube\.com/(?:embed/|watch\?v=)([a-zA-Z0-9_-]{11})', page_res.text)
-                            if not yt_match:
-                                yt_match = re.search(r'youtu\.be/([a-zA-Z0-9_-]{11})', page_res.text)
-                            
+                            # 1. Try Meta Tags first (Highest quality/intent)
+                            meta_video_candidates = [
+                                ("meta", {"property": "og:video"}),
+                                ("meta", {"property": "og:video:secure_url"}),
+                                ("meta", {"name": "twitter:player"}),
+                                ("meta", {"property": "twitter:player"})
+                            ]
+                            for tag_type, attrs in meta_video_candidates:
+                                tag = page_soup.find(tag_type, attrs=attrs)
+                                if tag:
+                                    v_cand = tag.get("content") or tag.get("href")
+                                    if v_cand and ("youtube.com" in v_cand or "youtu.be" in v_cand):
+                                        video_url = to_embed(v_cand)
+                                        if video_url: break
+
+                        if not video_url:
+                            # 2. Search for iframes in likely content areas (Avoid sidebar)
+                            content_selectors = ['article', '.article-content', '.post-content', '.entry-content', '.content', '#main-content']
+                            for selector in content_selectors:
+                                area = page_soup.select_one(selector)
+                                if area:
+                                    # Look for youtube iframes
+                                    iframes = area.find_all("iframe", src=True)
+                                    for iframe in iframes:
+                                        src = iframe["src"]
+                                        if "youtube.com" in src or "youtu.be" in src:
+                                            video_url = to_embed(src)
+                                            if video_url: break
+                                    if video_url: break
+
+                        if not video_url:
+                            # 3. Last Resort: Global Page search but ONLY for embed patterns (less likely to be in sidebars than raw links)
+                            yt_match = re.search(r'youtube\.com/embed/([a-zA-Z0-9_-]{11})', page_res.text)
                             if yt_match:
                                 video_id = yt_match.group(1)
                                 video_url = f"https://www.youtube.com/embed/{video_id}"
-                                logger.info(f"Scraped YouTube video ID from page: {video_id}")
+                                logger.info(f"Scraped YouTube embed from page text: {video_id}")
                 except Exception as e:
                     logger.debug(f"Scraping failed for {url}: {e}")
                     pass
@@ -303,11 +347,15 @@ class Crawler:
                 final_excerpt = scraped_excerpt
 
             # 3. Fallback/Transformation Logic
-            # If we have a video but NO image, use the video thumbnail as the image
-            if not image_url and video_url and "youtube.com/embed/" in video_url:
+            # If we have a video, prioritize its thumbnail as the main image to ensure visual consistency
+            if video_url and "youtube.com/embed/" in video_url:
                 video_id = video_url.split("youtube.com/embed/")[1].split("?")[0].split("/")[0]
-                image_url = f"https://img.youtube.com/vi/{video_id}/maxresdefault.jpg"
-                logger.info(f"Using YouTube thumbnail as fallback image: {image_url}")
+                video_thumb = f"https://img.youtube.com/vi/{video_id}/maxresdefault.jpg"
+                
+                # Use video thumbnail if no image exists OR if the current image is a generic fallback/placeholder
+                if not image_url or "unsplash.com" in image_url or "placeholder" in image_url.lower():
+                    image_url = video_thumb
+                    logger.info(f"Prioritizing YouTube thumbnail for consistency: {image_url}")
 
             # Final check: Don't let video URLs leak into image_url field unless they are thumbnails
             if image_url and any(ext in image_url.lower() for ext in ["youtube.com/embed/", "player.vimeo.com", ".mp4", ".mov"]):
