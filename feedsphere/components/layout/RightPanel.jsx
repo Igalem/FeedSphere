@@ -1,10 +1,16 @@
 import { db } from '@/lib/db';
 import Link from 'next/link';
 import SentimentFace from '@/components/SentimentFace';
+import FollowButton from '@/components/FollowButton';
+import { createClient } from '@/lib/supabase/server';
 
-export const revalidate = 60;
+export const dynamic = 'force-dynamic';
 
 export default async function RightPanel() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  let userFollows = [];
+
   // Fetch LIVE PULSE data
   let PULSE_DATA = [];
   try {
@@ -37,11 +43,6 @@ export default async function RightPanel() {
     });
   } catch (e) { console.error('Pulse fetch error:', e); }
 
-  // Fallback defaults removed (stay empty if no data)
-  if (PULSE_DATA.length === 0) {
-    // PULSE_DATA remains an empty array
-  }
-
   // Fetch TRENDING Topics data
   let TRENDING = [];
   try {
@@ -51,17 +52,13 @@ export default async function RightPanel() {
       WHERE created_at > NOW() - INTERVAL '24 hours'
       GROUP BY tag 
       ORDER BY count DESC 
-      LIMIT 5
+      LIMIT 8
     `);
     TRENDING = trendRes.rows.map(row => ({
       name: row.tag.startsWith('#') ? row.tag : `#${row.tag}`,
       count: `${row.count} posts`
     }));
   } catch (e) { console.error('Trend fetch error:', e); }
-
-  if (TRENDING.length === 0) {
-    // TRENDING remains an empty array
-  }
 
   // Fetch agents data for "Discover Agents"
   let agents = [];
@@ -75,6 +72,14 @@ export default async function RightPanel() {
       ORDER BY last_activity DESC NULLS LAST
     `);
     agents = res.rows;
+
+    if (user) {
+      const followRes = await db.query(
+        `SELECT agent_id FROM user_follows WHERE user_id = $1`,
+        [user.id]
+      );
+      userFollows = followRes.rows.map(r => r.agent_id);
+    }
   } catch (e) { console.error(e); }
 
   return (
@@ -144,18 +149,15 @@ export default async function RightPanel() {
                 <div className="agent-stat-name">{agent.name}</div>
                 <div className="agent-stat-desc">{agent.persona ? agent.persona.slice(0,35) : 'Agent'}...</div>
                 <div className="agent-stat-nums">
-                  <span className="agent-stat-num">
-                    <span translate="no">
-                      {agent.follower_count >= 1000000 
-                        ? (agent.follower_count / 1000000).toFixed(1) + 'M' 
-                        : agent.follower_count >= 1000 
-                          ? (agent.follower_count / 1000).toFixed(1) + 'K' 
-                          : agent.follower_count}
-                    </span> <span translate="no">followers</span>
-                  </span>
                 </div>
               </div>
-              <button className="follow-btn" translate="no">Follow</button>
+              <FollowButton 
+                agentId={agent.id} 
+                creatorId={agent.creator_id}
+                initialFollowerCount={agent.follower_count} 
+                initialIsFollowing={userFollows.includes(agent.id)} 
+              />
+
             </div>
           ))}
         </div>

@@ -4,6 +4,7 @@ import FeedContent from '@/components/FeedContent';
 import Link from 'next/link';
 import DraggableScrollContainer from '@/components/DraggableScrollContainer';
 import { createClient } from '@/lib/supabase/server';
+import FeedHeader from '@/components/FeedHeader';
 
 export const revalidate = 60;
 
@@ -54,7 +55,11 @@ const conditions = ['a.is_active = true'];
 if (activeAgentSlug !== 'All') {
   values.push(activeAgentSlug);
   conditions.push(`a.slug = $${values.length}`);
+} else if (user) {
+  // Only show posts from followed agents in "Your Feed"
+  conditions.push(`EXISTS (SELECT 1 FROM user_follows uf WHERE uf.user_id = $1 AND uf.agent_id = a.id)`);
 }
+
 if (activeTopic) {
   values.push(activeTopic);
   conditions.push(`a.topic = $${values.length}`);
@@ -90,6 +95,18 @@ if (conditions.length > 0) {
 
   // Fetch initial debates
   let initialDebates = [];
+  let followedAgentIds = [];
+  
+  if (user) {
+    try {
+      const followRes = await db.query(
+        'SELECT agent_id FROM user_follows WHERE user_id = $1',
+        [user.id]
+      );
+      followedAgentIds = followRes.rows.map(r => r.agent_id);
+    } catch (e) { console.error(e); }
+  }
+
   try {
     let debateSql = `
       SELECT 
@@ -115,7 +132,11 @@ if (conditions.length > 0) {
     if (activeAgentSlug !== 'All') {
       debateParams.push(activeAgentSlug);
       debateConditions.push(`(aa.slug = $${debateParams.length} OR ab.slug = $${debateParams.length})`);
+    } else if (user) {
+      // Only show debates involving at least one followed agent in "Your Feed"
+      debateConditions.push(`EXISTS (SELECT 1 FROM user_follows uf WHERE uf.user_id = $1 AND (uf.agent_id = aa.id OR uf.agent_id = ab.id))`);
     }
+
     if (activeTopic) {
       debateParams.push(activeTopic);
       debateConditions.push(`d.topic = $${debateParams.length}`);
@@ -145,28 +166,14 @@ if (conditions.length > 0) {
 
   return (
     <>
-      <div className="feed-header">
-        <div className="feed-filters" translate="no">
-          <Link
-            href="/"
-            className={`filter-btn ${activeAgentSlug === 'All' && !activeTopic && !activeTag && !activeType ? 'active' : ''}`}
-          >
-            Your Feed
-          </Link>
-          <DraggableScrollContainer className="agents-scroll-container">
-            {agents.slice(1).map((agent) => (
-              <Link
-                key={agent.slug}
-                href={`/?agent=${agent.slug}`}
-                className={`filter-btn ${activeAgentSlug === agent.slug ? 'active' : ''}`}
-                draggable="false"
-              >
-                {agent.emoji} {agent.name}
-              </Link>
-            ))}
-          </DraggableScrollContainer>
-        </div>
-      </div>
+      <FeedHeader 
+        agents={agents} 
+        initialFollowedIds={followedAgentIds}
+        activeAgentSlug={activeAgentSlug}
+        activeTopic={activeTopic}
+        activeTag={activeTag}
+        activeType={activeType}
+      />
 
       <div id="feedContent">
         <FeedContent 

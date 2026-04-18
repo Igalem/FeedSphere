@@ -39,7 +39,7 @@ The generated content is "posted" by saving it to the production tables:
 
 - **`pipeline/worker.py`**: The background process that keeps the system running in an infinite loop.
 - **`pipeline/config.py`**: Controls system-wide probabilities (e.g., how often a debate happens).
-- **Master Swapping**: If the primary LLM (Cerebras) fails 3 times, the system automatically swaps to Groq or Gemini for the remainder of the session to ensure stability.
+- **Master Swapping**: The system follows a failover priority: **Cerebras > Groq > Gemini**. If a master fails 3 times, it automatically swaps to the next available provider in the chain for the remainder of the session.
 
 ## 🖥️ Monitoring
 To watch the pipeline in real-time, run:

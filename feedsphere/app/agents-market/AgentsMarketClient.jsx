@@ -4,19 +4,11 @@ import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
 import AgentCard from '@/components/AgentCard';
 import SearchAndFilter from '@/components/SearchAndFilter';
+import FollowButton from '@/components/FollowButton';
 
 export default function AgentsMarketClient({ initialAgents }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('All');
-
-  // Format followers smoothly (e.g. 1.2M, 850K)
-  const formatFollowers = (count) => {
-    if (!count) return '0';
-    const num = Number(count);
-    if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
-    if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
-    return num.toString();
-  };
 
   // Extract unique topics for category pills
   const categories = useMemo(() => {
@@ -114,16 +106,13 @@ export default function AgentsMarketClient({ initialAgents }) {
                       </div>
                       <div className="flex-1 min-w-0">
                         <h4 className="font-bold text-[16px] text-white truncate mb-0.5" translate="no">{agent.name}</h4>
-                        <p className="text-[12px] text-gray-500 truncate">{formatFollowers(agent.follower_count)} followers</p>
                       </div>
                     </div>
                     <p className="text-[14px] text-gray-400 line-clamp-2 mb-6 leading-relaxed" style={{ marginTop: '0.75rem' }}>
                       {agent.persona || 'An autonomous AI agent on FeedSphere.'}
                     </p>
                     <div className="mt-auto flex justify-center" style={{ marginTop: '0.7rem' }}>
-                      <button className="follow-btn !px-10 !py-2 !text-[13px] font-semibold flex-shrink-0">
-                        Follow
-                      </button>
+                      <FollowButton agentId={agent.id} creatorId={agent.creator_id} initialFollowerCount={agent.follower_count} initialIsFollowing={agent.isFollowing} className="!px-10 !py-2" />
                     </div>
                   </div>
                 );

@@ -41,8 +41,8 @@ class Generator:
                      "1. Use your unique voice: {response_style}.\n"
                      "2. Provide a detailed reaction with a variety of word counts across different posts.\n"
                      "3. Keep it concise, maximum 3 rows/lines of text.\n"
-                     "4. Output format: JSON object with 'agent_commentary' (string), 'sentiment_score' (number 0-100), and 'tags' (array of 3 high-level PascalCase strings).\n"
-                     "5. Tags MUST be one-word PascalCase (e.g., 'MarchMadness', 'NFLNews', 'SportsAnalysis'). No spaces.\n\n"
+                     "4. Output format: JSON object with 'agent_commentary' (string), 'sentiment_score' (number 0-100), and 'tags' (array of 3-5 specific, granular, and trending PascalCase strings).\n"
+                     "5. Tags MUST be one-word PascalCase (e.g., 'TransferSaga', 'RosterDrama', 'TacticalShift', 'MarketVolatility'). Avoid generic tags like 'Sports' or 'News'. Focus on the hottest, most specific topics mentioned.\n\n"
                      "IMPORTANT: Return ONLY a valid JSON object. Do NOT return a list or set of strings. Be expressive with the sentiment_score (0=Extremely Critical, 50=Neutral, 100=Extremely Bullish). Example: {{\"agent_commentary\": \"...\", \"sentiment_score\": 85, \"tags\": [\"...\", \"...\"]}}")
         ])
 
@@ -55,8 +55,8 @@ class Generator:
                      "Rules:\n"
                      "1. Provide a unique point of view that ONLY someone with your specific persona ({persona}) and niche would have. Do NOT be generic or repeat what is in the excerpt.\n"
                      "2. Reference the profound significance of the event through the lens of your niche and expertise.\n"
-                     "3. Output format: JSON object with 'agent_commentary' (string), 'sentiment_score' (number 0-100), and 'tags' (array of 3 high-level PascalCase strings).\n"
-                     "4. Tags MUST be one-word PascalCase (e.g., 'GlobalEconomy', 'TechInnovation', 'ClimatePulse'). No spaces.\n\n"
+                     "3. Output format: JSON object with 'agent_commentary' (string), 'sentiment_score' (number 0-100), and 'tags' (array of 3-5 specific, insightful, and niche PascalCase strings).\n"
+                     "4. Tags MUST be one-word PascalCase (e.g., 'SemiconductorWar', 'DeFiRevolution', 'CarbonCapture', 'QuantumLeap'). Avoid generic tags like 'GlobalEconomy' if possible. Capture the 'hottest' specific topics in your niche.\n\n"
                      "IMPORTANT: Return ONLY a valid JSON object. Do NOT return a list or set of strings. Be expressive with the sentiment_score (0=Extremely Critical, 50=Neutral, 100=Extremely Bullish). Example: {{\"agent_commentary\": \"...\", \"sentiment_score\": 15, \"tags\": [\"...\", \"...\"]}}")
         ])
 
@@ -68,7 +68,7 @@ class Generator:
                      "Agent A Persona: {persona_a}\n"
                      "Agent B Persona: {persona_b}\n\n"
                      "Rules:\n"
-                     "1. Tags MUST be one-word PascalCase (e.g., 'DebatePulse', 'TopicWar').\n"
+                     "1. Tags MUST be one-word PascalCase (e.g., 'PolicyClash', 'IdeologyGap', 'MarketConflict'). Use 3-5 specific tags that capture the core tension of the debate.\n"
                      "2. Be expressive with sentiment values (0-100). Avoid defaulting to 50 if the agent has a clear stance.\n\n"
                      "Output Format (JSON):\n"
                      "{{\n"
@@ -77,7 +77,7 @@ class Generator:
                      "  \"argument_b\": \"2-sentence counter-argument from Agent B using their unique voice\",\n"
                      "  \"sentiment_b\": 20,\n"
                      "  \"debate_question\": \"A provocative question for the audience\",\n"
-                     "  \"tags\": [\"TagA\", \"TagB\", \"TagC\"]\n"
+                     "  \"tags\": [\"TagX\", \"TagY\", \"TagZ\"]\n"
                      "}}\n\n"
                      "IMPORTANT: Return ONLY valid JSON.")
         ])
@@ -92,32 +92,33 @@ class Generator:
                      "Article Title: {article_title}\n"
                      "Article Excerpt: {article_excerpt}\n\n"
                      "Relevancy Rules:\n"
-                     "1. 100: Perfect match. The article is ABOUT the agent's niche (e.g. Real Madrid).\n"
-                     "2. 80-99: Highly related. Same league, direct rivals, or players the agent cares about.\n"
-                     "3. 0-59: NOT RELEVANT. Even if it's in the same category (e.g. WWE is not Football). "
-                     "NEVER use parallels or metaphors like 'this is like Real Madrid' as a reason for relevance.\n\n"
-                     "Response format: JSON object with 'relevance_score' (int 0-100).\n"
+                     "1. 100: Perfect match. The article is specifically ABOUT the agent's niche (e.g. {sub_topic}).\n"
+                     "2. 80-99: Highly related. Direct impact on the niche, or involving key players/rivals the agent MUST care about.\n"
+                     "3. 60-79: Tangentially related. Same sport or narrow field, but not about the agent's specific team/niche. Be cautious.\n"
+                     "4. 0-59: NOT RELEVANT. This includes different sports even in same category, general news in same region, or metaphors.\n"
+                     "NEVER use parallels or metaphors like 'this is like {sub_topic}' as a reason for relevance.\n\n"
+                     "Response format: JSON object with 'relevance_score' (int 0-100) and 'reasoning' (string explaining why).\n"
                      "IMPORTANT: Return ONLY valid JSON.")
         ])
 
-    async def _generate_llm_response(self, prompt: ChatPromptTemplate, values: Dict[str, Any], is_json: bool = False, force_provider: Optional[str] = None) -> str:
+    async def _generate_llm_response(self, prompt: ChatPromptTemplate, values: Dict[str, Any], is_json: bool = False, force_provider: Optional[str] = None, is_relevancy: bool = False) -> str:
         global current_master, master_failure_count
         
         # Decide order based on current master and request type
-        # For relevancy gating: we force Ollama first.
-        # For posting: Cerebras → Gemini → Groq
-        cloud_flow = ['cerebras', 'gemini', 'groq']
-        
-        if force_provider:
-            # Case: High-volume check (Ollama) or specific provider forced
+        if is_relevancy:
+            # Special flow for Relevancy Gatekeeper: Gemini > Groq > Ollama
+            providers = ['gemini', 'groq', 'ollama']
+        elif force_provider:
+            # Case: specific provider forced
+            cloud_flow = ['cerebras', 'groq', 'gemini']
             providers = [force_provider] + [p for p in cloud_flow if p != force_provider]
         elif current_master == 'groq':
-            providers = ['groq', 'cerebras', 'gemini', 'ollama']
+            providers = ['groq', 'gemini', 'cerebras', 'ollama']
         elif current_master == 'gemini':
             providers = ['gemini', 'cerebras', 'groq', 'ollama']
         else:
-            # Default flow: Cerebras → Gemini → Groq
-            providers = ['cerebras', 'gemini', 'groq', 'ollama']
+            # Default flow: Cerebras > Groq > Gemini > Ollama
+            providers = ['cerebras', 'groq', 'gemini', 'ollama']
             
         messages = prompt.format_messages(**values)
         
@@ -160,10 +161,7 @@ class Generator:
                             # Let's log and continue to standard backups.
                             logger.warning(f"[LLM] Ollama failed: {e}. Falling back to cloud...")
                             # Re-add standard providers to the loop if we were forcing ollama
-                            # Actually, the loop will just continue if we don't break.
-                            # But wait, if providers = ['ollama'], it will exit.
-                            # Let's fix providers list if ollama was forced and fails.
-                            providers = ['cerebras', 'gemini', 'groq']
+                            providers = ['cerebras', 'groq', 'gemini']
                             continue
                         logger.warning(f"[LLM] Ollama check failed or not running: {e}")
                         continue
@@ -178,7 +176,8 @@ class Generator:
                         model="llama3.1-8b",
                         temperature=0.8,
                         max_tokens=1000,
-                        timeout=30
+                        timeout=30,
+                        max_retries=0
                     )
                     
                 elif provider == 'groq':
@@ -190,7 +189,8 @@ class Generator:
                         model="llama-3.3-70b-versatile",
                         temperature=0.8,
                         max_tokens=1000,
-                        timeout=30
+                        timeout=30,
+                        max_retries=0
                     )
                     
                 elif provider == 'gemini':
@@ -199,11 +199,13 @@ class Generator:
                     logger.info(f"[LLM] Trying Gemini (Master: {current_master})...")
                     llm = ChatGoogleGenerativeAI(
                         google_api_key=settings.GEMINI_API_KEY,
-                        model="gemini-2.0-flash-lite", # Using the name from lib/llm.js
+                        model="gemini-2.0-flash-lite", 
                         temperature=0.8,
                         max_tokens=1000,
-                        timeout=30
+                        timeout=30,
+                        max_retries=0
                     )
+
                 
                 async with self.semaphore:
                     response = await llm.ainvoke(messages)
@@ -332,7 +334,7 @@ class Generator:
             "persona": agent["persona"],
             "article_title": article["article_title"],
             "article_excerpt": article["article_excerpt"]
-        }, is_json=True, force_provider="ollama")
+        }, is_json=True, is_relevancy=True) # Use specialized Relevancy Flow: Gemini > Groq > Ollama
         
         try:
             json_str = self._clean_json_response(content)
@@ -342,7 +344,7 @@ class Generator:
             logger.error(f"Failed to parse relevancy score JSON: {e}, Content: {content}")
             return 40 # Default to non-relevant if parsing fails to avoid unrelated content
 
-    @retry(wait=wait_exponential(multiplier=1, min=4, max=10), stop=stop_after_attempt(5))
+    @retry(wait=wait_exponential(multiplier=1, min=4, max=10), stop=stop_after_attempt(3))
     async def generate_reaction(self, agent: Dict, article: Dict) -> Dict:
         """Generates a standard short reaction post."""
         logger.info(f"Generating reaction for agent: {agent['slug']}")
@@ -370,6 +372,7 @@ class Generator:
                 "article_url": article["article_url"],
                 "article_excerpt": article["article_excerpt"],
                 "article_image_url": article.get("article_image_url"),
+                "video_url": article.get("video_url"),
                 "source_name": article["source_name"],
                 "agent_commentary": self._clean_commentary(data.get("agent_commentary", data.get("content", ""))),
                 "sentiment_score": data.get("sentiment_score", data.get("sentiment", 50)),
@@ -396,6 +399,7 @@ class Generator:
                     "article_url": article["article_url"],
                     "article_excerpt": article["article_excerpt"],
                     "article_image_url": article.get("article_image_url"),
+                    "video_url": article.get("video_url"),
                     "source_name": article["source_name"],
                     "agent_commentary": self._clean_commentary(commentary),
                     "sentiment_score": 50,
@@ -412,6 +416,7 @@ class Generator:
                 "article_url": article["article_url"],
                 "article_excerpt": article["article_excerpt"],
                 "article_image_url": article.get("article_image_url"),
+                "video_url": article.get("video_url"),
                 "source_name": article["source_name"],
                 "agent_commentary": self._clean_commentary(content),
                 "sentiment_score": 50,
@@ -419,7 +424,7 @@ class Generator:
                 "published_at": article.get("published_at")
             }
 
-    @retry(wait=wait_exponential(multiplier=1, min=4, max=10), stop=stop_after_attempt(5))
+    @retry(wait=wait_exponential(multiplier=1, min=4, max=10), stop=stop_after_attempt(3))
     async def generate_perspective(self, agent: Dict, article: Dict) -> Dict:
         """Generates a deeper perspective post."""
         logger.info(f"Generating perspective for agent: {agent['slug']}")
@@ -445,6 +450,7 @@ class Generator:
                 "article_url": article["article_url"],
                 "article_excerpt": article["article_excerpt"],
                 "article_image_url": article.get("article_image_url"),
+                "video_url": article.get("video_url"),
                 "source_name": article["source_name"],
                 "agent_commentary": self._clean_commentary(data.get("agent_commentary", data.get("content", ""))),
                 "sentiment_score": data.get("sentiment_score", data.get("sentiment", 50)),
@@ -470,6 +476,7 @@ class Generator:
                     "article_url": article["article_url"],
                     "article_excerpt": article["article_excerpt"],
                     "article_image_url": article.get("article_image_url"),
+                    "video_url": article.get("video_url"),
                     "source_name": article["source_name"],
                     "agent_commentary": self._clean_commentary(commentary),
                     "sentiment_score": 50,
@@ -486,6 +493,7 @@ class Generator:
                 "article_url": article["article_url"],
                 "article_excerpt": article["article_excerpt"],
                 "article_image_url": article.get("article_image_url"),
+                "video_url": article.get("video_url"),
                 "source_name": article["source_name"],
                 "agent_commentary": self._clean_commentary(content),
                 "sentiment_score": 50,
@@ -493,7 +501,7 @@ class Generator:
                 "published_at": article.get("published_at")
             }
 
-    @retry(wait=wait_exponential(multiplier=1, min=4, max=10), stop=stop_after_attempt(5))
+    @retry(wait=wait_exponential(multiplier=1, min=4, max=10), stop=stop_after_attempt(3))
     async def generate_debate(self, agent_a: Dict, agent_b: Dict, article: Dict) -> Dict:
         """Generates a debate between two agents."""
         logger.info(f"Generating debate between {agent_a['slug']} and {agent_b['slug']}")
@@ -519,6 +527,7 @@ class Generator:
                 "article_title": article["article_title"],
                 "article_url": article["article_url"],
                 "article_image_url": article.get("article_image_url"),
+                "video_url": article.get("video_url"),
                 "article_excerpt": article["article_excerpt"],
                 "agent_a_id": agent_a["id"],
                 "agent_b_id": agent_b["id"],

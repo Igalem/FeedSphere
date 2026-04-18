@@ -5,7 +5,7 @@ import { useSearchParams, usePathname } from 'next/navigation';
 import DebatesNavBadge from '@/components/DebatesNavBadge';
 import PerspectivesNavBadge from '@/components/PerspectivesNavBadge';
 
-export default function SidebarClient({ agents, latestPerspectives, initialDebates, user, votedDebateIds, lastSeenPerspectivesAt }) {
+export default function SidebarClient({ agents, followedAgentIds, latestPerspectives, initialDebates, user, votedDebateIds, lastSeenPerspectivesAt }) {
   const searchParams = useSearchParams();
   const pathname = usePathname();
   
@@ -20,18 +20,39 @@ export default function SidebarClient({ agents, latestPerspectives, initialDebat
   const isLogin = pathname === '/login';
 
   const [localVotedIds, setLocalVotedIds] = useState(votedDebateIds || []);
+  const [localFollowedIds, setLocalFollowedIds] = useState(followedAgentIds || []);
+  const [localLastSeen, setLocalLastSeen] = useState(lastSeenPerspectivesAt);
+
+  useEffect(() => {
+    if (activeType === 'perspective') {
+      setLocalLastSeen(new Date().toISOString());
+    }
+  }, [activeType]);
 
   useEffect(() => {
     setLocalVotedIds(votedDebateIds || []);
-  }, [votedDebateIds]);
+    setLocalFollowedIds(followedAgentIds || []);
+    setLocalLastSeen(lastSeenPerspectivesAt);
+  }, [votedDebateIds, followedAgentIds, lastSeenPerspectivesAt]);
 
   useEffect(() => {
     const handleVote = (e) => {
       const { debateId } = e.detail;
       setLocalVotedIds(prev => prev.includes(debateId) ? prev : [...prev, debateId]);
     };
+    const handleFollow = (e) => {
+      const { agentId, isFollowing } = e.detail;
+      setLocalFollowedIds(prev => {
+        if (isFollowing) return prev.includes(agentId) ? prev : [...prev, agentId];
+        return prev.filter(id => id !== agentId);
+      });
+    };
     window.addEventListener('debateVoted', handleVote);
-    return () => window.removeEventListener('debateVoted', handleVote);
+    window.addEventListener('agentFollowStatusChanged', handleFollow);
+    return () => {
+      window.removeEventListener('debateVoted', handleVote);
+      window.removeEventListener('agentFollowStatusChanged', handleFollow);
+    };
   }, []);
 
   const scrollToTop = (e) => {
@@ -75,7 +96,7 @@ export default function SidebarClient({ agents, latestPerspectives, initialDebat
             <span className="nav-icon">🏠</span> Home Feed
           </Link>
           <DebatesNavBadge debates={initialDebates} activeType={activeType} votedDebateIds={localVotedIds} />
-          <PerspectivesNavBadge perspectives={latestPerspectives} activeType={activeType} lastSeenAt={lastSeenPerspectivesAt} />
+          <PerspectivesNavBadge perspectives={latestPerspectives} activeType={activeType} lastSeenAt={localLastSeen} />
           <Link href="/agents-market" onClick={scrollToTop} className={`nav-item ${isAgentsMarket ? 'active' : ''}`} style={{ textDecoration: 'none' }}>
             <span className="nav-icon">🤖</span> Agents Market
           </Link>
@@ -84,17 +105,19 @@ export default function SidebarClient({ agents, latestPerspectives, initialDebat
         <div translate="no" className="agents-section">
           <div className="nav-label">My Agents</div>
           <div className="sidebar-agents">
-            {agents.map(agent => (
-              <Link key={agent.id} href={`/?agent=${agent.slug}`} onClick={scrollToTop} className={`agent-nav ${isHome && activeAgentSlug === agent.slug ? 'active' : ''}`} style={{ textDecoration: 'none' }}>
-                <div className="agent-avatar-sm" style={{ background: `${agent.color_hex}22`, border: isHome && activeAgentSlug === agent.slug ? `1px solid ${agent.color_hex}` : 'none' }}>
-                  {[...(agent.emoji || '')].slice(0, 3).join('')}
-                </div>
-                <span className="agent-name-sm" style={{ color: isHome && activeAgentSlug === agent.slug ? 'var(--text)' : 'var(--muted)' }}>
-                  {agent.name}
-                </span>
-                {isHome && activeAgentSlug === agent.slug && <div className="agent-dot"></div>}
-              </Link>
-            ))}
+            {agents
+              .filter(agent => localFollowedIds.includes(agent.id))
+              .map(agent => (
+                <Link key={agent.id} href={`/?agent=${agent.slug}`} onClick={scrollToTop} className={`agent-nav ${isHome && activeAgentSlug === agent.slug ? 'active' : ''}`} style={{ textDecoration: 'none' }}>
+                  <div className="agent-avatar-sm" style={{ background: `${agent.color_hex}22`, border: isHome && activeAgentSlug === agent.slug ? `1px solid ${agent.color_hex}` : 'none' }}>
+                    {[...(agent.emoji || '')].slice(0, 3).join('')}
+                  </div>
+                  <span className="agent-name-sm" style={{ color: isHome && activeAgentSlug === agent.slug ? 'var(--text)' : 'var(--muted)' }}>
+                    {agent.name}
+                  </span>
+                  {isHome && activeAgentSlug === agent.slug && <div className="agent-dot"></div>}
+                </Link>
+              ))}
           </div>
         </div>
       </div>

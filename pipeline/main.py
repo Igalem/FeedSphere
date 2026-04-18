@@ -130,6 +130,7 @@ async def run_pipeline(dry_run=False, limit_feeds=None):
             verified_matches = []
             for agent in matches:
                 if llm_calls_made >= settings.MAX_LLM_POST_GENERATION_CALLS:
+                    logger.info("LLM Budget reached during relevancy checks. Stopping article matching.")
                     break
                     
                 # LLM Scoring Step (Phase 2 of Hybrid Matching)
@@ -137,15 +138,17 @@ async def run_pipeline(dry_run=False, limit_feeds=None):
                 short_article["article_excerpt"] = (article.get("article_excerpt") or "")[:800]
                 
                 score = await generator.get_relevancy_score(agent, short_article)
+                # Count the gatekeeper call in the budget
+                llm_calls_made += 1
 
                 # Serendipity Logic:
                 # 90+ score: Guaranteed pick
                 # 60-89 score: High probability pick (80% chance)
                 # < 60: Skip
                 is_picked = False
-                if score >= 90:
+                if score >= 95:
                     is_picked = True
-                elif score >= 60 and random.random() < 0.8:
+                elif score >= 75 and random.random() < 0.5:
                     is_picked = True
                 
                 if is_picked:
@@ -172,24 +175,28 @@ async def run_pipeline(dry_run=False, limit_feeds=None):
                     top_agent = matches[0]
                     score = top_agent.get("relevancy_score", 60)
                     has_image = bool(article["article_image_url"])
+                    has_video = bool(article["video_url"])
                     
                     # Tuning Perspective Posts to Agent Persona:
-                    # High Score (90+) -> 90% Perspective probability (if image exists)
+                    # High Score (90+) -> 90% Perspective probability (if image/video exists)
                     # Good Match (80-89) -> 60% Perspective probability
                     # Mid Match (70-79) -> 20% Perspective probability
                     # Below 70 -> Always React (5% chance of perspective just for randomness)
-                    if score >= 90:
-                        perspective_prob = 0.9
-                    elif score >= 80:
+                    if score >= 95:
                         perspective_prob = 0.6
-                    elif score >= 70:
+                    elif score >= 85:
+                        perspective_prob = 0.4
+                    elif score >= 75:
                         perspective_prob = 0.2
                     else:
                         perspective_prob = 0.05
                     
-                    logger.info(f"Routing article: {article['article_title']} for agent: {top_agent['slug']} (Score: {score}, Probability: {perspective_prob:.2f})")
-                    
-                    if has_image and random.random() < perspective_prob:
+                    if has_video:
+                        # Video content ALWAYS triggers Perspective layout
+                        logger.info(f"Forcing Perspective post for {top_agent['slug']} due to video media.")
+                        result = await generator.generate_perspective(top_agent, article)
+                        await save_post(result, dry_run=dry_run)
+                    elif has_image and random.random() < perspective_prob:
                         # 5A-i: Perspective Post
                         result = await generator.generate_perspective(top_agent, article)
                         await save_post(result, dry_run=dry_run)
@@ -216,19 +223,22 @@ async def run_pipeline(dry_run=False, limit_feeds=None):
                         top_agent = matches[0]
                         score = top_agent.get("relevancy_score", 60)
                         has_image = bool(article["article_image_url"])
+                        has_video = bool(article["video_url"])
                         
-                        if score >= 90:
-                            perspective_prob = 0.9
-                        elif score >= 80:
+                        if score >= 95:
                             perspective_prob = 0.6
-                        elif score >= 70:
+                        elif score >= 85:
+                            perspective_prob = 0.4
+                        elif score >= 75:
                             perspective_prob = 0.2
                         else:
                             perspective_prob = 0.05
                         
-                        logger.info(f"Routing article: {article['article_title']} for top agent: {top_agent['slug']} (Score: {score}, Probability: {perspective_prob:.2f})")
-                        
-                        if has_image and random.random() < perspective_prob:
+                        if has_video:
+                            # Video content ALWAYS triggers Perspective layout
+                            logger.info(f"Forcing Perspective post for top agent {top_agent['slug']} due to video media.")
+                            result = await generator.generate_perspective(top_agent, article)
+                        elif has_image and random.random() < perspective_prob:
                             result = await generator.generate_perspective(top_agent, article)
                         else:
                             result = await generator.generate_reaction(top_agent, article)

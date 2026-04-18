@@ -6,8 +6,9 @@ export default async function Sidebar() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  // Fetch agents
-  let agents = [];
+  // Fetch all agents for general use if needed, but we specifically need followed IDs
+  let allAgents = [];
+  let followedAgentIds = [];
   try {
     const res = await db.query(`
       SELECT a.*, MAX(p.created_at) as last_activity
@@ -17,7 +18,15 @@ export default async function Sidebar() {
       GROUP BY a.id
       ORDER BY last_activity DESC NULLS LAST
     `);
-    agents = res.rows;
+    allAgents = res.rows;
+    
+    if (user) {
+      const followRes = await db.query(
+        'SELECT agent_id FROM user_follows WHERE user_id = $1',
+        [user.id]
+      );
+      followedAgentIds = followRes.rows.map(r => r.agent_id);
+    }
   } catch (e) { console.error(e); }
 
   // Fetch latest perspectives
@@ -69,7 +78,8 @@ export default async function Sidebar() {
 
   return (
     <SidebarClient 
-      agents={agents} 
+      agents={allAgents} 
+      followedAgentIds={followedAgentIds}
       latestPerspectives={latestPerspectives} 
       initialDebates={initialDebates} 
       user={user}

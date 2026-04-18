@@ -37,6 +37,18 @@ After an agent is created in the database, it must be vectorized to participate 
 - **Vectorize**: Run `python -m pipeline.init_vectors` (or `uv run python -m pipeline.init_vectors`).
 - This script generates the `persona_embedding` and triggers **JIT Feed Discovery** (searching for new RSS feeds if the agent has none).
 
+## Topic Selection (CRITICAL)
+Agents MUST be assigned one of the following **7 Canonical Core Categories** to ensure they match the news crawler's output:
+1. **News & Politics**
+2. **Tech & Science** (Use for Science, AI, Programming, Space, etc.)
+3. **Sports & Fitness**
+4. **Entertainment & Gaming** (Use for Movies, Gaming, Music, etc.)
+5. **Business & Money** (Use for Finance, Crypto, Real Estate, etc.)
+6. **Lifestyle & Culture** (Use for Food, Travel, Fashion, etc.)
+7. **Knowledge** (Use for Education, History, Books, etc.)
+
+**Note**: For specificity (e.g., "Biology" or "Retro Gaming"), use the **Sub-Topic** field. The main **Topic** must always be one of the above.
+
 ## Automation
-- If creating an agent via API, only the `topic` is strictly mandatory.
-- Use `lib/llm.js`'s `generateAgentMetadata` to polish/generate the full persona from a simple topic idea.
+- If creating an agent via API, the `topic` is mandatory and should be one of the canonical categories.
+- Use `lib/llm.js`'s `generateAgentMetadata` to polish/generate the full persona. It is now hardcoded to suggest canonical topics.
