@@ -20,6 +20,7 @@ if (fs.existsSync(envPath)) {
 const GLOBAL_AGENTS = [
   {
     topic: 'News & Politics',
+    sub_topic: 'World, Politics, Diplomacy',
     name: 'Global News Hub',
     emoji: '📰',
     color_hex: '#1D4ED8',
@@ -46,6 +47,7 @@ World events global news international relations politics breaking news summit d
   },
   {
     topic: 'Sports & Fitness',
+    sub_topic: 'Competition, League, Athletes',
     name: 'Arena Central',
     emoji: '🏟️',
     color_hex: '#dc2626',
@@ -72,6 +74,7 @@ Championship tournament league finals playoffs athletes players stadium coach re
   },
   {
     topic: 'Entertainment & Gaming',
+    sub_topic: 'Hollywood, Trends, Celebrity',
     name: 'Pop Culture Pulse',
     emoji: '🎬',
     color_hex: '#9333ea',
@@ -98,6 +101,7 @@ Hollywood celebrity blockbuster box office streaming spotify viral tiktok billbo
   },
   {
     topic: 'Sports & Fitness',
+    sub_topic: 'Nutrition, Mindfulness, Health',
     name: 'Wellness Guide',
     emoji: '🌿',
     color_hex: '#16a34a',
@@ -124,6 +128,7 @@ Medical research nutrition mental health therapy fitness exercise wellness mindf
   },
   {
     topic: 'Tech & Science',
+    sub_topic: 'Innovation, Coding, Hardware',
     name: 'Tech Frontier',
     emoji: '💻',
     color_hex: '#0ea5e9',
@@ -150,6 +155,7 @@ Artificial intelligence startup silicon valley software hardware coding machine 
   },
   {
     topic: 'Business & Money',
+    sub_topic: 'Stocks, Finance, Economy',
     name: 'Market Watcher',
     emoji: '📈',
     color_hex: '#059669',
@@ -176,6 +182,7 @@ Wall street stocks index crypto economy inflation interest rates Federal Reserve
   },
   {
     topic: 'Tech & Science',
+    sub_topic: 'Space, Astrophysics, Physics',
     name: 'Cosmic Curiosity',
     emoji: '🔭',
     color_hex: '#4f46e5',
@@ -202,6 +209,7 @@ Astrophysics NASA space exploration biology evolution quantum mechanics climate 
   },
   {
     topic: 'Lifestyle & Culture',
+    sub_topic: 'Design, Travel, Aesthetic',
     name: 'Modern Living',
     emoji: '☕',
     color_hex: '#d97706',
@@ -228,6 +236,7 @@ Architecture interior design travel culinary coffee fashion slow living minimali
   },
   {
     topic: 'Entertainment & Gaming',
+    sub_topic: 'Esports, Gaming, Console',
     name: 'Gamer 365',
     emoji: '🎮',
     color_hex: '#ec4899',
@@ -254,6 +263,7 @@ Playstation Xbox Nintendo Steam Unreal Engine frame rate hitbox speedrun multipl
   },
   {
     topic: 'Tech & Science',
+    sub_topic: 'Genetics, Biotech, Research',
     name: 'Quantum Quest',
     emoji: '🧬',
     color_hex: '#10b981',
@@ -295,11 +305,12 @@ async function generateGlobalAgents() {
       const slug = `global-${cleanName}`;
       
       const query = `
-        INSERT INTO agents (name, slug, emoji, topic, persona, color_hex, response_style, follower_count, country, is_global)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'World', true)
+        INSERT INTO agents (name, slug, emoji, topic, sub_topic, persona, color_hex, response_style, follower_count, country, is_global)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'World', true)
         ON CONFLICT (slug) DO UPDATE SET
           name = excluded.name,
           topic = excluded.topic,
+          sub_topic = excluded.sub_topic,
           persona = excluded.persona,
           follower_count = excluded.follower_count,
           is_global = true
@@ -310,6 +321,7 @@ async function generateGlobalAgents() {
         slug,
         payload.emoji,
         payload.topic,
+        payload.sub_topic || '',
         payload.persona,
         payload.color_hex,
         payload.response_style,

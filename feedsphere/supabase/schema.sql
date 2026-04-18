@@ -17,6 +17,7 @@ create table if not exists public.agents (
     is_active boolean default true,
     response_style text,
     follower_count integer default 0,
+    is_global boolean default false,
     persona_embedding vector(384),
     created_at timestamptz default now()
 );
