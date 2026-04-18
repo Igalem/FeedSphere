@@ -146,9 +146,9 @@ async def run_pipeline(dry_run=False, limit_feeds=None):
                 # 60-89 score: High probability pick (80% chance)
                 # < 60: Skip
                 is_picked = False
-                if score >= 90:
+                if score >= 95:
                     is_picked = True
-                elif score >= 60 and random.random() < 0.8:
+                elif score >= 75 and random.random() < 0.5:
                     is_picked = True
                 
                 if is_picked:
@@ -182,14 +182,14 @@ async def run_pipeline(dry_run=False, limit_feeds=None):
                     # Good Match (80-89) -> 60% Perspective probability
                     # Mid Match (70-79) -> 20% Perspective probability
                     # Below 70 -> Always React (5% chance of perspective just for randomness)
-                    if score >= 90:
-                        perspective_prob = 0.5  # 50% Reaction chance
-                    elif score >= 80:
-                        perspective_prob = 0.4  # 60% Reaction chance
-                    elif score >= 70:
-                        perspective_prob = 0.25
+                    if score >= 95:
+                        perspective_prob = 0.6
+                    elif score >= 85:
+                        perspective_prob = 0.4
+                    elif score >= 75:
+                        perspective_prob = 0.2
                     else:
-                        perspective_prob = 0.1
+                        perspective_prob = 0.05
                     
                     if has_video:
                         # Video content ALWAYS triggers Perspective layout
@@ -225,14 +225,14 @@ async def run_pipeline(dry_run=False, limit_feeds=None):
                         has_image = bool(article["article_image_url"])
                         has_video = bool(article["video_url"])
                         
-                        if score >= 90:
-                            perspective_prob = 0.5
-                        elif score >= 80:
+                        if score >= 95:
+                            perspective_prob = 0.6
+                        elif score >= 85:
                             perspective_prob = 0.4
-                        elif score >= 70:
-                            perspective_prob = 0.25
+                        elif score >= 75:
+                            perspective_prob = 0.2
                         else:
-                            perspective_prob = 0.1
+                            perspective_prob = 0.05
                         
                         if has_video:
                             # Video content ALWAYS triggers Perspective layout

@@ -92,31 +92,32 @@ class Generator:
                      "Article Title: {article_title}\n"
                      "Article Excerpt: {article_excerpt}\n\n"
                      "Relevancy Rules:\n"
-                     "1. 100: Perfect match. The article is ABOUT the agent's niche (e.g. Real Madrid).\n"
-                     "2. 80-99: Highly related. Same league, direct rivals, or players the agent cares about.\n"
-                     "3. 0-59: NOT RELEVANT. Even if it's in the same category (e.g. WWE is not Football). "
-                     "NEVER use parallels or metaphors like 'this is like Real Madrid' as a reason for relevance.\n\n"
-                     "Response format: JSON object with 'relevance_score' (int 0-100).\n"
+                     "1. 100: Perfect match. The article is specifically ABOUT the agent's niche (e.g. {sub_topic}).\n"
+                     "2. 80-99: Highly related. Direct impact on the niche, or involving key players/rivals the agent MUST care about.\n"
+                     "3. 60-79: Tangentially related. Same sport or narrow field, but not about the agent's specific team/niche. Be cautious.\n"
+                     "4. 0-59: NOT RELEVANT. This includes different sports even in same category, general news in same region, or metaphors.\n"
+                     "NEVER use parallels or metaphors like 'this is like {sub_topic}' as a reason for relevance.\n\n"
+                     "Response format: JSON object with 'relevance_score' (int 0-100) and 'reasoning' (string explaining why).\n"
                      "IMPORTANT: Return ONLY valid JSON.")
         ])
 
-    async def _generate_llm_response(self, prompt: ChatPromptTemplate, values: Dict[str, Any], is_json: bool = False, force_provider: Optional[str] = None) -> str:
+    async def _generate_llm_response(self, prompt: ChatPromptTemplate, values: Dict[str, Any], is_json: bool = False, force_provider: Optional[str] = None, is_relevancy: bool = False) -> str:
         global current_master, master_failure_count
         
         # Decide order based on current master and request type
-        # For relevancy gating: we force Ollama first.
-        # Primary rotation: Cerebras > Groq > Gemini
-        cloud_flow = ['cerebras', 'groq', 'gemini']
-        
-        if force_provider:
-            # Case: High-volume check (Ollama) or specific provider forced
+        if is_relevancy:
+            # Special flow for Relevancy Gatekeeper: Gemini > Groq > Ollama
+            providers = ['gemini', 'groq', 'ollama']
+        elif force_provider:
+            # Case: specific provider forced
+            cloud_flow = ['cerebras', 'groq', 'gemini']
             providers = [force_provider] + [p for p in cloud_flow if p != force_provider]
         elif current_master == 'groq':
             providers = ['groq', 'gemini', 'cerebras', 'ollama']
         elif current_master == 'gemini':
             providers = ['gemini', 'cerebras', 'groq', 'ollama']
         else:
-            # Default flow: Cerebras > Groq > Gemini
+            # Default flow: Cerebras > Groq > Gemini > Ollama
             providers = ['cerebras', 'groq', 'gemini', 'ollama']
             
         messages = prompt.format_messages(**values)
@@ -175,7 +176,8 @@ class Generator:
                         model="llama3.1-8b",
                         temperature=0.8,
                         max_tokens=1000,
-                        timeout=30
+                        timeout=30,
+                        max_retries=0
                     )
                     
                 elif provider == 'groq':
@@ -187,7 +189,8 @@ class Generator:
                         model="llama-3.3-70b-versatile",
                         temperature=0.8,
                         max_tokens=1000,
-                        timeout=30
+                        timeout=30,
+                        max_retries=0
                     )
                     
                 elif provider == 'gemini':
@@ -199,7 +202,8 @@ class Generator:
                         model="gemini-2.0-flash-lite", 
                         temperature=0.8,
                         max_tokens=1000,
-                        timeout=30
+                        timeout=30,
+                        max_retries=0
                     )
 
                 
@@ -330,7 +334,7 @@ class Generator:
             "persona": agent["persona"],
             "article_title": article["article_title"],
             "article_excerpt": article["article_excerpt"]
-        }, is_json=True, force_provider="ollama")
+        }, is_json=True, is_relevancy=True) # Use specialized Relevancy Flow: Gemini > Groq > Ollama
         
         try:
             json_str = self._clean_json_response(content)
@@ -340,7 +344,7 @@ class Generator:
             logger.error(f"Failed to parse relevancy score JSON: {e}, Content: {content}")
             return 40 # Default to non-relevant if parsing fails to avoid unrelated content
 
-    @retry(wait=wait_exponential(multiplier=1, min=4, max=10), stop=stop_after_attempt(5))
+    @retry(wait=wait_exponential(multiplier=1, min=4, max=10), stop=stop_after_attempt(3))
     async def generate_reaction(self, agent: Dict, article: Dict) -> Dict:
         """Generates a standard short reaction post."""
         logger.info(f"Generating reaction for agent: {agent['slug']}")
@@ -420,7 +424,7 @@ class Generator:
                 "published_at": article.get("published_at")
             }
 
-    @retry(wait=wait_exponential(multiplier=1, min=4, max=10), stop=stop_after_attempt(5))
+    @retry(wait=wait_exponential(multiplier=1, min=4, max=10), stop=stop_after_attempt(3))
     async def generate_perspective(self, agent: Dict, article: Dict) -> Dict:
         """Generates a deeper perspective post."""
         logger.info(f"Generating perspective for agent: {agent['slug']}")
@@ -497,7 +501,7 @@ class Generator:
                 "published_at": article.get("published_at")
             }
 
-    @retry(wait=wait_exponential(multiplier=1, min=4, max=10), stop=stop_after_attempt(5))
+    @retry(wait=wait_exponential(multiplier=1, min=4, max=10), stop=stop_after_attempt(3))
     async def generate_debate(self, agent_a: Dict, agent_b: Dict, article: Dict) -> Dict:
         """Generates a debate between two agents."""
         logger.info(f"Generating debate between {agent_a['slug']} and {agent_b['slug']}")

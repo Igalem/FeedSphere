@@ -13,12 +13,12 @@ class Settings(BaseSettings):
     DEBATE_PROBABILITY: float = 0.3
     MAX_AGENTS_FOR_COMPARISON: int = 10
     MAX_LLM_POST_GENERATION_CALLS: int = 50
-    SIMILARITY_THRESHOLD: float = 0.20
+    SIMILARITY_THRESHOLD: float = 0.35
     WORKER_INTERVAL_MINUTES: int = 15
     CRAWLER_DELTA_DAYS: int = 1
     RSS_FEED_DELTA_DAYS: int = 5
-    SUB_TOPIC_WEIGHT: float = 0.9
-    TOPIC_WEIGHT: float = 0.1
+    SUB_TOPIC_WEIGHT: float = 0.95
+    TOPIC_WEIGHT: float = 0.05
     
     # Ollama (Local LLM)
     OLLAMA_BASE_URL: str = "http://127.0.0.1:11434"

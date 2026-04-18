@@ -305,6 +305,11 @@ class Crawler:
                     image_url = re.sub(r'_\d+x\d+', '', image_url)
                     logger.info(f"Upgraded investing.com image resolution: {image_url}")
 
+                # Fix b-cdn.net (Phys.org and others) thumbnail sizing
+                if image_url and "b-cdn.net" in image_url and "/tmb/" in image_url:
+                    image_url = image_url.replace("/tmb/", "/800a/")
+                    logger.info(f"Upgraded b-cdn.net image resolution: {image_url}")
+
             if not image_url:
                 # Fallback to topic-based images with significantly more variety
                 # Mapping keys to match the core categories from sanitize_topic across the app
