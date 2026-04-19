@@ -11,6 +11,8 @@ from .db import db
 from .config import settings
 from .utils import sanitize_topic
 from datetime import datetime, timezone
+import base64
+import urllib.parse
 
 # Set global socket timeout to prevent hang on slow feeds
 socket.setdefaulttimeout(10)
@@ -236,12 +238,31 @@ class Crawler:
                     if image_url:
                         logger.info(f"Found image in RSS summary: {image_url}")
 
-            # --- PRIORITY 5: Scrape Meta tags (OG, Twitter, etc) ---
             scraped_excerpt = None
-            if not image_url or len(clean_summary) < 200:
+            if not image_url or not video_url or len(clean_summary) < 200:
                 try:
+                    # Special handling for Google News redirects
+                    target_url = url
+                    if "news.google.com" in url:
+                        try:
+                            # Try to follow redirect with a session to get the real URL
+                            with requests.Session() as s:
+                                s.headers.update(BROWSER_HEADERS)
+                                r = s.get(url, timeout=5, allow_redirects=True)
+                                if r.url != url:
+                                    target_url = r.url
+                                    # logger.info(f"Followed Google News redirect to: {target_url}")
+                        except:
+                            pass
+
                     # Use BROWSER_HEADERS to avoid 403s
-                    page_res = requests.get(url, timeout=10, headers=BROWSER_HEADERS)
+                    page_res = requests.get(target_url, timeout=10, headers=BROWSER_HEADERS)
+                    
+                    # If 403, try a different approach (simpler headers)
+                    if page_res.status_code == 403:
+                        simple_headers = {'User-Agent': 'Mozilla/5.0'}
+                        page_res = requests.get(target_url, timeout=10, headers=simple_headers)
+
                     if page_res.status_code == 200:
                         page_soup = BeautifulSoup(page_res.text, "html.parser")
                         
@@ -264,7 +285,8 @@ class Crawler:
                                 tag = page_soup.find(tag_type, attrs=attrs)
                                 if tag:
                                     candidate = tag.get("content") or tag.get("href")
-                                    if candidate and not any(v in candidate for v in ["doubleclick.net", "ads.", ".svg", "logo", "icon"]): 
+                                    # Relax 'logo' rejection but still avoid ads/tiny svgs/icons
+                                    if candidate and not any(v in candidate.lower() for v in ["doubleclick.net", "ads.", ".svg", "icon"]): 
                                         image_url = candidate
                                         break
                             
@@ -272,7 +294,8 @@ class Crawler:
                             if not image_url:
                                 images = page_soup.find_all("img", src=True)
                                 if images:
-                                    # Prioritize high-res JPG/PNG and not common ad/icon formats
+                                    # Prioritize high-res JPG/PNG and not common ad format
+                                    # Avoid images with 'logo' in them unless they are large (heuristic)
                                     candidates = [i for i in images if (".jpg" in i["src"].lower() or ".png" in i["src"].lower()) and "logo" not in i["src"].lower()]
                                     if candidates:
                                         image_url = candidates[0]["src"]
@@ -316,7 +339,7 @@ class Crawler:
                                         if video_url: break
 
                         if not video_url:
-                            # 2. Search for iframes in likely content areas (Avoid sidebar)
+                            # 2. Search for iframes in likely content areas
                             content_selectors = ['article', '.article-content', '.post-content', '.entry-content', '.content', '#main-content']
                             for selector in content_selectors:
                                 area = page_soup.select_one(selector)
@@ -331,12 +354,12 @@ class Crawler:
                                     if video_url: break
 
                         if not video_url:
-                            # 3. Last Resort: Global Page search but ONLY for embed patterns (less likely to be in sidebars than raw links)
+                            # 3. Last Resort: Global Page search but ONLY for embed patterns
                             yt_match = re.search(r'youtube\.com/embed/([a-zA-Z0-9_-]{11})', page_res.text)
                             if yt_match:
                                 video_id = yt_match.group(1)
                                 video_url = f"https://www.youtube.com/embed/{video_id}"
-                                logger.info(f"Scraped YouTube embed from page text: {video_id}")
+                                # logger.info(f"Scraped YouTube embed from page text: {video_id}")
                 except Exception as e:
                     logger.debug(f"Scraping failed for {url}: {e}")
                     pass
