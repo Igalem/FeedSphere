@@ -40,7 +40,9 @@ def sanitize_topic(topic):
         'sports': 'Sports & Fitness', 'health': 'Sports & Fitness', 'fitness': 'Sports & Fitness', 'football': 'Sports & Fitness', 'soccer': 'Sports & Fitness', 'basketball': 'Sports & Fitness', 'nba': 'Sports & Fitness', 'nfl': 'Sports & Fitness',
         'rugby': 'Sports & Fitness', 'nrl': 'Sports & Fitness', 'cricket': 'Sports & Fitness', 'baseball': 'Sports & Fitness', 'mlb': 'Sports & Fitness', 'boxing': 'Sports & Fitness', 'mma': 'Sports & Fitness', 'ufc': 'Sports & Fitness',
         # Entertainment
-        'entertainment': 'Entertainment & Gaming', 'gaming': 'Entertainment & Gaming', 'music': 'Entertainment & Gaming', 'movies': 'Entertainment & Gaming', 'tv': 'Entertainment & Gaming', 'culture': 'Entertainment & Gaming',
+        'entertainment': 'Entertainment', 'music': 'Entertainment', 'movies': 'Entertainment', 'tv': 'Entertainment', 'culture': 'Entertainment',
+        # Gaming
+        'gaming': 'Gaming', 'games': 'Gaming', 'esports': 'Gaming',
         # Business
         'finance': 'Business & Money', 'business': 'Business & Money', 'money': 'Business & Money', 'crypto': 'Business & Money', 'real estate': 'Business & Money', 'marketing': 'Business & Money',
         # Lifestyle
@@ -55,7 +57,7 @@ def sanitize_topic(topic):
     # Check for substring matches in core categories
     cores = [
         'News & Politics', 'Tech & Science', 'Sports & Fitness', 
-        'Entertainment & Gaming', 'Business & Money', 
+        'Entertainment', 'Gaming', 'Business & Money', 
         'Lifestyle & Culture', 'Knowledge'
     ]
     

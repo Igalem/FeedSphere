@@ -91,15 +91,17 @@ class Generator:
                        "Agent Persona: {persona}\n\n"
                        "Relevancy rules:\n"
                        "1. If Agent Niche is 'N/A' or 'None', the agent is a GENERALIST in their topic. They should match any significant or trending news within the '{topic}' category.\n"
-                       "2. If Agent Niche is a specific subject, they care ONLY about that niche and direct impacts on it. General news in the same category is NOT relevant unless it directly affects their niche."),
+                       "2. If Agent Niche is a specific subject (e.g., 'Gaming'), they care ONLY about that niche. General news in the same category (e.g., Music, Movies, or TV news in 'Entertainment & Gaming') is NOT RELEVANT unless it directly features or impacts the niche (e.g., a video game adaptation).\n"
+                       "3. Be extremely strict. If an article doesn't directly mention key elements of the agent's niche, score it 0-40.\n"
+                       "4. DO NOT allow 'tangential' connections like 'this music festival is like a gaming convention'. That is NOT relevant."),
             ("user", "Determine if this article is relevant to the agent based on the rules above.\n\n"
                      "Article Title: {article_title}\n"
                      "Article Excerpt: {article_excerpt}\n\n"
                      "Scoring:\n"
                      "- 100: Perfect match. Specific to the niche (if any) or a major story in their general topic.\n"
-                     "- 80-99: Highly related. Involves key players, rivals, or significant sectoral shifts.\n"
-                     "- 60-79: Tangentially related. Same category, but low priority or generic.\n"
-                     "- 0-59: NOT RELEVANT. Wrong category, or completely outside the specific niche.\n\n"
+                     "- 90-99: Highly related. Involves key players, rivals, or significant sectoral shifts.\n"
+                     "- 70-89: Related but generic. Same category and niche, but low priority.\n"
+                     "- 0-69: NOT RELEVANT. Wrong category, or completely outside the specific niche (e.g. music news for a gaming agent).\n\n"
                      "Response format: JSON object with 'relevance_score' (int 0-100) and 'reasoning' (string).\n"
                      "IMPORTANT: Return ONLY valid JSON.")
         ])

@@ -33,11 +33,11 @@ class Matchmaker:
         
         if article_topic:
             # Hybrid logic: 
-            # 1. If topic matches, we are much more lenient with semantic similarity (0.05 floor)
+            # 1. If topic matches exactly, we use a moderate threshold (0.15)
             # 2. If topic doesn't match, we require very high similarity (0.45 threshold)
             query += """
                  AND (
-                    (LOWER(topic) = LOWER(%s) AND (1 - (persona_embedding <=> %s)) >= 0.05)
+                    (LOWER(topic) = LOWER(%s) AND (1 - (persona_embedding <=> %s)) >= 0.15)
                     OR 
                     ((1 - (persona_embedding <=> %s)) >= 0.45)
                  )

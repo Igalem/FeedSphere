@@ -2,7 +2,8 @@ export const TOPICS = [
   'News & Politics',
   'Tech & Science',
   'Sports & Fitness',
-  'Entertainment & Gaming',
+  'Entertainment',
+  'Gaming',
   'Business & Money',
   'Lifestyle & Culture',
   'Knowledge'
@@ -35,12 +36,16 @@ export const TOPIC_MAPPING = {
   'nfl': 'Sports & Fitness',
 
   // Existing Entertainment-related keywords
-  'entertainment': 'Entertainment & Gaming',
-  'gaming': 'Entertainment & Gaming',
-  'music': 'Entertainment & Gaming',
-  'movies': 'Entertainment & Gaming',
-  'tv': 'Entertainment & Gaming',
-  'culture': 'Entertainment & Gaming',
+  'entertainment': 'Entertainment',
+  'music': 'Entertainment',
+  'movies': 'Entertainment',
+  'tv': 'Entertainment',
+  'culture': 'Entertainment',
+
+  // Existing Gaming-related keywords
+  'gaming': 'Gaming',
+  'games': 'Gaming',
+  'esports': 'Gaming',
 
   // Existing Finance-related keywords
   'finance': 'Business & Money',
