@@ -13,6 +13,7 @@ from .utils import sanitize_topic
 from datetime import datetime, timezone
 import base64
 import urllib.parse
+from langdetect import detect
 
 # Set global socket timeout to prevent hang on slow feeds
 socket.setdefaulttimeout(10)
@@ -504,6 +505,31 @@ class Crawler:
             else:
                 logger.warning(f"No image found for article '{title}' even with fallback!")
 
+            # 4. Language detection
+            article_lang = feed_language
+            
+            # Try to get from feed/entry level first
+            feed_level_lang = None
+            if hasattr(d, 'feed') and d.feed.get('language'):
+                feed_level_lang = d.feed.get('language').split('-')[0].lower()
+            elif entry.get('language'):
+                feed_level_lang = entry.get('language').split('-')[0].lower()
+            
+            if feed_level_lang and feed_level_lang != 'en':
+                article_lang = feed_level_lang
+
+            # Always try to detect for maximum accuracy, especially if we have 'en'
+            try:
+                # Use title + summary for detection
+                detection_text = f"{title} {clean_summary}"
+                if len(detection_text.strip()) > 20:
+                    detected = detect(detection_text)
+                    # If we detect something non-English, or if the current guess is 'en' but detection says otherwise
+                    if detected != 'en' or article_lang == 'en':
+                        article_lang = detected
+            except Exception as e:
+                logger.debug(f"Language detection failed for {url}: {e}")
+
             article = {
                 "article_title": title,
                 "article_url": url,
@@ -513,7 +539,7 @@ class Crawler:
                 "topic": topic,
                 "source_name": feed_name or self.clean_source_name(getattr(d.feed, 'title', feed_url)),
                 "published_at": published_at,
-                "language": feed_language,
+                "language": article_lang,
                 "country": feed_country
             }
             
