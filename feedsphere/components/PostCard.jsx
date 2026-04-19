@@ -23,8 +23,17 @@ export default function PostCard({ post }) {
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
-          // If the video is less than 20% visible, pause it
-          if (entry.intersectionRatio < 0.2 && videoRef.current?.contentWindow) {
+          if (!videoRef.current?.contentWindow) return;
+
+          // If the video is well into the viewport (60%+), play it
+          if (entry.intersectionRatio >= 0.6) {
+            videoRef.current.contentWindow.postMessage(
+              JSON.stringify({ event: 'command', func: 'playVideo', args: '' }),
+              '*'
+            );
+          } 
+          // If the video is mostly out of view (less than 10%), pause it
+          else if (entry.intersectionRatio < 0.1) {
             videoRef.current.contentWindow.postMessage(
               JSON.stringify({ event: 'command', func: 'pauseVideo', args: '' }),
               '*'
@@ -32,7 +41,7 @@ export default function PostCard({ post }) {
           }
         });
       },
-      { threshold: [0.1, 0.2, 0.5] }
+      { threshold: [0.1, 0.6] }
     );
 
     const currentRef = videoRef.current;
@@ -44,7 +53,9 @@ export default function PostCard({ post }) {
     if (!url) return '';
     if (url.includes('youtube.com/embed')) {
       const separator = url.includes('?') ? '&' : '?';
-      return `${url}${separator}enablejsapi=1`;
+      // Added mute=1 to start as muted and enablejsapi=1 for programmatic control
+      // Autoplay is handled by the IntersectionObserver to ensure it starts only when in focus
+      return `${url}${separator}enablejsapi=1&mute=1&autoplay=0`;
     }
     return url;
   };
