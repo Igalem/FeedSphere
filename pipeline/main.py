@@ -12,6 +12,13 @@ from .config import settings
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Light Colors for Pipeline Stages
+C_PINK = "\033[95m"
+C_YELLOW = "\033[93m"
+C_CYAN = "\033[96m"
+C_GREEN = "\033[92m"
+C_RESET = "\033[0m"
+
 async def save_post(item, dry_run=False):
     if dry_run: return
     
@@ -121,7 +128,8 @@ async def run_pipeline(dry_run=False, limit_feeds=None):
                 "published_at": row["published_at"]
             }
 
-            # Phase 4: Shadow Audition (Vector Matchmaking)
+            # Stage 1: Vector Matchmaking (Phase 4)
+            logger.info(f"{C_PINK}Stage 1: Vector Matchmaking for '{article['article_title']}'{C_RESET}")
             matches = matchmaker.match(
                 article["article_title"], 
                 article["article_excerpt"],
@@ -144,7 +152,8 @@ async def run_pipeline(dry_run=False, limit_feeds=None):
                     logger.info("LLM Budget reached during relevancy checks. Stopping article matching.")
                     break
                     
-                # LLM Scoring Step (Phase 2 of Hybrid Matching)
+                # Stage 2: Relevancy Gatekeeper (Phase 4.5)
+                logger.info(f"{C_YELLOW}Stage 2: Relevancy Gatekeeper for agent {agent['slug']}{C_RESET}")
                 short_article = article.copy()
                 short_article["article_excerpt"] = (article.get("article_excerpt") or "")[:800]
                 
@@ -176,8 +185,9 @@ async def run_pipeline(dry_run=False, limit_feeds=None):
                 # Skip but don't mark as processed.
                 continue
             
-            # Routing Logic (Phase 5)
+            # Stage 3: Decision & Routing (Phase 5)
             num_matches = len(matches)
+            logger.info(f"{C_CYAN}Stage 3: Decision & Routing for {num_matches} verified matches{C_RESET}")
             
             try:
                 if num_matches == 1:
@@ -204,14 +214,17 @@ async def run_pipeline(dry_run=False, limit_feeds=None):
                     if has_video:
                         # Video content ALWAYS triggers Perspective layout
                         logger.info(f"Forcing Perspective post for {top_agent['slug']} due to video media.")
+                        logger.info(f"{C_GREEN}Stage 4: LLM Post Generation (Perspective / Video){C_RESET}")
                         result = await generator.generate_perspective(top_agent, article)
                         await save_post(result, dry_run=dry_run)
                     elif has_image and random.random() < perspective_prob:
                         # 5A-i: Perspective Post
+                        logger.info(f"{C_GREEN}Stage 4: LLM Post Generation (Perspective){C_RESET}")
                         result = await generator.generate_perspective(top_agent, article)
                         await save_post(result, dry_run=dry_run)
                     else:
                         # 5A-ii: Reaction Post
+                        logger.info(f"{C_GREEN}Stage 4: LLM Post Generation (Reaction){C_RESET}")
                         result = await generator.generate_reaction(top_agent, article)
                         await save_post(result, dry_run=dry_run)
                     
@@ -227,6 +240,7 @@ async def run_pipeline(dry_run=False, limit_feeds=None):
                     if random.random() < settings.DEBATE_PROBABILITY:
                         # 5B-i: Live Debate (Top 2 Agents)
                         # Remove the relevancy_score from dict before passing to generator if it causes issues
+                        logger.info(f"{C_GREEN}Stage 4: LLM Post Generation (Debate Arena){C_RESET}")
                         result = await generator.generate_debate(matches[0], matches[1], article)
                         if result:
                             await save_debate(result, dry_run=dry_run)
@@ -254,10 +268,13 @@ async def run_pipeline(dry_run=False, limit_feeds=None):
                         if has_video:
                             # Video content ALWAYS triggers Perspective layout
                             logger.info(f"Forcing Perspective post for top agent {top_agent['slug']} due to video media.")
+                            logger.info(f"{C_GREEN}Stage 4: LLM Post Generation (Perspective / Video){C_RESET}")
                             result = await generator.generate_perspective(top_agent, article)
                         elif has_image and random.random() < perspective_prob:
+                            logger.info(f"{C_GREEN}Stage 4: LLM Post Generation (Perspective){C_RESET}")
                             result = await generator.generate_perspective(top_agent, article)
                         else:
+                            logger.info(f"{C_GREEN}Stage 4: LLM Post Generation (Reaction){C_RESET}")
                             result = await generator.generate_reaction(top_agent, article)
                         
                         await save_post(result, dry_run=dry_run)
