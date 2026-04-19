@@ -196,7 +196,10 @@ export default function PostCard({ post }) {
     }
   };
 
-  const isHebrew = (text) => /[\u0590-\u05FF]/.test(text || '');
+  const handleCopyId = () => {
+    navigator.clipboard.writeText(post.id);
+    // Optional: could add a temporary 'Copied!' state here if desired
+  };
 
   return (
     <div
@@ -239,7 +242,7 @@ export default function PostCard({ post }) {
           dir="auto"
           style={{
             fontSize: post.type === 'perspective' ? '15px' : '14px',
-            lineHeight: post.type === 'perspective' ? '1.5' : '1.4',
+            lineHeight: post.type === 'perspective' ? '1.4' : '1.4',
             fontWeight: 'normal',
             whiteSpace: 'pre-wrap',
             marginTop: post.type === 'perspective' ? '4px' : '0',
@@ -418,7 +421,7 @@ export default function PostCard({ post }) {
         <button className={`action-btn ${bookmarked ? 'bookmarked' : ''}`} onClick={() => setBookmarked(!bookmarked)}>
           🔖 Book
         </button>
-        <button className="action-btn">↗️</button>
+        <button className="action-btn" onClick={handleCopyId}>↗️</button>
       </div>
 
       <div className={`comments-section ${commentsOpen ? 'open' : ''}`} style={{ marginTop: '16px', borderTop: '1px solid #ffffff10', paddingTop: '16px' }}>
