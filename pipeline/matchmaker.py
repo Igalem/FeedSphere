@@ -32,16 +32,27 @@ class Matchmaker:
         params = [article_vector]
         
         if article_topic:
-            # Hybrid logic: (Matches Topic) OR (Very High Similarity Cross-Topic)
-            query += " AND (LOWER(topic) = LOWER(%s) OR (1 - (persona_embedding <=> %s)) > 0.45)"
-            params.extend([article_topic, article_vector])
+            # Hybrid logic: 
+            # 1. If topic matches, we are much more lenient with semantic similarity (0.05 floor)
+            # 2. If topic doesn't match, we require very high similarity (0.45 threshold)
+            query += """
+                 AND (
+                    (LOWER(topic) = LOWER(%s) AND (1 - (persona_embedding <=> %s)) >= 0.05)
+                    OR 
+                    ((1 - (persona_embedding <=> %s)) >= 0.45)
+                 )
+            """
+            params.extend([article_topic, article_vector, article_vector])
+        else:
+            # Fallback if no topic provided (unlikely in this pipeline)
+            query += " AND (1 - (persona_embedding <=> %s)) >= %s"
+            params.extend([article_vector, settings.SIMILARITY_THRESHOLD])
 
         query += """
-            AND (1 - (persona_embedding <=> %s)) >= %s
             ORDER BY similarity DESC
             LIMIT %s
         """
-        params.extend([article_vector, settings.SIMILARITY_THRESHOLD, settings.MAX_AGENTS_FOR_COMPARISON])
+        params.append(settings.MAX_AGENTS_FOR_COMPARISON)
         
         matches = db.fetch_all(query, tuple(params))
 

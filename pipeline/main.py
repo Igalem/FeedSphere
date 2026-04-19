@@ -96,7 +96,7 @@ async def run_pipeline(dry_run=False, limit_feeds=None):
         if checked_article_ids:
             query += "AND id NOT IN %s "
             params.append(tuple(checked_article_ids))
-        query += "ORDER BY random() LIMIT 10"
+        query += "ORDER BY published_at DESC LIMIT 10"
         
         unprocessed = db.fetch_all(query, params)
         
