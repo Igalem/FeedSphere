@@ -24,6 +24,13 @@ export async function POST(req) {
       responseStyle
     } = body;
 
+    // Trim inputs
+    name = name?.trim();
+    topic = topic?.trim();
+    subTopic = subTopic?.trim();
+    persona = persona?.trim();
+    responseStyle = responseStyle?.trim();
+
     // Sanitize Topic immediately
     topic = sanitizeTopic(topic);
 

@@ -111,8 +111,8 @@ class Generator:
         
         # Decide order based on current master and request type
         if is_relevancy:
-            # Special flow for Relevancy Gatekeeper: Gemini > Groq > Ollama
-            providers = ['gemini', 'groq', 'ollama']
+            # Special flow for Relevancy Gatekeeper: Gemini > Cerebras > Groq > Ollama
+            providers = ['gemini', 'cerebras', 'groq', 'ollama']
         elif force_provider:
             # Case: specific provider forced
             cloud_flow = ['cerebras', 'groq', 'gemini']
@@ -227,13 +227,22 @@ class Generator:
                     raise Exception(f"Empty response from {provider}")
                     
             except Exception as e:
-                logger.warning(f"[LLM] {provider.capitalize()} failed: {str(e)}")
+                err_msg = str(e).lower()
+                is_rate_limit = "429" in err_msg or "rate limit" in err_msg or "resource_exhausted" in err_msg
+                
+                logger.warning(f"[LLM] {provider.capitalize()} failed {'(Rate Limit)' if is_rate_limit else ''}: {str(e)}")
                 last_exception = e
                 
-                # Check for master failure logic
+                # Check for master failure logic or immediate swap on rate limit
                 if provider == current_master:
-                    master_failure_count += 1
-                    logger.warning(f"⚠️ [LLM] Master ({current_master}) failure count: {master_failure_count}/3")
+                    if is_rate_limit:
+                        # Immediate swap on rate limit
+                        master_failure_count = 3 
+                        logger.error(f"🚫 [LLM] Master ({current_master}) hit Rate Limit. Forcing swap.")
+                    else:
+                        master_failure_count += 1
+                        logger.warning(f"⚠️ [LLM] Master ({current_master}) failure count: {master_failure_count}/3")
+                        
                     if master_failure_count >= 3:
                         if current_master == 'cerebras':
                             current_master = 'groq'
@@ -242,7 +251,11 @@ class Generator:
                         else:
                             current_master = 'cerebras' # Reset or stay
                         master_failure_count = 0
-                        logger.error(f"🚨 [LLM] Master failed 3 times. SWAPPING MASTER TO {current_master.upper()} for rest of session.")
+                        logger.error(f"🚨 [LLM] Master failed or rate limited 3 times. SWAPPING MASTER TO {current_master.upper()} for rest of session.")
+                
+                # If we hit a rate limit, wait a bit before trying the next provider to let things cool down
+                if is_rate_limit:
+                    await asyncio.sleep(2)
                 
                 continue
         
@@ -335,7 +348,7 @@ class Generator:
         clean_words = [re.sub(r'\W+', '', word.capitalize()) for word in words]
         return "".join(clean_words)
 
-    @retry(wait=wait_exponential(multiplier=1, min=2, max=6), stop=stop_after_attempt(3))
+    @retry(wait=wait_exponential(multiplier=1, min=4, max=20), stop=stop_after_attempt(5))
     async def get_relevancy_score(self, agent: Dict, article: Dict) -> int:
         """Determines if the article is topically relevant to the agent using the LLM Gatekeeper."""
         logger.info(f"Running LLM Relevancy Gatekeeper for agent: {agent['slug']} against article: {article['article_title']}")
@@ -356,7 +369,7 @@ class Generator:
             logger.error(f"Failed to parse relevancy score JSON: {e}, Content: {content}")
             return 40 # Default to non-relevant if parsing fails to avoid unrelated content
 
-    @retry(wait=wait_exponential(multiplier=1, min=4, max=10), stop=stop_after_attempt(3))
+    @retry(wait=wait_exponential(multiplier=1, min=4, max=20), stop=stop_after_attempt(4))
     async def generate_reaction(self, agent: Dict, article: Dict) -> Dict:
         """Generates a standard short reaction post."""
         logger.info(f"Generating reaction for agent: {agent['slug']}")
@@ -442,7 +455,7 @@ class Generator:
                 "published_at": article.get("published_at")
             }
 
-    @retry(wait=wait_exponential(multiplier=1, min=4, max=10), stop=stop_after_attempt(3))
+    @retry(wait=wait_exponential(multiplier=1, min=4, max=20), stop=stop_after_attempt(4))
     async def generate_perspective(self, agent: Dict, article: Dict) -> Dict:
         """Generates a deeper perspective post."""
         logger.info(f"Generating perspective for agent: {agent['slug']}")
@@ -527,7 +540,7 @@ class Generator:
                 "published_at": article.get("published_at")
             }
 
-    @retry(wait=wait_exponential(multiplier=1, min=4, max=10), stop=stop_after_attempt(3))
+    @retry(wait=wait_exponential(multiplier=1, min=4, max=20), stop=stop_after_attempt(4))
     async def generate_debate(self, agent_a: Dict, agent_b: Dict, article: Dict) -> Dict:
         """Generates a debate between two agents."""
         logger.info(f"Generating debate between {agent_a['slug']} and {agent_b['slug']}")

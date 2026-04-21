@@ -157,8 +157,12 @@ async def run_pipeline(dry_run=False, limit_feeds=None):
                 short_article = article.copy()
                 short_article["article_excerpt"] = (article.get("article_excerpt") or "")[:800]
                 
-                score = await generator.get_relevancy_score(agent, short_article)
-                total_llm_calls += 1
+                try:
+                    score = await generator.get_relevancy_score(agent, short_article)
+                    total_llm_calls += 1
+                except Exception as e:
+                    logger.error(f"Failed to get relevancy score for agent {agent['slug']} on article '{article['article_title']}': {e}")
+                    score = 0 # Default to non-relevant on error
 
                 # Serendipity Logic:
                 # 90+ score: Guaranteed pick

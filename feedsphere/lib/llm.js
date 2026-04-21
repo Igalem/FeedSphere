@@ -30,7 +30,7 @@ export function resetLLMMaster() {
  */
 export async function generateLLMResponse(systemPrompt, userMessages, options = {}) {
   const geminiModel = getGeminiModel();
-  const { maxTokens = 1200, temperature = 0.8, retries = 5, initialDelay = 3000 } = options;
+  const { maxTokens = 1200, temperature = 0.8, retries = 5, initialDelay = 3000, useProvider } = options;
   let lastError;
 
   // Decide order based on current master
@@ -41,6 +41,12 @@ export async function generateLLMResponse(systemPrompt, userMessages, options = 
     providers = ['groq', 'gemini', 'cerebras'];
   } else if (currentMaster === 'gemini') {
     providers = ['gemini', 'cerebras', 'groq'];
+  }
+
+  // If a specific provider is requested, prioritize it
+  if (useProvider && providers.includes(useProvider)) {
+    providers = [useProvider, ...providers.filter(p => p !== useProvider)];
+    console.log(`[LLM] Specific provider requested: ${useProvider.toUpperCase()}. Prioritizing it.`);
   }
   
   console.log(`[LLM] Session Master: ${currentMaster.toUpperCase()}. Current request order: ${providers.join(' -> ')}`);
@@ -62,7 +68,7 @@ export async function generateLLMResponse(systemPrompt, userMessages, options = 
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            model: 'llama3.1-8b',
+            model: 'llama3.1-70b',
             messages: [
               { role: 'system', content: systemPrompt },
               ...userMessages
@@ -196,6 +202,7 @@ export async function generateLLMResponse(systemPrompt, userMessages, options = 
               ],
               max_tokens: Math.min(maxTokens, 32768),
               temperature: temperature,
+              ...(options.responseMimeType === 'application/json' ? { response_format: { type: "json_object" } } : {})
             })
           });
 
@@ -530,7 +537,7 @@ Rules: 1-2 sentences max, authentic voice, stay in character, no dashes.`;
 export async function generateAgentMetadata(userInput) {
   const TOPICS_LIST = [
     'News & Politics', 'Tech & Science', 'Sports & Fitness', 
-    'Entertainment & Gaming', 'Business & Money', 
+    'Entertainment', 'Gaming', 'Business & Money', 
     'Lifestyle & Culture', 'Knowledge'
   ].join(', ');
 
@@ -562,16 +569,20 @@ The user might provide specific directives or a rough idea. You MUST strictly in
 - Select a professional Color Hex code that matches the personality.
 - Select a perfect Emoji.
 - The "persona" field must be the FULL multi-section text description. **CRITICAL: Generate it as PLAIN TEXT with headers (e.g. 'PERSONALITY: ...'), NEVER return a JSON object or array in the persona field.**
-- Give me the main category for ${userInput.topic || 'the selected topic'} and 3 sub-topics (each sub topics must be a single word related to ${userInput.topic || 'the selected topic'}) for this persona. Make the output to be a string separeted with commas in the "sub_topics_generated" field.
+- Create a comma-separated string of EXACTLY 9 terms for the topic: '${userInput.topic || 'topic'}' and sub-topic: '${userInput.subTopic || 'sub-topic'}'. 
+- The FIRST term of these 9 MUST be the specific branch/type of the main topic (e.g., if Topic is 'Sports & Fitness' and Sub-topic is 'FC Barcelona', the first term here should be 'Football').
+- The remaining 8 terms must be common terms or phrases directly associated with '${userInput.subTopic || 'sub-topic'}' in the context of their main domain/field. 
+- IMPORTANT: DO NOT mention any individual names of people (players, CEOs, politicians, etc.) in these terms. Focus on concepts, places, and actions.
+- Return these 9 terms as a comma-separated string in the "sub_topics_generated" field.
 
-YOUR FINAL OUTPUT MUST BE A VALID JSON OBJECT AND NOTHING ELSE.
+YOUR FINAL OUTPUT MUST BE A VALID JSON OBJECT AND NOTHING ELSE. ALL FIELDS ARE MANDATORY.
 
 JSON Structure:
 {
   "name": "...",
   "emoji": "...",
   "topic": "...",
-  "sub_topics_generated": "Word1, Word2, Word3",
+  "sub_topics_generated": "Term1, Term2, Term3, Term4, Term5, Term6, Term7, Term8, Term9, Term10",
   "persona": "...",
   "responseStyle": "...",
   "color_hex": "..."
@@ -587,64 +598,45 @@ Return ONLY the JSON.`;
   ];
 
   const response = await generateLLMResponse(systemPrompt, userMessages, {
-    maxTokens: 2000,
+    maxTokens: 3000,
     temperature: 0.7,
     responseMimeType: "application/json",
-    useProvider: 'groq' // Forcing Groq for structured architect tasks
+    useProvider: 'cerebras' // Try Cerebras first, then fall back to Groq -> Gemini
   });
 
   try {
     const jsonMatch = response.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
       const data = JSON.parse(jsonMatch[0].replace(/,\s*([\}\]])/g, '$1'));
-      console.log(`[LLM] AI Metadata raw keys:`, Object.keys(data));
+      console.log(`[LLM] AI Metadata response keys:`, Object.keys(data));
 
-      // Strict Topic Inference check
-      let finalTopic = sanitizeTopic(userInput.topic || data.topic);
-
-      // Ensure persona is text, even if AI returns it as an object
-      let finalPersona = data.persona || data.personality || data.identity || data.SystemPrompt || data.system_prompt || "";
+      // Robust sub-topic extraction checking multiple potential keys
+      const genSub = data.sub_topics_generated || data.sub_topics || data.subtopics || data.tags || data.keywords || "";
       
-      // Fallback if AI returned nothing for persona (last resort)
-      if (!finalPersona) {
-        finalPersona = `You are ${userInput.name || 'AI Assistant'}, a specialist in ${finalTopic}. 
-Your writing style is professional and data-driven.
-Focus on providing unique insights into ${userInput.subTopic || finalTopic} news.
-Keywords: News, Analysis, Trends, Research, Data.`;
-      }
-      if (typeof finalPersona === 'object' && finalPersona !== null) {
-        const formatValue = (v) => {
-          if (Array.isArray(v)) return v.join(', ');
-          if (typeof v === 'object' && v !== null) {
-            return Object.entries(v)
-              .map(([k, val]) => `${k}: ${formatValue(val)}`)
-              .join('; ');
-          }
-          return v;
-        };
-        
-        finalPersona = Object.entries(finalPersona)
-          .map(([key, val]) => {
-            const displayVal = formatValue(val);
-            return `${key.toUpperCase()}:\n${displayVal}`;
-          })
-          .join('\n\n');
-      }
-
-      const genSub = data.sub_topics_generated || "";
+      // Final sub-topic list: User's input + AI's 9 terms = 10 terms
       let finalSubTopic = userInput.subTopic 
         ? `${userInput.subTopic}, ${genSub}`.replace(/(,\s*)+$/, '').trim() 
         : genSub;
       
-      // Clean up any trailing commas just in case
-      finalSubTopic = finalSubTopic.replace(/^,\s*/, '').replace(/,\s*$/, '');
+      // Clean up any trailing/double commas or redundant spaces
+      finalSubTopic = finalSubTopic
+        .replace(/,(\s*,)+/g, ',')
+        .replace(/^,\s*/, '')
+        .replace(/,\s*$/, '')
+        .split(',')
+        .map(t => t.trim())
+        .filter(t => t.length > 0)
+        .join(', ');
+      
+      console.log(`[LLM] Resolved Identity: ${data.name || userInput.name} with ${finalSubTopic.split(',').length} sub-topics.`);
+      console.log(`[LLM] Full Sub-Topics: ${finalSubTopic}`);
 
       return {
         name: userInput.name || data.name || data.agent_name || "New Agent",
         emoji: userInput.emoji || data.emoji || data.agent_emoji || "🤖",
-        topic: finalTopic,
+        topic: sanitizeTopic(userInput.topic || data.topic),
         sub_topic: finalSubTopic,
-        persona: finalPersona,
+        persona: data.persona || data.personality || "AI Persona generated successfully.",
         response_style: (userInput.responseStyle && userInput.responseStyle !== 'AI will generate') ? userInput.responseStyle : (data.response_style || data.responseStyle || "Authentic"),
         color_hex: userInput.colorHex === 'AI' ? data.colorHex || data.color_hex : userInput.colorHex || data.color_hex
       };
