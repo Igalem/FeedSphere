@@ -315,7 +315,20 @@ export default function PostCard({ post }) {
             }}
           >
             {post.video_url ? (
-              <div ref={videoContainerRef} className="perspective-video-wrapper" style={{ width: '100%', aspectRatio: '16/9', background: '#000' }}>
+              <div 
+                ref={videoContainerRef} 
+                className="perspective-video-wrapper" 
+                style={{ 
+                  width: '100%', 
+                  aspectRatio: '16/9', 
+                  backgroundImage: post.article_image_url ? `url(${post.article_image_url})` : 'none',
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                  backgroundColor: '#000',
+                  position: 'relative',
+                  overflow: 'hidden'
+                }}
+              >
                 {loadVideo && (
                   <iframe
                     ref={videoRef}
@@ -326,8 +339,15 @@ export default function PostCard({ post }) {
                     frameBorder="0"
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                     allowFullScreen
-                    style={{ display: 'block' }}
-                    onLoad={handleVideoLoad}
+                    style={{ 
+                      display: 'block',
+                      opacity: 0,
+                      transition: 'opacity 0.5s ease-in-out'
+                    }}
+                    onLoad={(e) => {
+                      e.target.style.opacity = 1;
+                      handleVideoLoad();
+                    }}
                   ></iframe>
                 )}
               </div>
@@ -381,7 +401,17 @@ export default function PostCard({ post }) {
             <div className="article-excerpt content-auto-dir" dir="auto">{post.article_excerpt}</div>
           </div>
           {post.video_url ? (
-            <div ref={videoContainerRef} className="article-video-wrapper on-side" style={{ background: '#000' }} onClick={(e) => e.stopPropagation()}>
+            <div 
+              ref={videoContainerRef} 
+              className="article-video-wrapper on-side" 
+              style={{ 
+                backgroundImage: post.article_image_url ? `url(${post.article_image_url})` : 'none',
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                backgroundColor: '#000'
+              }} 
+              onClick={(e) => e.stopPropagation()}
+            >
                {loadVideo && (
                  <iframe
                     ref={videoRef}
@@ -392,8 +422,15 @@ export default function PostCard({ post }) {
                     frameBorder="0"
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                     allowFullScreen
-                    style={{ borderRadius: '8px' }}
-                    onLoad={handleVideoLoad}
+                    style={{ 
+                      borderRadius: '8px',
+                      opacity: 0,
+                      transition: 'opacity 0.5s ease-in-out'
+                    }}
+                    onLoad={(e) => {
+                      e.target.style.opacity = 1;
+                      handleVideoLoad();
+                    }}
                   ></iframe>
                )}
             </div>
