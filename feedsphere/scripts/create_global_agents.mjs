@@ -20,7 +20,7 @@ if (fs.existsSync(envPath)) {
 const GLOBAL_AGENTS = [
   {
     topic: 'News & Politics',
-    sub_topic: 'World, Politics, Diplomacy',
+    sub_topic: 'World, Politics, Diplomacy, International Relations, Geopolitics, UN, Conflicts, Elections, Policy, Summit',
     name: 'Global News Hub',
     emoji: '📰',
     color_hex: '#1D4ED8',
@@ -47,7 +47,7 @@ World events global news international relations politics breaking news summit d
   },
   {
     topic: 'Sports & Fitness',
-    sub_topic: 'Competition, League, Athletes',
+    sub_topic: 'Football, Competition, League, Records, Championship, Stadium, Playoffs, Coach, Transfer, Roster',
     name: 'Arena Central',
     emoji: '🏟️',
     color_hex: '#dc2626',
@@ -73,8 +73,8 @@ SEMANTIC ANCHOR:
 Championship tournament league finals playoffs athletes players stadium coach referee score goal touchdown sportsmanship.`
   },
   {
-    topic: 'Entertainment & Gaming',
-    sub_topic: 'Hollywood, Trends, Celebrity',
+    topic: 'Entertainment',
+    sub_topic: 'Movies, Hollywood, Trends, Celebrity, Music, Streaming, Box Office, Awards, Viral, Gossip',
     name: 'Pop Culture Pulse',
     emoji: '🎬',
     color_hex: '#9333ea',
@@ -101,7 +101,7 @@ Hollywood celebrity blockbuster box office streaming spotify viral tiktok billbo
   },
   {
     topic: 'Sports & Fitness',
-    sub_topic: 'Nutrition, Mindfulness, Health',
+    sub_topic: 'Health, Nutrition, Mindfulness, Exercise, Sleep, Recovery, Diet, Supplements, Wellness, Lifestyle',
     name: 'Wellness Guide',
     emoji: '🌿',
     color_hex: '#16a34a',
@@ -128,7 +128,7 @@ Medical research nutrition mental health therapy fitness exercise wellness mindf
   },
   {
     topic: 'Tech & Science',
-    sub_topic: 'Innovation, Coding, Hardware',
+    sub_topic: 'Innovation, AI, Hardware, Software, Chips, Cybersecurity, Quantum, Robotics, Startups, Silicon Valley',
     name: 'Tech Frontier',
     emoji: '💻',
     color_hex: '#0ea5e9',
@@ -155,7 +155,7 @@ Artificial intelligence startup silicon valley software hardware coding machine 
   },
   {
     topic: 'Business & Money',
-    sub_topic: 'Stocks, Finance, Economy',
+    sub_topic: 'Finance, Stocks, Economy, Interest Rates, Inflation, Crypto, Dividends, Trading, Portfolio, Wall Street',
     name: 'Market Watcher',
     emoji: '📈',
     color_hex: '#059669',
@@ -182,7 +182,7 @@ Wall street stocks index crypto economy inflation interest rates Federal Reserve
   },
   {
     topic: 'Tech & Science',
-    sub_topic: 'Space, Astrophysics, Physics',
+    sub_topic: 'Science, Space, Astrophysics, Physics, Gravity, Galaxy, Planet, NASA, Research, Discovery',
     name: 'Cosmic Curiosity',
     emoji: '🔭',
     color_hex: '#4f46e5',
@@ -209,7 +209,7 @@ Astrophysics NASA space exploration biology evolution quantum mechanics climate 
   },
   {
     topic: 'Lifestyle & Culture',
-    sub_topic: 'Design, Travel, Aesthetic',
+    sub_topic: 'Design, Travel, Aesthetic, Architecture, Food, Fashion, Interior, Minimalism, Vacation, Culinary',
     name: 'Modern Living',
     emoji: '☕',
     color_hex: '#d97706',
@@ -235,8 +235,8 @@ SEMANTIC ANCHOR:
 Architecture interior design travel culinary coffee fashion slow living minimalist home decor vacation aesthetic destination.`
   },
   {
-    topic: 'Entertainment & Gaming',
-    sub_topic: 'Esports, Gaming, Console',
+    topic: 'Gaming',
+    sub_topic: 'Gaming, Esports, Console, Controller, PC, Strategy, Level, Graphics, Multiplayer, Retro',
     name: 'Gamer 365',
     emoji: '🎮',
     color_hex: '#ec4899',
@@ -262,8 +262,8 @@ SEMANTIC ANCHOR:
 Playstation Xbox Nintendo Steam Unreal Engine frame rate hitbox speedrun multiplayer esports patch notes graphics gameplay.`
   },
   {
-    topic: 'Tech & Science',
-    sub_topic: 'Genetics, Biotech, Research',
+    topic: 'Knowledge',
+    sub_topic: 'Research, Genetics, Biotech, Lab, Thesis, Education, History, Theory, Ethics, Archive',
     name: 'Quantum Quest',
     emoji: '🧬',
     color_hex: '#10b981',
