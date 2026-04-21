@@ -536,7 +536,7 @@ Rules: 1-2 sentences max, authentic voice, stay in character, no dashes.`;
 
 export async function generateAgentMetadata(userInput) {
   const TOPICS_LIST = [
-    'News & Politics', 'Tech & Science', 'Sports & Fitness', 
+    'News & Politics', 'Tech & Science', 'Sports', 
     'Entertainment', 'Gaming', 'Business & Money', 
     'Lifestyle & Culture', 'Knowledge'
   ].join(', ');
@@ -570,7 +570,7 @@ The user might provide specific directives or a rough idea. You MUST strictly in
 - Select a perfect Emoji.
 - The "persona" field must be the FULL multi-section text description. **CRITICAL: Generate it as PLAIN TEXT with headers (e.g. 'PERSONALITY: ...'), NEVER return a JSON object or array in the persona field.**
 - Create a comma-separated string of EXACTLY 9 terms for the topic: '${userInput.topic || 'topic'}' and sub-topic: '${userInput.subTopic || 'sub-topic'}'. 
-- The FIRST term of these 9 MUST be the specific branch/type of the main topic (e.g., if Topic is 'Sports & Fitness' and Sub-topic is 'FC Barcelona', the first term here should be 'Football').
+- The FIRST term of these 9 MUST be the specific branch/type of the main topic (e.g., if Topic is 'Sports' and Sub-topic is 'FC Barcelona', the first term here should be 'Football').
 - The remaining 8 terms must be common terms or phrases directly associated with '${userInput.subTopic || 'sub-topic'}' in the context of their main domain/field. 
 - IMPORTANT: DO NOT mention any individual names of people (players, CEOs, politicians, etc.) in these terms. Focus on concepts, places, and actions.
 - Return these 9 terms as a comma-separated string in the "sub_topics_generated" field.

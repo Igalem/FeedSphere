@@ -97,20 +97,22 @@ export default function AgentsMarketClient({ initialAgents }) {
 
                 return (
                   <div key={agent.id} className="relative overflow-hidden flex flex-col hover:-translate-y-1 transition-transform" style={{ backgroundColor: '#151821', border: '1.5px solid #eaff04', borderRadius: '1rem', padding: '1rem' }}>
-                    <div className="absolute font-bold items-center" style={{ top: '0.75rem', insetInlineEnd: '0.75rem', fontSize: '12px', color: '#eaff04', display: 'flex', gap: '0.2rem' }}>
+                    <Link href={`/agent/${agent.slug}`} className="absolute font-bold items-center hover:scale-105 transition-transform" style={{ top: '0.75rem', insetInlineEnd: '0.75rem', fontSize: '12px', color: '#eaff04', display: 'flex', gap: '0.2rem' }}>
                       🔥 Trending
-                    </div>
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className={`rounded-full flex-shrink-0 flex items-center justify-center text-xl border ${avatarBg} ${avatarBorder}`} style={{ width: '40px', height: '40px', border: '1px solid rgba(255,255,255,0.1)' }}>
-                        {[...(agent.emoji || '🤖')].slice(0, 3).join('')}
+                    </Link>
+                    <Link href={`/agent/${agent.slug}`} className="block group">
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className={`rounded-full flex-shrink-0 flex items-center justify-center text-xl border ${avatarBg} ${avatarBorder}`} style={{ width: '40px', height: '40px', border: '1px solid rgba(255,255,255,0.1)' }}>
+                          {[...(agent.emoji || '🤖')].slice(0, 3).join('')}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-bold text-[16px] text-white group-hover:text-[#eaff04] transition-colors truncate mb-0.5" translate="no">{agent.name}</h4>
+                        </div>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <h4 className="font-bold text-[16px] text-white truncate mb-0.5" translate="no">{agent.name}</h4>
-                      </div>
-                    </div>
-                    <p className="text-[14px] text-gray-400 line-clamp-2 mb-6 leading-relaxed" style={{ marginTop: '0.75rem' }}>
-                      {agent.persona || 'An autonomous AI agent on FeedSphere.'}
-                    </p>
+                      <p className="text-[14px] text-gray-400 line-clamp-2 mb-6 leading-relaxed" style={{ marginTop: '0.75rem' }}>
+                        {(agent.persona || '').replace(/SYSTEM PROMPT —/gi, '').replace(/PERSONALITY:/gi, '').trim() || 'An autonomous AI agent on FeedSphere.'}
+                      </p>
+                    </Link>
                     <div className="mt-auto flex justify-center" style={{ marginTop: '0.7rem' }}>
                       <FollowButton agentId={agent.id} creatorId={agent.creator_id} initialFollowerCount={agent.follower_count} initialIsFollowing={agent.isFollowing} className="!px-10 !py-2" />
                     </div>
@@ -134,7 +136,7 @@ export default function AgentsMarketClient({ initialAgents }) {
 
         {/* Agents Grid */}
         {filteredAgents.length > 0 ? (
-          <section className="pb-20" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1rem', width: '100%', marginTop: '1.5rem' }}>
+          <section className="pb-20" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '1rem', width: '100%', marginTop: '1.5rem' }}>
             {filteredAgents.map(agent => (
               <AgentCard key={agent.id} agent={agent} />
             ))}

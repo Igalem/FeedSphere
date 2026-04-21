@@ -174,15 +174,15 @@ class Crawler:
             if 'media_content' in entry and entry.media_content:
                 for mc in entry.media_content:
                     v_url = mc.get('url', '')
-                    if "youtube.com" in v_url or "vimeo.com" in v_url or v_url.endswith(('.mp4', '.mov')):
+                    if any(v in v_url.lower() for v in ["youtube.com", "youtu.be", "vimeo.com", "dailymotion.com", "yahoo.com/video"]) or v_url.lower().endswith(('.mp4', '.mov', '.m3u8')):
                         video_url = v_url
                         break
             
             if not video_url:
-                # Check for YouTube links in the entry or content
+                # Check for video links in the entry or content
                 for link in entry.get('links', []):
                     l_href = link.get('href', '')
-                    if "youtube.com" in l_href or "youtu.be" in l_href:
+                    if any(v in l_href.lower() for v in ["youtube.com", "youtu.be", "vimeo.com", "dailymotion.com", "yahoo.com/video"]):
                         video_url = l_href
                         break
 
@@ -335,7 +335,7 @@ class Crawler:
                                 tag = page_soup.find(tag_type, attrs=attrs)
                                 if tag:
                                     v_cand = tag.get("content") or tag.get("href")
-                                    if v_cand and ("youtube.com" in v_cand or "youtu.be" in v_cand):
+                                    if v_cand:
                                         video_url = to_embed(v_cand)
                                         if video_url: break
 
@@ -349,7 +349,7 @@ class Crawler:
                                     iframes = area.find_all("iframe", src=True)
                                     for iframe in iframes:
                                         src = iframe["src"]
-                                        if "youtube.com" in src or "youtu.be" in src:
+                                        if any(v in src.lower() for v in ["youtube.com", "youtu.be", "vimeo.com", "dailymotion.com", "yahoo.com/video"]):
                                             video_url = to_embed(src)
                                             if video_url: break
                                     if video_url: break
@@ -361,6 +361,18 @@ class Crawler:
                                 video_id = yt_match.group(1)
                                 video_url = f"https://www.youtube.com/embed/{video_id}"
                                 # logger.info(f"Scraped YouTube embed from page text: {video_id}")
+                            
+                            if not video_url and "yahoo.com" in url:
+                                # Search for data-video-id pattern typical for Yahoo (UUID or Numeric)
+                                y_match = re.search(r'data-video-id=["\']([a-f0-9-]{36}|[a-f0-9]{32}|\d+)["\']', page_res.text)
+                                if not y_match:
+                                    # Fallback for different Yahoo video ID patterns (uuid or videoId)
+                                    y_match = re.search(r'\\?["\'](uuid|videoId)\\?["\']:\s*\\?["\']([a-f0-9-]{36}|\d+)\\?["\']', page_res.text)
+                                
+                                if y_match:
+                                    video_id = y_match.group(2) if len(y_match.groups()) > 1 else y_match.group(1)
+                                    video_url = f"https://finance.yahoo.com/video/{video_id}.html"
+                                    # logger.info(f"Scraped Yahoo video ID from page text: {video_id}")
                 except Exception as e:
                     logger.debug(f"Scraping failed for {url}: {e}")
                     pass
@@ -395,7 +407,11 @@ class Crawler:
             if image_url:
                 image_url = image_url.strip()
                 # Reject known generic stubs, logos, and tiny thumbnails
-                bad_keywords = ['genric_yahoo', 'default-thumbnail', 'placeholder', 'w=240;h=56', 'w=56;h=56', 'yahoo-sports-logo']
+                bad_keywords = [
+                    'genric_yahoo', 'default-thumbnail', 'placeholder', 'w=240;h=56', 'w=56;h=56', 'yahoo-sports-logo',
+                    'yahoo_frontpage', 'world_news_2', 'tass_logo_share', 'seekingalpha.com/assets/og_image',
+                    'reuters.com/pf/resources/images/reuters/reuters-default.png'
+                ]
                 if '108x81' in image_url.lower() and 'investing.com' not in image_url.lower():
                     # Reject standard tiny thumbnails
                     image_url = None
@@ -417,10 +433,10 @@ class Crawler:
                 # Fallback to topic-based images with significantly more variety
                 # Mapping keys to match the core categories from sanitize_topic across the app
                 placeholder_pools = {
-                    "Sports & Fitness": [
-                        "https://images.unsplash.com/photo-1461896756913-c27eeff1d9b1?q=80&w=1000",
+                    "Sports": [
+                        "https://images.unsplash.com/photo-1461896836934-ffe607ba8211?q=80&w=1000",
                         "https://images.unsplash.com/photo-1504450758481-7338eba7524a?q=80&w=1000",
-                        "https://images.unsplash.com/photo-1471295253337-3ceaaedca401?q=80&w=1000",
+                        "https://images.unsplash.com/photo-1541252260730-0412e8e2108e?q=80&w=1000",
                         "https://images.unsplash.com/photo-1517649763962-0c623066013b?q=80&w=1000",
                         "https://images.unsplash.com/photo-1505751172876-fa1923c5c528?q=80&w=1000",
                         "https://images.unsplash.com/photo-1532938911079-1b06ac7ceec7?q=80&w=1000",
@@ -437,15 +453,18 @@ class Crawler:
                         "https://images.unsplash.com/photo-1519389950473-47ba0277781c?q=80&w=1000",
                         "https://images.unsplash.com/photo-1498050108023-c5249f4df085?q=80&w=1000"
                     ],
-                    "Entertainment & Gaming": [
+                    "Entertainment": [
                         "https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=1000",
                         "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1000",
-                        "https://images.unsplash.com/photo-1552824236-0776484ffb27?q=80&w=1000",
-                        "https://images.unsplash.com/photo-1531297484001-80022131f5a1?q=80&w=1000",
-                        "https://images.unsplash.com/photo-1603190287605-e6ade32fa852?q=80&w=1000",
+                        "https://images.unsplash.com/photo-1499364615650-68d98fa21442?q=80&w=1000",
                         "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?q=80&w=1000",
-                        "https://images.unsplash.com/photo-1514525253344-99a4299965d2?q=80&w=1000",
-                        "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?q=80&w=1000"
+                        "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?q=80&w=1000",
+                    ],
+                    "Gaming": [
+                        "https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=1000",
+                        "https://images.unsplash.com/photo-1511512578047-dfb367046420?q=80&w=1000",
+                        "https://images.unsplash.com/photo-1499364615650-68d98fa21442?q=80&w=1000",
+                        "https://images.unsplash.com/photo-1603190287605-e6ade32fa852?q=80&w=1000"
                     ],
                     "News & Politics": [
                         "https://images.unsplash.com/photo-1495020689067-958852a7765e?q=80&w=1000",
@@ -459,16 +478,15 @@ class Crawler:
                     ],
                     "Business & Money": [
                         "https://images.unsplash.com/photo-1460925895917-afdab827c52f?q=80&w=1000",
-                        "https://images.unsplash.com/photo-1507679799987-c7377ec48696?q=80&w=1000",
-                        "https://images.unsplash.com/photo-1526303328184-c7fc2e861d9a?q=80&w=1000",
-                        "https://images.unsplash.com/photo-1554224155-16974fa9f2ec?q=80&w=1000",
+                        "https://images.unsplash.com/photo-1518458028785-8fbcd101ebb9?q=80&w=1000",
+                        "https://images.unsplash.com/photo-1554224155-672629188047?q=80&w=1000",
                         "https://images.unsplash.com/photo-1518186285589-2f7649de83e0?q=80&w=1000"
                     ],
                     "Lifestyle & Culture": [
                         "https://images.unsplash.com/photo-1498837167922-ddd27525d352?q=80&w=1000",
                         "https://images.unsplash.com/photo-1506126613408-eca07ce68773?q=80&w=1000",
                         "https://images.unsplash.com/photo-1490818387583-1baba5e638af?q=80&w=1000",
-                        "https://images.unsplash.com/photo-1511733351957-46046d997851?q=80&w=1000"
+                        "https://images.unsplash.com/photo-1511632765486-a019a0e636bd?q=80&w=1000"
                     ],
                     "Knowledge": [
                         "https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?q=80&w=1000",

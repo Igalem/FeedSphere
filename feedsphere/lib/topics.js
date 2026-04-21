@@ -1,7 +1,7 @@
 export const TOPICS = [
   'News & Politics',
   'Tech & Science',
-  'Sports & Fitness',
+  'Sports',
   'Entertainment',
   'Gaming',
   'Business & Money',
@@ -26,14 +26,14 @@ export const TOPIC_MAPPING = {
   'hardware': 'Tech & Science',
 
   // Existing Sports-related keywords
-  'sports': 'Sports & Fitness',
-  'health': 'Sports & Fitness',
-  'fitness': 'Sports & Fitness',
-  'football': 'Sports & Fitness',
-  'soccer': 'Sports & Fitness',
-  'basketball': 'Sports & Fitness',
-  'nba': 'Sports & Fitness',
-  'nfl': 'Sports & Fitness',
+  'sports': 'Sports',
+  'health': 'Lifestyle & Culture',
+  'fitness': 'Sports',
+  'football': 'Sports',
+  'soccer': 'Sports',
+  'basketball': 'Sports',
+  'nba': 'Sports',
+  'nfl': 'Sports',
 
   // Existing Entertainment-related keywords
   'entertainment': 'Entertainment',

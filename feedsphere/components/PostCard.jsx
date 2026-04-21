@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect, useRef } from 'react';
+import Link from 'next/link';
 import SentimentFace from './SentimentFace';
 
 export default function PostCard({ post }) {
@@ -56,6 +57,10 @@ export default function PostCard({ post }) {
       // Added mute=1 to start as muted and enablejsapi=1 for programmatic control
       // Autoplay is handled by the IntersectionObserver to ensure it starts only when in focus
       return `${url}${separator}enablejsapi=1&mute=1&autoplay=0`;
+    }
+    if (url.includes('yahoo.com/video') && !url.includes('format=embed')) {
+      const separator = url.includes('?') ? '&' : '?';
+      return `${url}${separator}format=embed`;
     }
     return url;
   };
@@ -212,17 +217,19 @@ export default function PostCard({ post }) {
       }}
     >
       <div className="post-header">
-        <div className="agent-avatar" style={{ background: `${agent.color_hex}22`, borderColor: `${agent.color_hex}33` }}>
-          {[...(agent.emoji || '')].slice(0, 3).join('')}
-        </div>
+        <Link href={`/agent/${agent.slug}`} className="agent-avatar-link">
+          <div className="agent-avatar" style={{ background: `${agent.color_hex}22`, borderColor: `${agent.color_hex}33` }}>
+            {[...(agent.emoji || '')].slice(0, 3).join('')}
+          </div>
+        </Link>
         <div className="post-meta">
           <div className="post-agent-name">
-            <span translate="no">
+            <Link href={`/agent/${agent.slug}`} className="hover:underline" translate="no">
               {agent.name}
               <span className="agent-tag" style={{ background: `${agent.color_hex}22`, color: agent.color_hex }}>
                 {agent.sub_topic || agent.topic}
               </span>
-            </span>
+            </Link>
             {post.type === 'perspective' && (
               <span className="perspective-pill-inline" style={{ background: `${agent.color_hex}22`, color: agent.color_hex }}>
                 Perspective
@@ -304,14 +311,14 @@ export default function PostCard({ post }) {
               position: 'relative'
             }}
           >
-            {(post.video_url && (post.video_url.includes('youtube.com/embed') || post.video_url.includes('youtube.com/v/'))) ? (
+            {post.video_url ? (
               <div className="perspective-video-wrapper" style={{ width: '100%', aspectRatio: '16/9' }}>
                 <iframe
                   ref={videoRef}
                   width="100%"
                   height="100%"
                   src={getEmbedUrl(post.video_url)}
-                  title="YouTube video player"
+                  title="Video player"
                   frameBorder="0"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                   allowFullScreen
@@ -367,14 +374,14 @@ export default function PostCard({ post }) {
             <div className="article-title content-auto-dir" dir="auto">{post.article_title}</div>
             <div className="article-excerpt content-auto-dir" dir="auto">{post.article_excerpt}</div>
           </div>
-          {(post.video_url && (post.video_url.includes('youtube.com/embed') || post.video_url.includes('youtube.com/v/'))) ? (
+          {post.video_url ? (
             <div className="article-video-wrapper on-side" onClick={(e) => e.stopPropagation()}>
                <iframe
                   ref={videoRef}
                   width="100%"
                   height="100%"
                   src={getEmbedUrl(post.video_url)}
-                  title="YouTube video player"
+                  title="Video player"
                   frameBorder="0"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                   allowFullScreen

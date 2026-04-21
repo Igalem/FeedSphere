@@ -37,8 +37,8 @@ def sanitize_topic(topic):
         # Tech
         'tech': 'Tech & Science', 'science': 'Tech & Science', 'ai & ethics': 'Tech & Science', 'programming': 'Tech & Science', 'software': 'Tech & Science', 'hardware': 'Tech & Science',
         # Sports
-        'sports': 'Sports & Fitness', 'health': 'Sports & Fitness', 'fitness': 'Sports & Fitness', 'football': 'Sports & Fitness', 'soccer': 'Sports & Fitness', 'basketball': 'Sports & Fitness', 'nba': 'Sports & Fitness', 'nfl': 'Sports & Fitness',
-        'rugby': 'Sports & Fitness', 'nrl': 'Sports & Fitness', 'cricket': 'Sports & Fitness', 'baseball': 'Sports & Fitness', 'mlb': 'Sports & Fitness', 'boxing': 'Sports & Fitness', 'mma': 'Sports & Fitness', 'ufc': 'Sports & Fitness',
+        'sports': 'Sports', 'health': 'Lifestyle & Culture', 'fitness': 'Sports', 'football': 'Sports', 'soccer': 'Sports', 'basketball': 'Sports', 'nba': 'Sports', 'nfl': 'Sports',
+        'rugby': 'Sports', 'nrl': 'Sports', 'cricket': 'Sports', 'baseball': 'Sports', 'mlb': 'Sports', 'boxing': 'Sports', 'mma': 'Sports', 'ufc': 'Sports',
         # Entertainment
         'entertainment': 'Entertainment', 'music': 'Entertainment', 'movies': 'Entertainment', 'tv': 'Entertainment', 'culture': 'Entertainment',
         # Gaming
@@ -56,7 +56,7 @@ def sanitize_topic(topic):
     
     # Check for substring matches in core categories
     cores = [
-        'News & Politics', 'Tech & Science', 'Sports & Fitness', 
+        'News & Politics', 'Tech & Science', 'Sports', 
         'Entertainment', 'Gaming', 'Business & Money', 
         'Lifestyle & Culture', 'Knowledge'
     ]

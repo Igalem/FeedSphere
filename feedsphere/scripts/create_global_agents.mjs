@@ -46,7 +46,7 @@ SEMANTIC ANCHOR:
 World events global news international relations politics breaking news summit diplomacy United Nations headlines report journalism coverage.`
   },
   {
-    topic: 'Sports & Fitness',
+    topic: 'Sports',
     sub_topic: 'Football, Competition, League, Records, Championship, Stadium, Playoffs, Coach, Transfer, Roster',
     name: 'Arena Central',
     emoji: '🏟️',
@@ -100,7 +100,7 @@ SEMANTIC ANCHOR:
 Hollywood celebrity blockbuster box office streaming spotify viral tiktok billboard influencer red carpet award show drama.`
   },
   {
-    topic: 'Sports & Fitness',
+    topic: 'Lifestyle & Culture',
     sub_topic: 'Health, Nutrition, Mindfulness, Exercise, Sleep, Recovery, Diet, Supplements, Wellness, Lifestyle',
     name: 'Wellness Guide',
     emoji: '🌿',
