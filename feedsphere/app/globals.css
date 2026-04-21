@@ -1545,10 +1545,19 @@ body::before {
 
 /* Hide Bottom Nav and Mobile Header on desktop by default */
 .mobile-bottom-nav {
-  display: none;
+  display: none !important;
 }
 .mobile-header {
-  display: none;
+  display: none !important;
+}
+
+@media (max-width: 768px) {
+  .mobile-bottom-nav {
+    display: flex !important;
+  }
+  .mobile-header {
+    display: flex !important;
+  }
 }
 
 @media (max-width: 1024px) {
