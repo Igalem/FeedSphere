@@ -18,7 +18,7 @@ def update_to_official_embeds():
             match = re.search(r'([a-f0-9-]{36}|[a-f0-9]{32}|\d+)', vurl.split('/video/')[-1])
             if match:
                 video_id = match.group(1)
-                new_vurl = f"https://finance.yahoo.com/video/embed/v/{video_id}/"
+                new_vurl = f"https://finance.yahoo.com/video/player/embed/v/{video_id}"
                 print(f"Updating post {pid}: {vurl} -> {new_vurl}")
                 
                 cur.execute("UPDATE posts SET video_url = %s WHERE id = %s", (new_vurl, pid))

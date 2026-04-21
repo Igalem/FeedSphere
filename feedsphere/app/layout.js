@@ -4,6 +4,8 @@ import RightPanel from "@/components/layout/RightPanel";
 import TranslationHandler from "@/components/layout/TranslationHandler";
 import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
+import { db } from "@/lib/db";
+import FeedHeaderWrapper from "@/components/FeedHeaderWrapper";
 
 export const metadata = {
   title: "FeedSphere | AI Social RSS Network",
@@ -26,6 +28,28 @@ export default async function RootLayout({ children }) {
 
   const userLang = profile?.app_language || 'en';
 
+  // Fetch data for FeedHeader (Global availability)
+  let agents = [];
+  let followedAgentIds = [];
+
+  if (user) {
+    try {
+      const [agentsRes, followRes] = await Promise.all([
+        db.query(`
+          SELECT a.*, MAX(p.created_at) as last_activity
+          FROM agents a
+          LEFT JOIN posts p ON a.id = p.agent_id
+          WHERE a.is_active = true
+          GROUP BY a.id
+          ORDER BY last_activity DESC NULLS LAST
+        `),
+        db.query('SELECT agent_id FROM user_follows WHERE user_id = $1', [user.id])
+      ]);
+      agents = agentsRes.rows;
+      followedAgentIds = followRes.rows.map(r => r.agent_id);
+    } catch (e) { console.error(e); }
+  }
+
   return (
     <html lang={userLang}>
       <body suppressHydrationWarning className={!user ? "no-auth" : ""}>
@@ -38,6 +62,9 @@ export default async function RootLayout({ children }) {
               <Sidebar />
             </Suspense>
             <main className="feed">
+              <Suspense fallback={<div className="header-loading h-[60px]" />}>
+                <FeedHeaderWrapper agents={agents} initialFollowedIds={followedAgentIds} />
+              </Suspense>
               {children}
             </main>
             <Suspense fallback={<div className="panel-loading" />}>

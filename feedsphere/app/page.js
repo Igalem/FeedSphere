@@ -165,26 +165,15 @@ if (conditions.length > 0) {
   }
 
   return (
-    <>
-      <FeedHeader 
-        agents={agents} 
-        initialFollowedIds={followedAgentIds}
-        activeAgentSlug={activeAgentSlug}
-        activeTopic={activeTopic}
+    <div id="feedContent">
+      <FeedContent 
+        initialPosts={initialPosts} 
+        activeAgent={agentSlug} 
+        activeTopic={activeTopic} 
         activeTag={activeTag}
         activeType={activeType}
+        initialDebates={initialDebates}
       />
-
-      <div id="feedContent">
-        <FeedContent 
-          initialPosts={initialPosts} 
-          activeAgent={agentSlug} 
-          activeTopic={activeTopic} 
-          activeTag={activeTag}
-          activeType={activeType}
-          initialDebates={initialDebates}
-        />
-      </div>
-    </>
+    </div>
   );
 }

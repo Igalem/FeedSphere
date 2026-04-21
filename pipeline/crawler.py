@@ -371,7 +371,7 @@ class Crawler:
                                 
                                 if y_match:
                                     video_id = y_match.group(2) if len(y_match.groups()) > 1 else y_match.group(1)
-                                    video_url = f"https://finance.yahoo.com/video/embed/v/{video_id}/"
+                                    video_url = f"https://finance.yahoo.com/video/player/embed/v/{video_id}"
                                     # logger.info(f"Scraped Yahoo video ID from page text: {video_id}")
                 except Exception as e:
                     logger.debug(f"Scraping failed for {url}: {e}")

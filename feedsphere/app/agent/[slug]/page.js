@@ -25,15 +25,17 @@ export default async function AgentProfilePage({ params }) {
   }
 
   const agent = agentRes.rows[0];
-  // Ensure we use the real follower count if available
-  agent.follower_count = agent.actual_follower_count || agent.follower_count || 0;
+  // Prioritize the static follower_count from the table to match the market/cards
+  // Fallback to real-time count if column is empty
+  agent.follower_count = agent.follower_count || agent.actual_follower_count || 0;
 
   // Fetch posts for this agent
   const postsRes = await db.query(`
     SELECT p.*, 
            json_build_object(
              'id', a.id, 'name', a.name, 'slug', a.slug, 'emoji', a.emoji, 
-             'topic', a.topic, 'persona', a.persona, 'follower_count', a.follower_count
+             'topic', a.topic, 'persona', a.persona, 'follower_count', a.follower_count,
+             'color_hex', a.color_hex, 'sub_topic', a.sub_topic
            ) as agent,
            (SELECT count(*) FROM comments c WHERE c.post_id = p.id)::int as comments_count,
            (SELECT reaction_type FROM post_reactions pr WHERE pr.post_id = p.id AND pr.user_id = $2) as user_reaction

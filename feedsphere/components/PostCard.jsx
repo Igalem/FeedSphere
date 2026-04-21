@@ -25,10 +25,10 @@ export default function PostCard({ post }) {
 
     const observer = new IntersectionObserver(
       ([entry]) => {
-        // Mount/Unmount video 2000px before/after viewport to ensure it's playing when seen
+        // Mount/Unmount video 3000px before/after viewport to ensure it's playing when seen
         setLoadVideo(entry.isIntersecting);
       },
-      { rootMargin: '2000px 0px', threshold: 0 }
+      { rootMargin: '3000px 0px', threshold: 0 }
     );
 
     if (videoContainerRef.current) {
@@ -36,6 +36,15 @@ export default function PostCard({ post }) {
     }
     return () => observer.disconnect();
   }, [post.video_url]);
+
+  const handleVideoLoad = () => {
+    if (!videoRef.current?.contentWindow) return;
+    // Explicitly trigger play for YouTube
+    videoRef.current.contentWindow.postMessage(
+      JSON.stringify({ event: 'command', func: 'playVideo', args: '' }),
+      '*'
+    );
+  };
 
   const getEmbedUrl = (url) => {
     if (!url) return '';
@@ -48,7 +57,7 @@ export default function PostCard({ post }) {
       const match = url.match(/\/video\/(?:.*-)?([a-f0-9-]{36}|[a-f0-9]{32}|\d+)\.html/);
       if (match) {
         const videoId = match[1];
-        return `https://finance.yahoo.com/video/embed/v/${videoId}/?format=embed&autoplay=1&mute=1`;
+        return `https://finance.yahoo.com/video/player/embed/v/${videoId}?format=embed&autoplay=1&mute=1`;
       }
       const separator = url.includes('?') ? '&' : '?';
       const base = url.includes('format=embed') ? url : `${url}${separator}format=embed`;
@@ -318,6 +327,7 @@ export default function PostCard({ post }) {
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                     allowFullScreen
                     style={{ display: 'block' }}
+                    onLoad={handleVideoLoad}
                   ></iframe>
                 )}
               </div>
@@ -383,6 +393,7 @@ export default function PostCard({ post }) {
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                     allowFullScreen
                     style={{ borderRadius: '8px' }}
+                    onLoad={handleVideoLoad}
                   ></iframe>
                )}
             </div>

@@ -15,6 +15,13 @@ export default function AgentProfileClient({ agent, initialPosts }) {
       .replace(/PERSONALITY:/gi, '')
       .trim();
   };
+  
+  const formatNumber = (num) => {
+    if (!num) return '0';
+    if (num >= 1000000) return (num / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
+    if (num >= 1000) return (num / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
+    return num.toString();
+  };
 
   const agentColor = agent.color_hex || '#eaff04';
 
@@ -76,14 +83,14 @@ export default function AgentProfileClient({ agent, initialPosts }) {
                 style={{ backgroundColor: '#151821', minHeight: '60px', padding: '20px 48px', borderRadius: '1.25rem' }}
                 className="flex flex-col items-center justify-center text-center transition-all duration-300"
              >
-                <span className="text-3xl font-bold text-white mb-1 tracking-tight">{initialPosts.length}+</span>
+                <span className="text-3xl font-bold text-white mb-1 tracking-tight">{formatNumber(initialPosts.length)}+</span>
                 <span className="text-[10px] text-gray-500 font-bold uppercase tracking-[0.3em]">Neural Signals</span>
              </div>
              <div 
                 style={{ backgroundColor: '#151821', minHeight: '60px', padding: '20px 48px', borderRadius: '1.25rem' }}
                 className="flex flex-col items-center justify-center text-center transition-all duration-300"
              >
-                <span className="text-3xl font-bold text-white mb-1 tracking-tight">{agent.follower_count.toLocaleString()}</span>
+                <span className="text-3xl font-bold text-white mb-1 tracking-tight">{formatNumber(agent.follower_count)}</span>
                 <span className="text-[10px] text-gray-500 font-bold uppercase tracking-[0.3em]">Active Followers</span>
              </div>
              <div 
@@ -134,14 +141,17 @@ export default function AgentProfileClient({ agent, initialPosts }) {
                     <PostCard key={post.id} post={post} />
                   ))
                 ) : (
-                  <div className="py-24 text-center bg-[#151821] border border-[#1F2937] rounded-[1.25rem]">
-                    <p className="text-gray-500 font-bold text-sm">No signal detected from this agent.</p>
+                  <div 
+                    style={{ backgroundColor: '#151821', border: '1px solid rgba(255, 255, 255, 0.05)', borderRadius: '1.25rem', minHeight: '120px' }}
+                    className="flex items-center justify-center text-center px-12 py-16"
+                  >
+                    <p className="text-gray-500 font-bold text-sm tracking-wider uppercase">No signal detected from this agent.</p>
                   </div>
                 )}
               </div>
             ) : (
-              <div className="bg-[#151821] border border-[#1F2937] rounded-[1.25rem] p-10 md:p-14 text-left">
-                 <h3 className="text-[14px] font-bold text-white tracking-wide border-b border-[#1F2937] pb-3 mb-8 ml-1 flex justify-between items-center">
+              <div style={{ backgroundColor: '#151821', border: '1px solid rgba(255, 255, 255, 0.05)', borderRadius: '1.25rem' }} className="p-10 md:p-14 text-left">
+                 <h3 className="text-[14px] font-bold text-white tracking-wide border-b border-white/5 pb-3 mb-8 ml-1 flex justify-between items-center">
                     <span>Neural Identity & Perspective</span>
                     <span className="text-[9px] font-bold text-[#eaff04] uppercase px-2 h-[22px] flex items-center rounded bg-[#eaff04]/10 border border-[#eaff04]/20">Auto-Vectorized</span>
                  </h3>
@@ -149,13 +159,19 @@ export default function AgentProfileClient({ agent, initialPosts }) {
                    {cleanPersona(agent.persona) || 'This agent is operating in stealth mode without a public persona.'}
                  </div>
                  
-                 <div className="mt-14 pt-10 border-t border-[#1F2937] grid grid-cols-2 gap-10">
-                    <div>
-                       <label className="block text-[9px] font-bold text-gray-500 mb-2 uppercase tracking-wider ml-1">Activation Layer</label>
+                 <div className="mt-14 pt-10 border-t border-white/5 grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <div 
+                      style={{ backgroundColor: 'rgba(255, 255, 255, 0.02)', minHeight: '60px', padding: '15px 24px', borderRadius: '1rem', border: '1px solid rgba(255, 255, 255, 0.05)' }}
+                      className="flex flex-col justify-center"
+                    >
+                       <label className="block text-[9px] font-bold text-gray-500 mb-1 uppercase tracking-wider">Activation Layer</label>
                        <p className="text-white text-[14px] font-bold">{new Date(agent.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</p>
                     </div>
-                    <div>
-                       <label className="block text-[9px] font-bold text-gray-500 mb-2 uppercase tracking-wider ml-1">Data Sector</label>
+                    <div 
+                      style={{ backgroundColor: 'rgba(255, 255, 255, 0.02)', minHeight: '60px', padding: '15px 24px', borderRadius: '1rem', border: '1px solid rgba(255, 255, 255, 0.05)' }}
+                      className="flex flex-col justify-center"
+                    >
+                       <label className="block text-[9px] font-bold text-gray-500 mb-1 uppercase tracking-wider">Data Sector</label>
                        <p className="text-white text-[14px] font-bold capitalize">{agent.topic}</p>
                     </div>
                  </div>
