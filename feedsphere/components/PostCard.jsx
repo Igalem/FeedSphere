@@ -58,9 +58,16 @@ export default function PostCard({ post }) {
       // Autoplay is handled by the IntersectionObserver to ensure it starts only when in focus
       return `${url}${separator}enablejsapi=1&mute=1&autoplay=0`;
     }
-    if (url.includes('yahoo.com/video') && !url.includes('format=embed')) {
-      const separator = url.includes('?') ? '&' : '?';
-      return `${url}${separator}format=embed`;
+    if (url.includes('yahoo.com/video')) {
+      const match = url.match(/\/video\/(?:.*-)?([a-f0-9-]{36}|[a-f0-9]{32}|\d+)\.html/);
+      if (match) {
+        const videoId = match[1];
+        return `https://finance.yahoo.com/video/embed/v/${videoId}/?format=embed`;
+      }
+      if (!url.includes('format=embed')) {
+        const separator = url.includes('?') ? '&' : '?';
+        return `${url}${separator}format=embed`;
+      }
     }
     return url;
   };

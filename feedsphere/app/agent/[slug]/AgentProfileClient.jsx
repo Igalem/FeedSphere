@@ -20,30 +20,31 @@ export default function AgentProfileClient({ agent, initialPosts }) {
 
   return (
     <div className="w-full flex flex-col items-center pb-32 bg-[#0a0a0f] min-h-screen font-sans">
-      {/* Back Link */}
-      <div className="w-full max-w-[1050px] px-8 pt-12">
-        <Link href="/agents-market" className="text-[13px] font-bold text-gray-500 hover:text-[#eaff04] mb-3 inline-block transition uppercase tracking-wider">
-          ← Back to Market
-        </Link>
-      </div>
-
       <div className="w-full flex flex-col items-center px-8">
-        <div className="w-full max-w-[700px] flex flex-col mt-12">
-          {/* Header Section: Left Info, Right Actions */}
+        <div className="w-full max-w-[850px] flex flex-col mt-12 gap-8">
+          
+          {/* Header Link - Placed as in Create page */}
+          <div className="px-1">
+             <Link href="/agents-market" className="text-[13px] font-bold text-gray-500 hover:text-[#eaff04] mb-3 inline-block transition uppercase tracking-wider">
+               ← Back to Market
+             </Link>
+          </div>
+
+          {/* Header Section: Vertically Centered Info */}
           <div 
-            className="flex flex-col md:flex-row items-center md:items-start justify-between gap-8 mb-24 p-8 md:p-12 rounded-[1.25rem]"
+            className="flex flex-col md:flex-row items-center justify-between gap-8 p-8 md:p-12 rounded-[1.25rem]"
             style={{ 
-              background: `linear-gradient(to bottom right, ${agentColor}30, #151821 60%)`
+              background: `linear-gradient(to bottom right, ${agentColor}30, ${agentColor}22 60%)`
             }}
           >
-            <div className="flex flex-col md:flex-row items-center md:items-start gap-8 md:gap-14">
+            <div className="flex flex-col md:flex-row items-center gap-0">
               {/* Logo (Left-aligned) - Stripped back */}
               <div className="w-32 h-32 md:w-36 md:h-36 flex items-center justify-center text-7xl md:text-8xl select-none flex-shrink-0">
                 {[...(agent.emoji || '🤖')].slice(0, 3).join('')}
               </div>
 
-              {/* Info */}
-              <div className="flex flex-col items-center md:items-start text-center md:text-left pt-2 md:pt-4">
+              {/* Info - Vertically centered */}
+              <div className="flex flex-col items-center md:items-start text-center md:text-left">
                 <h1 className="text-3xl md:text-5xl font-black tracking-tighter text-white mb-2 leading-none">
                   {agent.name}
                 </h1>
@@ -54,7 +55,7 @@ export default function AgentProfileClient({ agent, initialPosts }) {
               </div>
             </div>
 
-            <div className="flex items-center gap-4 pt-4">
+            <div className="flex items-center gap-4 pt-4 md:pt-0">
                <FollowButton 
                   agentId={agent.id} 
                   creatorId={agent.creator_id} 
@@ -68,23 +69,23 @@ export default function AgentProfileClient({ agent, initialPosts }) {
             </div>
           </div>
 
-          {/* KPI blocks without borders (background only) */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-4 mb-20 w-full">
-             <div className="bg-[#151821] p-6 rounded-[1.25rem] flex flex-col items-center justify-center text-center">
-                <span className="text-xl font-bold text-white mb-1">{agent.follower_count.toLocaleString()}</span>
+          {/* KPI blocks wider and gap-6 */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-16 w-full">
+             <div className="bg-[#151821] p-12 rounded-[1.25rem] flex flex-col items-center justify-center text-center">
+                <span className="text-2xl font-bold text-white mb-1">{agent.follower_count.toLocaleString()}</span>
                 <span className="text-[10px] text-gray-500 font-bold uppercase tracking-[0.2em]">Followers</span>
              </div>
-             <div className="bg-[#151821] p-6 rounded-[1.25rem] flex flex-col items-center justify-center text-center">
-                <span className="text-xl font-bold text-white mb-1">{initialPosts.length}+</span>
+             <div className="bg-[#151821] p-12 rounded-[1.25rem] flex flex-col items-center justify-center text-center">
+                <span className="text-2xl font-bold text-white mb-1">{initialPosts.length}+</span>
                 <span className="text-[10px] text-gray-500 font-bold uppercase tracking-[0.2em]">Posts</span>
              </div>
-             <div className="bg-[#151821] p-6 rounded-[1.25rem] flex flex-col items-center justify-center text-center">
-                <span className="text-xl font-bold text-white mb-1 capitalize">{agent.topic}</span>
+             <div className="bg-[#151821] p-12 rounded-[1.25rem] flex flex-col items-center justify-center text-center">
+                <span className="text-2xl font-bold text-white mb-1 capitalize">{agent.topic}</span>
                 <span className="text-[10px] text-gray-500 font-bold uppercase tracking-[0.2em]">Core Sector</span>
              </div>
           </div>
 
-          {/* Navigation Tabs - Consistent with Create Page style */}
+          {/* Navigation Tabs - Centered inside wider header but feed stays 700px */}
           <div className="flex justify-center gap-2 mb-10">
             <button 
               onClick={() => setActiveTab('posts')}
