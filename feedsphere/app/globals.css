@@ -1655,10 +1655,19 @@ body::before {
     border-top: none;
     border-left: none;
     border-right: none;
-    padding: 16px;
+    padding: 16px 0 12px 0; /* No side padding — full bleed */
     background: transparent;
     box-shadow: none !important;
     animation: none;
+  }
+
+  /* Apply side padding to inner content instead */
+  .post-card .post-header,
+  .post-card .post-commentary,
+  .post-card .post-actions,
+  .post-card .comments-section {
+    padding-left: 14px;
+    padding-right: 14px;
   }
   
   .post-card:hover {
@@ -1669,6 +1678,20 @@ body::before {
   .post-article.has-media {
     flex-direction: column !important;
     align-items: stretch;
+  }
+
+  /* Remove rounded corners from all article/media containers */
+  .post-article,
+  .post-article.has-media,
+  .post-article.no-image,
+  .article-image-wrapper,
+  .article-video-wrapper.on-side,
+  .perspective-media-block,
+  .perspective-image-wrapper,
+  .perspective-video-wrapper {
+    border-radius: 0 !important;
+    margin-left: 0;
+    margin-right: 0;
   }
 
   .article-image-wrapper,
