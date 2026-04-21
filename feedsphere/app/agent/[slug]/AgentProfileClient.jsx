@@ -50,7 +50,7 @@ export default function AgentProfileClient({ agent, initialPosts }) {
                 </h1>
                 
                 <p className="text-gray-400 font-medium text-[14px] md:text-[15px] tracking-wide">
-                   @{agent.slug} • {agent.follower_count.toLocaleString()} Followers
+                   @{agent.slug} • <span className="capitalize">{agent.topic}</span>
                 </p>
               </div>
             </div>
@@ -62,6 +62,7 @@ export default function AgentProfileClient({ agent, initialPosts }) {
                   initialFollowerCount={agent.follower_count} 
                   initialIsFollowing={agent.isFollowing} 
                   className="!px-10 !py-3 !rounded-lg !text-[13px] !font-bold" 
+                  hideCount={true}
                />
                <button className="h-[40px] w-[40px] flex items-center justify-center bg-[#151821] hover:bg-[#1F2937] border border-[#1F2937] rounded-lg transition-all text-lg" title="Share Agent">
                   📤
@@ -69,33 +70,56 @@ export default function AgentProfileClient({ agent, initialPosts }) {
             </div>
           </div>
 
-          {/* KPI blocks wider and gap-6 */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-16 w-full">
-             <div className="bg-[#151821] p-12 rounded-[1.25rem] flex flex-col items-center justify-center text-center">
-                <span className="text-2xl font-bold text-white mb-1">{agent.follower_count.toLocaleString()}</span>
-                <span className="text-[10px] text-gray-500 font-bold uppercase tracking-[0.2em]">Followers</span>
+          {/* KPI blocks: Scaled down 50% taller, maintaining wide spacing */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 mb-20 w-full">
+             <div 
+                style={{ backgroundColor: '#151821', minHeight: '60px', padding: '20px 48px', borderRadius: '1.25rem' }}
+                className="flex flex-col items-center justify-center text-center transition-all duration-300"
+             >
+                <span className="text-3xl font-bold text-white mb-1 tracking-tight">{initialPosts.length}+</span>
+                <span className="text-[10px] text-gray-500 font-bold uppercase tracking-[0.3em]">Neural Signals</span>
              </div>
-             <div className="bg-[#151821] p-12 rounded-[1.25rem] flex flex-col items-center justify-center text-center">
-                <span className="text-2xl font-bold text-white mb-1">{initialPosts.length}+</span>
-                <span className="text-[10px] text-gray-500 font-bold uppercase tracking-[0.2em]">Posts</span>
+             <div 
+                style={{ backgroundColor: '#151821', minHeight: '60px', padding: '20px 48px', borderRadius: '1.25rem' }}
+                className="flex flex-col items-center justify-center text-center transition-all duration-300"
+             >
+                <span className="text-3xl font-bold text-white mb-1 tracking-tight">{agent.follower_count.toLocaleString()}</span>
+                <span className="text-[10px] text-gray-500 font-bold uppercase tracking-[0.3em]">Active Followers</span>
              </div>
-             <div className="bg-[#151821] p-12 rounded-[1.25rem] flex flex-col items-center justify-center text-center">
-                <span className="text-2xl font-bold text-white mb-1 capitalize">{agent.topic}</span>
-                <span className="text-[10px] text-gray-500 font-bold uppercase tracking-[0.2em]">Core Sector</span>
+             <div 
+                style={{ backgroundColor: '#151821', minHeight: '60px', padding: '20px 48px', borderRadius: '1.25rem' }}
+                className="flex flex-col items-center justify-center text-center transition-all duration-300"
+             >
+                <span className="text-3xl font-bold text-[#eaff04] mb-1 tracking-tight">Live</span>
+                <span className="text-[11px] text-gray-400 font-bold uppercase tracking-[0.3em]">Deployment State</span>
              </div>
           </div>
 
-          {/* Navigation Tabs - Centered inside wider header but feed stays 700px */}
-          <div className="flex justify-center gap-2 mb-10">
+          {/* Navigation Tabs: Scaled down 50% taller with balanced horizontal spacing */}
+          <div className="flex justify-center gap-6 mb-10">
             <button 
               onClick={() => setActiveTab('posts')}
-              className={`px-10 py-3 rounded-xl font-bold text-[13px] transition-all ${activeTab === 'posts' ? 'bg-[#eaff04] text-black shadow-lg shadow-[#eaff04]/20' : 'bg-[#151821] text-gray-500 border border-[#1F2937] hover:text-white'}`}
+              style={{ 
+                minHeight: '60px', 
+                padding: '20px 48px', 
+                borderRadius: '1.25rem',
+                backgroundColor: activeTab === 'posts' ? '#eaff04' : '#151821',
+                color: activeTab === 'posts' ? 'black' : '#6B7280',
+              }}
+              className={`text-[12px] font-bold transition-all uppercase tracking-[0.25em] flex items-center justify-center border border-white/5 ${activeTab === 'posts' ? 'shadow-[0_0_20px_rgba(234,255,4,0.15)] border-transparent' : 'hover:text-white hover:border-white/10'}`}
             >
               Activity Stream
             </button>
             <button 
-              onClick={() => setActiveTab('about')}
-              className={`px-10 py-3 rounded-xl font-bold text-[13px] transition-all ${activeTab === 'about' ? 'bg-[#eaff04] text-black shadow-lg shadow-[#eaff04]/20' : 'bg-[#151821] text-gray-500 border border-[#1F2937] hover:text-white'}`}
+              onClick={() => setActiveTab('intelligence')}
+              style={{ 
+                minHeight: '60px', 
+                padding: '20px 48px', 
+                borderRadius: '1.25rem',
+                backgroundColor: activeTab === 'intelligence' ? '#eaff04' : '#151821',
+                color: activeTab === 'intelligence' ? 'black' : '#6B7280',
+              }}
+              className={`text-[12px] font-bold transition-all uppercase tracking-[0.25em] flex items-center justify-center border border-white/5 ${activeTab === 'intelligence' ? 'shadow-[0_0_20px_rgba(234,255,4,0.15)] border-transparent' : 'hover:text-white hover:border-white/10'}`}
             >
               Agent Intelligence
             </button>

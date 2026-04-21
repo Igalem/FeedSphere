@@ -15,61 +15,48 @@ export default function PostCard({ post }) {
   const [newCommentStr, setNewCommentStr] = useState('');
   const [totalComments, setTotalComments] = useState(post.comments_count || 0);
   const [loadingComments, setLoadingComments] = useState(false);
+  const [loadVideo, setLoadVideo] = useState(false);
+  const videoContainerRef = useRef(null);
   const videoRef = useRef(null);
 
-  // Auto-pause video when scrolled out of view
+  // Pre-load and auto-play video before it reaches the viewport
   useEffect(() => {
-    if (!post.video_url || !videoRef.current) return;
+    if (!post.video_url) return;
 
     const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (!videoRef.current?.contentWindow) return;
-
-          // If the video is well into the viewport (60%+), play it
-          if (entry.intersectionRatio >= 0.6) {
-            videoRef.current.contentWindow.postMessage(
-              JSON.stringify({ event: 'command', func: 'playVideo', args: '' }),
-              '*'
-            );
-          } 
-          // If the video is mostly out of view (less than 10%), pause it
-          else if (entry.intersectionRatio < 0.1) {
-            videoRef.current.contentWindow.postMessage(
-              JSON.stringify({ event: 'command', func: 'pauseVideo', args: '' }),
-              '*'
-            );
-          }
-        });
+      ([entry]) => {
+        // Mount/Unmount video 2000px before/after viewport to ensure it's playing when seen
+        setLoadVideo(entry.isIntersecting);
       },
-      { threshold: [0.1, 0.6] }
+      { rootMargin: '2000px 0px', threshold: 0 }
     );
 
-    const currentRef = videoRef.current;
-    observer.observe(currentRef);
-    return () => observer.unobserve(currentRef);
+    if (videoContainerRef.current) {
+      observer.observe(videoContainerRef.current);
+    }
+    return () => observer.disconnect();
   }, [post.video_url]);
 
   const getEmbedUrl = (url) => {
     if (!url) return '';
     if (url.includes('youtube.com/embed')) {
       const separator = url.includes('?') ? '&' : '?';
-      // Added mute=1 to start as muted and enablejsapi=1 for programmatic control
-      // Autoplay is handled by the IntersectionObserver to ensure it starts only when in focus
-      return `${url}${separator}enablejsapi=1&mute=1&autoplay=0`;
+      // Use autoplay=1 and mute=1 so it starts immediately when mounted via loadVideo state
+      return `${url}${separator}enablejsapi=1&mute=1&autoplay=1`;
     }
     if (url.includes('yahoo.com/video')) {
       const match = url.match(/\/video\/(?:.*-)?([a-f0-9-]{36}|[a-f0-9]{32}|\d+)\.html/);
       if (match) {
         const videoId = match[1];
-        return `https://finance.yahoo.com/video/embed/v/${videoId}/?format=embed`;
+        return `https://finance.yahoo.com/video/embed/v/${videoId}/?format=embed&autoplay=1&mute=1`;
       }
-      if (!url.includes('format=embed')) {
-        const separator = url.includes('?') ? '&' : '?';
-        return `${url}${separator}format=embed`;
-      }
+      const separator = url.includes('?') ? '&' : '?';
+      const base = url.includes('format=embed') ? url : `${url}${separator}format=embed`;
+      return `${base}${base.includes('?') ? '&' : '?'}autoplay=1&mute=1`;
     }
-    return url;
+    // Default fallback with autoplay/mute
+    const separator = url.includes('?') ? '&' : '?';
+    return `${url}${separator}autoplay=1&mute=1`;
   };
 
   // Sync count if prop changes
@@ -319,18 +306,20 @@ export default function PostCard({ post }) {
             }}
           >
             {post.video_url ? (
-              <div className="perspective-video-wrapper" style={{ width: '100%', aspectRatio: '16/9' }}>
-                <iframe
-                  ref={videoRef}
-                  width="100%"
-                  height="100%"
-                  src={getEmbedUrl(post.video_url)}
-                  title="Video player"
-                  frameBorder="0"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                  allowFullScreen
-                  style={{ display: 'block' }}
-                ></iframe>
+              <div ref={videoContainerRef} className="perspective-video-wrapper" style={{ width: '100%', aspectRatio: '16/9', background: '#000' }}>
+                {loadVideo && (
+                  <iframe
+                    ref={videoRef}
+                    width="100%"
+                    height="100%"
+                    src={getEmbedUrl(post.video_url)}
+                    title="Video player"
+                    frameBorder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    allowFullScreen
+                    style={{ display: 'block' }}
+                  ></iframe>
+                )}
               </div>
             ) : post.article_image_url && (
               <div className="perspective-image-wrapper">
@@ -382,18 +371,20 @@ export default function PostCard({ post }) {
             <div className="article-excerpt content-auto-dir" dir="auto">{post.article_excerpt}</div>
           </div>
           {post.video_url ? (
-            <div className="article-video-wrapper on-side" onClick={(e) => e.stopPropagation()}>
-               <iframe
-                  ref={videoRef}
-                  width="100%"
-                  height="100%"
-                  src={getEmbedUrl(post.video_url)}
-                  title="Video player"
-                  frameBorder="0"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                  allowFullScreen
-                  style={{ borderRadius: '8px' }}
-                ></iframe>
+            <div ref={videoContainerRef} className="article-video-wrapper on-side" style={{ background: '#000' }} onClick={(e) => e.stopPropagation()}>
+               {loadVideo && (
+                 <iframe
+                    ref={videoRef}
+                    width="100%"
+                    height="100%"
+                    src={getEmbedUrl(post.video_url)}
+                    title="Video player"
+                    frameBorder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    allowFullScreen
+                    style={{ borderRadius: '8px' }}
+                  ></iframe>
+               )}
             </div>
           ) : post.article_image_url && (
             <div className="article-image-wrapper">

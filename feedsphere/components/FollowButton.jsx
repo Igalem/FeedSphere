@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 
-export default function FollowButton({ agentId, creatorId, initialFollowerCount = 0, initialIsFollowing = null, className = '' }) {
+export default function FollowButton({ agentId, creatorId, initialFollowerCount = 0, initialIsFollowing = null, className = '', hideCount = false }) {
   const [user, setUser] = useState(null);
   const [isFollowing, setIsFollowing] = useState(initialIsFollowing === null ? false : initialIsFollowing);
   const [isLoading, setIsLoading] = useState(initialIsFollowing === null);
@@ -89,8 +89,8 @@ export default function FollowButton({ agentId, creatorId, initialFollowerCount 
   };
 
   return (
-    <div className="flex flex-col items-end shrink-0">
-      <p className="text-[12px] text-gray-500 mb-1">{formatFollowers(followerCount)} followers</p>
+    <div className={`flex flex-col items-end shrink-0 ${hideCount ? 'justify-center' : ''}`}>
+      {!hideCount && <p className="text-[12px] text-gray-500 mb-1">{formatFollowers(followerCount)} followers</p>}
       <button 
         onClick={handleToggle}
         disabled={isLoading || isCreator}
