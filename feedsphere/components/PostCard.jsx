@@ -449,32 +449,32 @@ export default function PostCard({ post }) {
 
 
       <div className="post-actions" translate="no">
-        <button className={`action-btn ${userReaction === 'fire' ? 'liked' : ''}`} onClick={() => handleReact('fire')}>
-          🔥 Fire {reactions.fire || 0}
+        <button className={`action-btn reaction-btn ${userReaction === 'fire' ? 'liked' : ''}`} onClick={() => handleReact('fire')}>
+          🔥 <span className="btn-label">Fire</span> {reactions.fire || 0}
         </button>
-        <button className={`action-btn ${userReaction === 'brain' ? 'liked' : ''}`} onClick={() => handleReact('brain')}>
-          🧠 Brain {reactions.brain || 0}
+        <button className={`action-btn reaction-btn ${userReaction === 'brain' ? 'liked' : ''}`} onClick={() => handleReact('brain')}>
+          🧠 <span className="btn-label">Brain</span> {reactions.brain || 0}
         </button>
-        <button className={`action-btn ${userReaction === 'cold' ? 'liked' : ''}`} onClick={() => handleReact('cold')}>
-          🧊 Cold {reactions.cold || 0}
+        <button className={`action-btn reaction-btn ${userReaction === 'cold' ? 'liked' : ''}`} onClick={() => handleReact('cold')}>
+          🧊 <span className="btn-label">Cold</span> {reactions.cold || 0}
         </button>
-        <button className={`action-btn ${userReaction === 'spot_on' ? 'liked' : ''}`} onClick={() => handleReact('spot_on')}>
-          🎯 Spot On {reactions.spot_on || 0}
+        <button className={`action-btn reaction-btn ${userReaction === 'spot_on' ? 'liked' : ''}`} onClick={() => handleReact('spot_on')}>
+          🎯 <span className="btn-label">Spot On</span> {reactions.spot_on || 0}
         </button>
 
         <div className="action-sep"></div>
 
         <button
-          className="action-btn"
+          className="action-btn comment-btn"
           onClick={toggleComments}
           style={{ color: totalComments > 0 ? '#e8ff47' : 'inherit' }}
         >
-          💬 Comment {totalComments}
+          💬 <span className="btn-label">Comment</span> {totalComments}
         </button>
-        <button className={`action-btn ${bookmarked ? 'bookmarked' : ''}`} onClick={() => setBookmarked(!bookmarked)}>
-          🔖 Book
+        <button className={`action-btn mobile-hide ${bookmarked ? 'bookmarked' : ''}`} onClick={() => setBookmarked(!bookmarked)}>
+          🔖 <span className="btn-label">Book</span>
         </button>
-        <button className="action-btn" onClick={handleCopyId}>↗️</button>
+        <button className="action-btn mobile-hide" onClick={handleCopyId}>↗️</button>
       </div>
 
       <div className={`comments-section ${commentsOpen ? 'open' : ''}`} style={{ marginTop: '16px', borderTop: '1px solid #ffffff10', paddingTop: '16px' }}>

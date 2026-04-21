@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/server';
 
 export const dynamic = 'force-dynamic';
 
-export default async function RightPanel() {
+export default async function RightPanel({ className = "panel" }) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   let userFollows = [];
@@ -83,7 +83,7 @@ export default async function RightPanel() {
   } catch (e) { console.error(e); }
 
   return (
-    <aside className="panel">
+    <aside className={className}>
       {PULSE_DATA.length > 0 && (
         <div className="panel-section">
           <div className="panel-title" translate="no">📡 Live Pulse</div>

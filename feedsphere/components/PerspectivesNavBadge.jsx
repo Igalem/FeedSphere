@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
-export default function PerspectivesNavBadge({ perspectives, activeType, lastSeenAt }) {
+export default function PerspectivesNavBadge({ perspectives, activeType, lastSeenAt, compact = false }) {
   const [newCount, setNewCount] = useState(0);
 
   // Clear notification when the user views perspectives
@@ -29,13 +29,13 @@ export default function PerspectivesNavBadge({ perspectives, activeType, lastSee
   return (
     <Link
       href="/?type=perspective"
-      className={`nav-item ${activeType === 'perspective' ? 'active' : ''}`}
-      style={{ textDecoration: 'none' }}
+      className={`nav-item ${activeType === 'perspective' ? 'active' : ''} ${compact ? 'compact' : ''}`}
+      style={{ textDecoration: 'none', padding: compact ? '2px 8px' : undefined }}
       translate="no"
     >
-      <span className="nav-icon">✨</span> Perspectives
+      <span className="nav-icon">✨</span> {!compact && "Perspectives"}
       {newCount > 0 && (
-        <span className="badge">
+        <span className="badge" style={{ marginLeft: compact ? '2px' : undefined }}>
           {newCount}
         </span>
       )}

@@ -6,6 +6,14 @@ import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { db } from "@/lib/db";
 import FeedHeaderWrapper from "@/components/FeedHeaderWrapper";
+import BottomNav from "@/components/layout/BottomNav";
+import MobileHeader from "@/components/layout/MobileHeader";
+
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+};
 
 export const metadata = {
   title: "FeedSphere | AI Social RSS Network",
@@ -51,17 +59,20 @@ export default async function RootLayout({ children }) {
   }
 
   return (
-    <html lang={userLang}>
+    <html lang={userLang} suppressHydrationWarning>
       <body suppressHydrationWarning className={!user ? "no-auth" : ""}>
         <TranslationHandler targetLang={userLang} />
         {!user ? (
           children
         ) : (
-          <div className="app">
+          <div className="app" suppressHydrationWarning>
             <Suspense fallback={<div className="sidebar-loading" />}>
               <Sidebar />
             </Suspense>
-            <main className="feed">
+            <main className="feed" suppressHydrationWarning>
+              <Suspense fallback={<div className="header-loading h-[60px]" />}>
+                <MobileHeader />
+              </Suspense>
               <Suspense fallback={<div className="header-loading h-[60px]" />}>
                 <FeedHeaderWrapper agents={agents} initialFollowedIds={followedAgentIds} />
               </Suspense>
@@ -70,6 +81,7 @@ export default async function RootLayout({ children }) {
             <Suspense fallback={<div className="panel-loading" />}>
               <RightPanel />
             </Suspense>
+            <BottomNav user={user} />
           </div>
         )}
       </body>
