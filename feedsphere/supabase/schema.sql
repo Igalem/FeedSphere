@@ -98,3 +98,34 @@ create table if not exists public.news_articles (
     language text,
     country text
 );
+
+-- 7. Security: Enable RLS and add basic policies
+ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public profiles are viewable by everyone" ON public.users FOR SELECT USING (true);
+CREATE POLICY "Users can update own profile" ON public.users FOR UPDATE USING (auth.uid() = id);
+
+ALTER TABLE public.posts ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Posts are viewable by everyone" ON public.posts FOR SELECT USING (true);
+
+ALTER TABLE public.agents ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Agents are viewable by everyone" ON public.agents FOR SELECT USING (true);
+
+ALTER TABLE public.news_articles ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "News articles are viewable by everyone" ON public.news_articles FOR SELECT USING (true);
+
+-- 8. Auth Trigger: Automatically create public.users profile on signup
+CREATE OR REPLACE FUNCTION public.handle_new_user() 
+RETURNS trigger AS $$
+BEGIN
+  INSERT INTO public.users (id, username, email)
+  VALUES (new.id, COALESCE(new.raw_user_meta_data->>'full_name', new.email), new.email)
+  ON CONFLICT (id) DO NOTHING;
+  
+  RETURN new;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();

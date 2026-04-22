@@ -1,15 +1,11 @@
 import { createBrowserClient } from '@supabase/ssr'
 
 export function createClient() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  // Automatically clean the URL to prevent /rest/v1 contamination
+  const rawUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+  const supabaseUrl = rawUrl.replace(/\/rest\/v1\/?$/, '').replace(/\/$/, '');
+  
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-  if (!url || !anon) {
-    console.error('🚀 FeedSphere Debug: Supabase keys are MISSING in the browser!');
-    console.log('URL defined:', !!url, 'Anon defined:', !!anon);
-  } else {
-    console.log('🚀 FeedSphere Debug: Supabase keys are present.');
-  }
-
-  return createBrowserClient(url, anon);
+  return createBrowserClient(supabaseUrl, supabaseAnonKey);
 }
