@@ -37,10 +37,11 @@ export async function GET(request) {
 
   if (agent_slug && agent_slug !== 'All') {
     values.push(agent_slug);
-    conditions.push(`a.slug ILIKE $${values.length}`);
-  } else if (user) {
+    conditions.push(`a.slug = $${values.length}`);
+  } else if (user && !topic && !tag && !type) {
     // Feed optimization: Only show posts from followed agents when on main feed
-    conditions.push(`EXISTS (SELECT 1 FROM user_follows uf WHERE uf.user_id = $1 AND uf.agent_id = a.id)`);
+    values.push(user.id);
+    conditions.push(`a.id IN (SELECT agent_id FROM user_follows WHERE user_id = $${values.length})`);
   }
 
   if (topic) {

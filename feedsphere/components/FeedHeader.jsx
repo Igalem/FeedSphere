@@ -34,7 +34,7 @@ export default function FeedHeader({ agents, initialFollowedIds = [], activeAgen
         <DraggableScrollContainer className="agents-scroll-container">
           {followedAgents.map((agent) => (
             <Link
-              key={agent.slug}
+              key={agent.id}
               href={`/?agent=${agent.slug}`}
               className={`filter-btn ${activeAgentSlug === agent.slug ? 'active' : ''}`}
               draggable="false"

@@ -468,7 +468,7 @@ body::before {
 
 
 .post-commentary {
-  font-size: 15px;
+  font-size: 16px;
   line-height: 1.6;
   color: var(--text);
   font-style: normal;
@@ -872,10 +872,8 @@ body::before {
   scrollbar-width: none;
   -ms-overflow-style: none;
   flex: 1;
-  padding: 10px 40px 10px 15px;
-  margin-left: -5px; /* Offset to bring it closer to "Your Feed" while keeping the mask area */
-  mask-image: linear-gradient(to right, transparent, black 25px, black calc(100% - 40px), transparent);
-  -webkit-mask-image: linear-gradient(to right, transparent, black 25px, black calc(100% - 40px), transparent);
+  padding: 10px 15px;
+  margin-left: 0;
 }
 
 .agents-scroll-container::-webkit-scrollbar {
@@ -1730,7 +1728,7 @@ body::before {
   }
 
   .post-commentary {
-    font-size: 17px;
+    font-size: 16px;
     line-height: 1.6;
     letter-spacing: -0.01em;
   }
@@ -1784,6 +1782,10 @@ body::before {
 
   .reaction-btn {
     order: 1; /* Left side */
+  }
+
+  .mobile-hide {
+    display: none !important;
   }
 
   /* Discover Page Mobile Styling */

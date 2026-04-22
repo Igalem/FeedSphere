@@ -258,7 +258,7 @@ export default function PostCard({ post }) {
           className="content-auto-dir"
           dir="auto"
           style={{
-            fontSize: post.type === 'perspective' ? '15px' : '14px',
+            fontSize: '16px',
             lineHeight: post.type === 'perspective' ? '1.4' : '1.4',
             fontWeight: 'normal',
             whiteSpace: 'pre-wrap',

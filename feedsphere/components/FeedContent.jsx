@@ -122,25 +122,29 @@ export default function FeedContent({ initialPosts, activeAgent, activeTopic, ac
     }
   };
 
+  const observerTarget = useRef(null);
   useEffect(() => {
-    const feedEl = document.querySelector('.feed');
-    if (!feedEl) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !loadingRef.current) {
+          loadMore();
+        }
+      },
+      { threshold: 0.1, rootMargin: '400px' }
+    );
 
-    const handleScroll = () => {
-      if (feedEl.scrollTop + feedEl.clientHeight + 100 >= feedEl.scrollHeight) {
-        loadMore();
-      }
-    };
-    
-    feedEl.addEventListener('scroll', handleScroll);
-    return () => feedEl.removeEventListener('scroll', handleScroll);
-  }, [offset, debateOffset, hasMore, activeAgent, activeTopic, activeTag, activeType]);
+    if (observerTarget.current) {
+      observer.observe(observerTarget.current);
+    }
+
+    return () => observer.disconnect();
+  }, [hasMore, offset, debateOffset]);
 
   if (isDebateMode) {
     // Note: displayDebates filtering is already done by sortDebates and initial state
     // but we keep the filter for extra safety with activeAgent/Tag/Topic params
     const displayDebates = debates.filter(d => {
-      if (activeAgent) return d.agent_a?.slug === activeAgent || d.agent_b?.slug === activeAgent;
+      if (activeAgent && activeAgent !== 'All') return d.agent_a?.slug === activeAgent || d.agent_b?.slug === activeAgent;
       if (activeTag) return d.tags?.includes(activeTag);
       if (activeTopic) return d.topic === activeTopic;
       return true;
@@ -177,6 +181,7 @@ export default function FeedContent({ initialPosts, activeAgent, activeTopic, ac
             </div>
           )}
         </div>
+        <div ref={observerTarget} style={{ height: '20px' }} />
       </div>
     );
   }
@@ -189,7 +194,7 @@ export default function FeedContent({ initialPosts, activeAgent, activeTopic, ac
   // Build interleaved feed: insert a relevant debate card after every 5th post
   const filteredDebates = debates.filter(d => {
     // 1. Relevance filters
-    if (activeAgent) {
+    if (activeAgent && activeAgent !== 'All') {
       if (d.agent_a?.slug !== activeAgent && d.agent_b?.slug !== activeAgent) return false;
     } else if (activeTag) {
       if (!d.tags?.includes(activeTag)) return false;
@@ -197,9 +202,9 @@ export default function FeedContent({ initialPosts, activeAgent, activeTopic, ac
       if (d.topic !== activeTopic) return false;
     }
 
-    // 2. "Your Feed" logic: remove voted posts
+    // 2. "Your Feed" logic: remove voted posts from the interleaved stream
     // We consider "Your Feed" to be the home view with no specific filters
-    const isYourFeed = !activeAgent && !activeTag && !activeTopic && !activeType;
+    const isYourFeed = (activeAgent === 'All' || !activeAgent) && !activeTag && !activeTopic && !activeType;
     if (isYourFeed && !!d.user_voted_for) {
       return false;
     }
@@ -246,6 +251,7 @@ export default function FeedContent({ initialPosts, activeAgent, activeTopic, ac
           </div>
         )}
       </div>
+      <div ref={observerTarget} style={{ height: '20px' }} />
     </div>
   );
 }

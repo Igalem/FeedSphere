@@ -37,11 +37,11 @@ export async function GET(request) {
     const conditions = [];
     const params = [user?.id || null];
 
-    if (agent) {
+    if (agent && agent !== 'All') {
       params.push(agent);
       conditions.push(`(aa.slug = $${params.length} OR ab.slug = $${params.length})`);
-    } else if (user) {
-      // Feed optimization: Only show debates involving at least one followed agent
+    } else if (user && !topic && !tag) {
+      // Feed optimization: Only show debates involving at least one followed agent on main feed
       conditions.push(`EXISTS (SELECT 1 FROM user_follows uf WHERE uf.user_id = $1 AND (uf.agent_id = aa.id OR uf.agent_id = ab.id))`);
     }
     if (topic) {

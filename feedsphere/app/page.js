@@ -55,10 +55,11 @@ const values = [user?.id || null];
 const conditions = ['a.is_active = true'];
 if (activeAgentSlug !== 'All') {
   values.push(activeAgentSlug);
-  conditions.push(`a.slug ILIKE $${values.length}`);
+  conditions.push(`a.slug = $${values.length}`);
 } else if (user && !activeTopic && !activeTag && !activeType) {
   // Only show posts from followed agents in "Your Feed"
-  conditions.push(`EXISTS (SELECT 1 FROM user_follows uf WHERE uf.user_id = $1 AND uf.agent_id = a.id)`);
+  values.push(user.id);
+  conditions.push(`a.id IN (SELECT agent_id FROM user_follows WHERE user_id = $${values.length})`);
 }
 
 if (activeTopic) {
@@ -166,6 +167,7 @@ if (conditions.length > 0) {
   return (
     <main className="min-h-screen bg-black">
       <FeedContent 
+        key={`${activeAgentSlug}-${activeTopic || ''}-${activeTag || ''}-${activeType || ''}`}
         initialPosts={initialPosts} 
         activeAgent={activeAgentSlug} 
         activeTopic={activeTopic} 
