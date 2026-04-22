@@ -50,7 +50,6 @@ export default function PostCard({ post }) {
     if (!url) return '';
     if (url.includes('youtube.com/embed')) {
       const separator = url.includes('?') ? '&' : '?';
-      // Use autoplay=1 and mute=1 so it starts immediately when mounted via loadVideo state
       return `${url}${separator}enablejsapi=1&mute=1&autoplay=1`;
     }
     if (url.includes('yahoo.com/video')) {
@@ -63,9 +62,17 @@ export default function PostCard({ post }) {
       const base = url.includes('format=embed') ? url : `${url}${separator}format=embed`;
       return `${base}${base.includes('?') ? '&' : '?'}autoplay=1&mute=1`;
     }
-    // Default fallback with autoplay/mute
     const separator = url.includes('?') ? '&' : '?';
     return `${url}${separator}autoplay=1&mute=1`;
+  };
+
+  const isEmbeddable = (url) => {
+    if (!url) return false;
+    if (url.includes('youtube.com')) return true;
+    // Yahoo and Expansion generally block iframes via X-Frame-Options: sameorigin
+    if (url.includes('yahoo.com')) return false;
+    if (url.includes('expansion.com')) return false;
+    return true; // Default to true for others, but YouTube is the safest
   };
 
   // Sync count if prop changes
@@ -329,7 +336,7 @@ export default function PostCard({ post }) {
                   overflow: 'hidden'
                 }}
               >
-                {loadVideo && (
+                {loadVideo && isEmbeddable(post.video_url) ? (
                   <iframe
                     ref={videoRef}
                     width="100%"
@@ -349,6 +356,39 @@ export default function PostCard({ post }) {
                       handleVideoLoad();
                     }}
                   ></iframe>
+                ) : (
+                  isEmbeddable(post.video_url) && (
+                    <div className="video-play-overlay" style={{
+                      position: 'absolute',
+                      inset: 0,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      background: 'rgba(0,0,0,0.2)',
+                      pointerEvents: 'none'
+                    }}>
+                      <div style={{
+                        width: '60px',
+                        height: '60px',
+                        borderRadius: '50%',
+                        background: 'rgba(255,255,255,0.2)',
+                        backdropFilter: 'blur(4px)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        border: '1px solid rgba(255,255,255,0.3)'
+                      }}>
+                        <div style={{
+                          width: '0',
+                          height: '0',
+                          borderTop: '10px solid transparent',
+                          borderBottom: '10px solid transparent',
+                          borderLeft: '16px solid white',
+                          marginLeft: '4px'
+                        }}></div>
+                      </div>
+                    </div>
+                  )
                 )}
               </div>
             ) : post.article_image_url && (
@@ -412,7 +452,7 @@ export default function PostCard({ post }) {
               }} 
               onClick={(e) => e.stopPropagation()}
             >
-               {loadVideo && (
+               {loadVideo && isEmbeddable(post.video_url) ? (
                  <iframe
                     ref={videoRef}
                     width="100%"
@@ -432,6 +472,39 @@ export default function PostCard({ post }) {
                       handleVideoLoad();
                     }}
                   ></iframe>
+               ) : (
+                 isEmbeddable(post.video_url) && (
+                  <div className="video-play-overlay-mini" style={{
+                    position: 'absolute',
+                    inset: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    background: 'rgba(0,0,0,0.1)',
+                    pointerEvents: 'none'
+                  }}>
+                    <div style={{
+                      width: '32px',
+                      height: '32px',
+                      borderRadius: '50%',
+                      background: 'rgba(255,255,255,0.2)',
+                      backdropFilter: 'blur(4px)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      border: '1px solid rgba(255,255,255,0.3)'
+                    }}>
+                       <div style={{
+                        width: '0',
+                        height: '0',
+                        borderTop: '6px solid transparent',
+                        borderBottom: '6px solid transparent',
+                        borderLeft: '10px solid white',
+                        marginLeft: '2px'
+                      }}></div>
+                    </div>
+                  </div>
+                 )
                )}
             </div>
           ) : post.article_image_url && (

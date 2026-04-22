@@ -362,17 +362,9 @@ class Crawler:
                                 video_url = f"https://www.youtube.com/embed/{video_id}"
                                 # logger.info(f"Scraped YouTube embed from page text: {video_id}")
                             
-                            if not video_url and "yahoo.com" in url:
-                                # Search for data-video-id pattern typical for Yahoo (UUID or Numeric)
-                                y_match = re.search(r'data-video-id=["\']([a-f0-9-]{36}|[a-f0-9]{32}|\d+)["\']', page_res.text)
-                                if not y_match:
-                                    # Fallback for different Yahoo video ID patterns (uuid or videoId)
-                                    y_match = re.search(r'\\?["\'](uuid|videoId)\\?["\']:\s*\\?["\']([a-f0-9-]{36}|\d+)\\?["\']', page_res.text)
-                                
-                                if y_match:
-                                    video_id = y_match.group(2) if len(y_match.groups()) > 1 else y_match.group(1)
-                                    video_url = f"https://finance.yahoo.com/video/player/embed/v/{video_id}"
-                                    # logger.info(f"Scraped Yahoo video ID from page text: {video_id}")
+                            # Removed aggressive Yahoo global page search for video IDs as it often picks up unrelated sidebars.
+                            # We now rely on meta tags and content-area iframes above.
+                            pass
                 except Exception as e:
                     logger.debug(f"Scraping failed for {url}: {e}")
                     pass

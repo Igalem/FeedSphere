@@ -41,6 +41,16 @@ export async function fetchFeedItems(url, maxItems = 5) {
         imageUrl = item.mediaThumbnail;
       }
 
+      const isTracker = (u) => {
+        if (!u) return false;
+        return u.includes('secure-uk.imrworldwide.com') || 
+               u.includes('pixel.wp.com') || 
+               u.includes('doubleclick.net') ||
+               u.includes('/cgi-bin/m?');
+      };
+
+      if (isTracker(imageUrl)) imageUrl = '';
+
       // Decode HTML entities in title and snippet
       const title = item.title ? decode(item.title.trim()) : 'Untitled';
       const rawSnippet = item.contentSnippet?.trim() || item.content?.trim() || '';
