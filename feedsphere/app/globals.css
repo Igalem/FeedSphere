@@ -323,8 +323,7 @@ body::before {
 }
 
 .feed-header {
-  position: sticky;
-  top: 0;
+  position: relative;
   background: #0a0a0fee;
   backdrop-filter: blur(20px);
   padding: 0 24px;
@@ -1598,21 +1597,20 @@ body::before {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    position: sticky;
-    top: 0;
-    left: 0;
-    right: 0;
+    position: relative;
     background: rgba(10, 10, 15, 0.9);
     backdrop-filter: blur(20px);
     height: 60px;
     padding: 0 16px;
     z-index: 100;
     border-bottom: 1px solid var(--border);
-    transition: transform 0.3s ease;
   }
   
-  .mobile-header.hide {
-    transform: translateY(-100%);
+  .feed-header {
+    position: relative !important;
+    top: 0 !important;
+    height: 60px;
+    background: rgba(10, 10, 15, 0.9) !important;
   }
 
   .mobile-bottom-nav {

@@ -11,8 +11,6 @@ export default function MobileHeaderClient({ latestPerspectives, initialDebates,
 
   const [localVotedIds, setLocalVotedIds] = useState(votedDebateIds || []);
   const [localLastSeen, setLocalLastSeen] = useState(lastSeenPerspectivesAt);
-  const [isHidden, setIsHidden] = useState(false);
-  const [lastScrollY, setLastScrollY] = useState(0);
 
   useEffect(() => {
     if (activeType === 'perspective') {
@@ -34,34 +32,8 @@ export default function MobileHeaderClient({ latestPerspectives, initialDebates,
     return () => window.removeEventListener('debateVoted', handleVote);
   }, []);
 
-  useEffect(() => {
-    const handleScroll = (e) => {
-      // The feed container is what scrolls, not the window
-      const container = e.target;
-      if (!container) return;
-      
-      const currentScrollY = container.scrollTop;
-      
-      if (currentScrollY > lastScrollY && currentScrollY > 60) {
-        setIsHidden(true);
-      } else if (currentScrollY < lastScrollY) {
-        setIsHidden(false);
-      }
-      setLastScrollY(currentScrollY);
-    };
-
-    const feedEl = document.querySelector('.feed');
-    if (feedEl) {
-      feedEl.addEventListener('scroll', handleScroll, { passive: true });
-    }
-
-    return () => {
-      if (feedEl) feedEl.removeEventListener('scroll', handleScroll);
-    };
-  }, [lastScrollY]);
-
   return (
-    <div className={`mobile-header ${isHidden ? 'hide' : ''}`} translate="no">
+    <div className="mobile-header" translate="no">
       <Link href="/" className="logo" style={{ padding: 0, border: 'none', height: 'auto' }}>
         <div className="logo-mark" style={{ width: '28px', height: '28px', fontSize: '14px', borderRadius: '8px' }}>⚡</div>
         <div className="logo-text" style={{ fontSize: '16px' }}>Feed<span>Sphere</span></div>
