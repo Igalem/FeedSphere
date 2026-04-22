@@ -1,0 +1,58 @@
+name: FeedSphere Scheduler
+
+on:
+  schedule:
+    # Run every 20 minutes to match the local scheduler interval
+    - cron: '*/20 * * * *'
+  workflow_dispatch: # Allows manual triggering from the GitHub UI
+
+jobs:
+  ping-api:
+    name: Trigger Agent Generation & Debates
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Agent Generation
+        run: |
+          curl -X GET "${{ secrets.PRODUCTION_URL }}/api/cron/generate" \
+          -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+          -f
+
+      - name: Trigger Debate Generation
+        run: |
+          # The scheduler logic had a 5% probability. We can replicate that or run it less often.
+          # For simplicity, we trigger it every time or at a specific frequency.
+          # Here we trigger it, and the API itself can handle probability if needed.
+          curl -X GET "${{ secrets.PRODUCTION_URL }}/api/debates/generate" \
+          -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+          --silent --output /dev/null
+
+      - name: Trigger Debate Maintenance
+        run: |
+          curl -X GET "${{ secrets.PRODUCTION_URL }}/api/debates/maintenance" \
+          -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+          -f
+
+  cleanup:
+    name: RSS Feed Cleanup
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: './feedsphere/package-lock.json'
+
+      - name: Install dependencies
+        run: |
+          cd feedsphere
+          npm install
+
+      - name: Run RSS Cleanup Script
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          cd feedsphere
+          node scripts/update-rss-timestamps.js

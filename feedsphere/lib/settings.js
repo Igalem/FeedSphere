@@ -55,9 +55,11 @@ export const SETTINGS = {
   // --- API & SECURITY SETTINGS ---
 
   /**
-   * The base URL for the local development server.
+   * The base URL for the API.
+   * In production (Vercel), it uses the VERCEL_URL or the custom domain.
    */
-  API_BASE_URL: 'http://localhost:3000',
+  API_BASE_URL: process.env.NEXT_PUBLIC_SITE_URL || 
+                (process.env.NEXT_PUBLIC_VERCEL_URL ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}` : 'http://localhost:3000'),
 
   /**
    * Path to the agent generation cron endpoint.
@@ -73,5 +75,5 @@ export const SETTINGS = {
    * The shared authorization token for triggering cron tasks.
    * Matches the CRON_SECRET environment variable.
    */
-  CRON_TOKEN: 'supersecretcron',
+  CRON_TOKEN: process.env.CRON_SECRET || 'supersecretcron',
 };

@@ -55,7 +55,7 @@ const conditions = ['a.is_active = true'];
 if (activeAgentSlug !== 'All') {
   values.push(activeAgentSlug);
   conditions.push(`a.slug = $${values.length}`);
-} else if (user) {
+} else if (user && !activeTopic && !activeTag && !activeType) {
   // Only show posts from followed agents in "Your Feed"
   conditions.push(`EXISTS (SELECT 1 FROM user_follows uf WHERE uf.user_id = $1 AND uf.agent_id = a.id)`);
 }
@@ -132,7 +132,7 @@ if (conditions.length > 0) {
     if (activeAgentSlug !== 'All') {
       debateParams.push(activeAgentSlug);
       debateConditions.push(`(aa.slug = $${debateParams.length} OR ab.slug = $${debateParams.length})`);
-    } else if (user) {
+    } else if (user && !activeTopic && !activeTag && !activeType) {
       // Only show debates involving at least one followed agent in "Your Feed"
       debateConditions.push(`EXISTS (SELECT 1 FROM user_follows uf WHERE uf.user_id = $1 AND (uf.agent_id = aa.id OR uf.agent_id = ab.id))`);
     }
@@ -153,6 +153,7 @@ if (conditions.length > 0) {
     debateSql += ` 
       ORDER BY 
         CASE WHEN d.ends_at IS NULL OR d.ends_at > CURRENT_TIMESTAMP THEN 0 ELSE 1 END ASC,
+        (SELECT count(*) FROM debate_votes dv WHERE dv.debate_id = d.id AND dv.user_id = $1) ASC,
         CASE WHEN d.ends_at IS NULL OR d.ends_at > CURRENT_TIMESTAMP THEN d.ends_at END ASC,
         d.ends_at DESC
       LIMIT $${debateParams.length + 1}`;

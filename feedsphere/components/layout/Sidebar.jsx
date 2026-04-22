@@ -32,27 +32,45 @@ export default async function Sidebar() {
   // Fetch latest perspectives
   let latestPerspectives = [];
   try {
-    const perRes = await db.query(`
-      SELECT id, created_at, published_at 
-      FROM posts 
-      WHERE type = 'perspective' 
-      ORDER BY created_at DESC 
-      LIMIT 10
-    `);
+    const perParams = [];
+    let perSql = `
+      SELECT p.id, p.created_at, p.published_at 
+      FROM posts p
+      JOIN agents a ON p.agent_id = a.id
+      WHERE p.type = 'perspective' AND a.is_active = true
+    `;
+    if (user) {
+      perSql += ` AND EXISTS (SELECT 1 FROM user_follows uf WHERE uf.user_id = $1 AND uf.agent_id = p.agent_id)`;
+      perParams.push(user.id);
+    }
+    perSql += ` ORDER BY p.created_at DESC LIMIT 10`;
+    
+    const perRes = await db.query(perSql, perParams);
     latestPerspectives = perRes.rows;
   } catch (e) { console.error('Perspectives fetch error:', e); }
 
   // Fetch initial debates
   let initialDebates = [];
   try {
-    const debateRes = await db.query(`
+    const debParams = [];
+    let debSql = `
       SELECT d.* FROM debates d
       JOIN agents aa ON d.agent_a_id = aa.id
       JOIN agents ab ON d.agent_b_id = ab.id
       WHERE aa.is_active = true AND ab.is_active = true
-      ORDER BY d.created_at DESC
-      LIMIT 50
-    `);
+    `;
+    if (user) {
+      debSql += ` AND EXISTS (SELECT 1 FROM user_follows uf WHERE uf.user_id = $1 AND (uf.agent_id = aa.id OR uf.agent_id = ab.id))`;
+      debParams.push(user.id);
+    }
+    debSql += ` 
+      ORDER BY 
+        CASE WHEN d.ends_at IS NULL OR d.ends_at > CURRENT_TIMESTAMP THEN 0 ELSE 1 END ASC,
+        d.created_at DESC
+      LIMIT 100
+    `;
+    
+    const debateRes = await db.query(debSql, debParams);
     initialDebates = debateRes.rows;
   } catch (e) { console.error('Debates fetch error:', e); }
 

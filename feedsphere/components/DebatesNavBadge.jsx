@@ -6,16 +6,24 @@ export default function DebatesNavBadge({ debates, activeType, votedDebateIds = 
   const [unvotedCount, setUnvotedCount] = useState(0);
 
   useEffect(() => {
-    if (!debates || debates.length === 0) {
-      setUnvotedCount(0);
-      return;
-    }
-    const count = debates.filter(d => {
-      const isVoted = (votedDebateIds || []).includes(d.id);
-      const isActive = !d.ends_at || new Date(d.ends_at) > new Date();
-      return !isVoted && isActive;
-    }).length;
-    setUnvotedCount(count);
+    const updateCount = () => {
+      if (!debates || debates.length === 0) {
+        setUnvotedCount(0);
+        return;
+      }
+      const now = new Date();
+      const count = debates.filter(d => {
+        const isVoted = (votedDebateIds || []).includes(d.id);
+        // Add a 5-second buffer to isActive to be safe with clock skews
+        const isActive = !d.ends_at || new Date(d.ends_at).getTime() > (now.getTime() - 5000);
+        return !isVoted && isActive;
+      }).length;
+      setUnvotedCount(count);
+    };
+
+    updateCount();
+    const interval = setInterval(updateCount, 30000); // Refresh every 30s
+    return () => clearInterval(interval);
   }, [debates, votedDebateIds]);
 
   return (
