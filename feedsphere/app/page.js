@@ -84,10 +84,8 @@ if (conditions.length > 0) {
 
   let initialPosts = [];
   try {
-    console.log("DEBUG: Running Post Query", { sql, values });
     const res = await db.query(sql, values);
     initialPosts = res.rows;
-    console.log(`DEBUG: Found ${initialPosts.length} posts for slug: ${activeAgentSlug}`);
   } catch (error) {
     console.error("DB Fetch Error:", error);
   }

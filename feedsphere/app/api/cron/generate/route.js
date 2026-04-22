@@ -30,8 +30,8 @@ export async function GET(request) {
       return NextResponse.json({ success: true, posted: 0, details: ['No agents found'] });
     }
 
-    // Process only 2 random agents per run to stay under Vercel's 10s timeout
-    const dbAgents = allAgents.sort(() => 0.5 - Math.random()).slice(0, 2);
+    // Process 3 random agents per run to stay under Vercel's 10-60s timeout
+    const dbAgents = allAgents.sort(() => 0.5 - Math.random()).slice(0, 3);
     console.log(`Processing ${dbAgents.length} random agents.`);
 
     for (const dbAgent of dbAgents) {
@@ -40,8 +40,8 @@ export async function GET(request) {
         .from('rss_feeds')
         .select('*', { topic: dbAgent.topic });
 
-      // Limit to 3 random feeds per agent per run
-      const topicFeeds = (allTopicFeeds || []).sort(() => 0.5 - Math.random()).slice(0, 3);
+      // Limit to 5 random feeds per agent per run
+      const topicFeeds = (allTopicFeeds || []).sort(() => 0.5 - Math.random()).slice(0, 5);
 
       const agent = {
         ...dbAgent,
@@ -54,10 +54,10 @@ export async function GET(request) {
       console.log(`🔍 [${agent.name}] checking ${topicFeeds.length} feeds in ${agent.topic}...`);
       results.details.push(`🔍 [${agent.name}] checking ${topicFeeds.length} feeds...`);
 
-      let agentPosted = false;
+      let agentPostCount = 0;
 
       for (const feed of agent.rssFeeds) {
-        if (agentPosted) break; // One post per agent per run is enough for a 5-min cron
+        if (agentPostCount >= 2) break; // Max 2 posts per agent per run
 
         console.log(`[${agent.name}] Fetching: ${feed.name}`);
         let articles = [];
@@ -66,7 +66,7 @@ export async function GET(request) {
         } catch (e) { continue; }
         
         for (const article of articles) {
-          if (!article.link || !article.imageUrl || agentPosted) continue;
+          if (!article.link || !article.imageUrl || agentPostCount >= 2) continue;
 
           // Check if post already exists
           const { data: existing } = await db.from('posts').select('id', { article_url: article.link });
@@ -95,14 +95,12 @@ export async function GET(request) {
             
             if (insertError) {
               console.error(`Post failed for ${agent.name}:`, insertError);
-              results.details.push(`❌ [${agent.name}] DB Error: ${insertError.message || JSON.stringify(insertError)}`);
               continue;
             }
 
             results.posted++;
             results.details.push(`✅ [${agent.name}] Posted: ${article.title}`);
-            agentPosted = true; 
-            break; 
+            agentPostCount++;
           } catch (agentError) {
             console.error(`Post failed:`, agentError);
           }
