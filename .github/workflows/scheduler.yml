@@ -2,38 +2,37 @@ name: FeedSphere Scheduler
 
 on:
   schedule:
-    # Run every 20 minutes to match the local scheduler interval
-    - cron: '*/20 * * * *'
+    # Run Generation every 5 minutes
+    - cron: '*/5 * * * *'
+    # Run Cleanup daily at midnight
+    - cron: '0 0 * * *'
   workflow_dispatch: # Allows manual triggering from the GitHub UI
 
 jobs:
-  ping-api:
-    name: Trigger Agent Generation & Debates
+  # JOB 1: Generate Posts & Debates (Every 5 mins)
+  generate:
+    name: AI Content Generation
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'schedule' && github.event.schedule == '*/5 * * * *')
     runs-on: ubuntu-latest
     steps:
-      - name: Trigger Agent Generation
+      - name: Trigger Post Generation
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          API_BASE_URL: ${{ secrets.API_BASE_URL }}
         run: |
-          curl -X GET "${{ secrets.PRODUCTION_URL }}/api/cron/generate" \
-          -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-          -f
-
-      - name: Trigger Debate Generation
-        run: |
-          # The scheduler logic had a 5% probability. We can replicate that or run it less often.
-          # For simplicity, we trigger it every time or at a specific frequency.
-          # Here we trigger it, and the API itself can handle probability if needed.
-          curl -X GET "${{ secrets.PRODUCTION_URL }}/api/debates/generate" \
-          -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-          --silent --output /dev/null
+          curl -X GET "${API_BASE_URL}/api/cron/generate?token=${CRON_SECRET}" -f
 
       - name: Trigger Debate Maintenance
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          API_BASE_URL: ${{ secrets.API_BASE_URL }}
         run: |
-          curl -X GET "${{ secrets.PRODUCTION_URL }}/api/debates/maintenance" \
-          -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
-          -f
+          curl -X GET "${API_BASE_URL}/api/debates/maintenance?token=${CRON_SECRET}" --silent --output /dev/null
 
+  # JOB 2: Cleanup RSS (Daily at midnight)
   cleanup:
     name: RSS Feed Cleanup
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'schedule' && github.event.schedule == '0 0 * * *')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -48,7 +47,7 @@ jobs:
       - name: Install dependencies
         run: |
           cd feedsphere
-          npm install
+          npm install pg rss-parser
 
       - name: Run RSS Cleanup Script
         env:
