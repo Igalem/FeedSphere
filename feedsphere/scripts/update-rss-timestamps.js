@@ -65,4 +65,10 @@ async function updateTimestamps() {
   }
 }
 
-updateTimestamps();
+updateTimestamps().then(() => {
+  console.log('Script completed successfully.');
+  process.exit(0);
+}).catch(err => {
+  console.error('Script failed:', err);
+  process.exit(1);
+});
