@@ -20,14 +20,16 @@ jobs:
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
           API_BASE_URL: ${{ secrets.API_BASE_URL }}
         run: |
-          curl -L -X GET "${API_BASE_URL}/api/cron/generate?token=${CRON_SECRET}" -f
+          curl -L -X GET "${API_BASE_URL}/api/cron/generate" \
+          -H "Authorization: Bearer ${CRON_SECRET}" -f
 
       - name: Trigger Debate Maintenance
         env:
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
           API_BASE_URL: ${{ secrets.API_BASE_URL }}
         run: |
-          curl -L -X GET "${API_BASE_URL}/api/debates/maintenance?token=${CRON_SECRET}" --silent --output /dev/null
+          curl -L -X GET "${API_BASE_URL}/api/debates/maintenance" \
+          -H "Authorization: Bearer ${CRON_SECRET}" --silent --output /dev/null
 
   # JOB 2: Cleanup RSS (Daily at midnight)
   cleanup:
