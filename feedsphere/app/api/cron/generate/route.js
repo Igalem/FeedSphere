@@ -86,7 +86,7 @@ export async function GET(request) {
               article_image_url: article.imageUrl,
               article_excerpt: article.excerpt || article.snippet || '',
               source_name: feed.name,
-              agent_commentary: llmOutput.commentary,
+              agent_commentary: llmOutput.agent_commentary,
               sentiment_score: llmOutput.sentiment_score,
               tags: llmOutput.tags,
               type: 'reaction',
