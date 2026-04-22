@@ -391,7 +391,8 @@ Return ONLY the JSON object.`;
   try {
     const jsonMatch = response.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
-      return { commentary: response, sentiment_score: 50, tags: ['Perspective'] };
+      console.warn('[LLM] Perspective response had no JSON, using raw text.');
+      return { agent_commentary: response, sentiment_score: 50, tags: ['Perspective'] };
     }
 
     let jsonStr = jsonMatch[0]
@@ -424,30 +425,22 @@ Return ONLY the JSON object.`;
           tags: tags
         };
       }
-      return { agent_commentary: response, sentiment_score: 50, tags: ['Perspective'] };
+      return { agent_commentary: commentary || response, sentiment_score: sentiment, tags: tags };
     } catch (e) {
+      console.error('[LLM] Perspective JSON parse failed, attempting regex fallback:', e);
       // Regex extraction logic for robustness
-      const commKey = jsonStr.includes("agent_commentary") ? "agent_commentary" : "commentary";
-      const commentaryMatch = jsonStr.match(new RegExp(`"${commKey}"\\s*:\\s*"([\\s\\S]*?)"\\s*(?:,|\\n|\\s*\\})`));
-      const sentimentMatch = jsonStr.match(/"sentiment_score"\s*:\s*(-? \d+)/);
+      const commentaryMatch = jsonStr.match(/"agent_commentary"\s*:\s*"([\s\S]*?)"\s*[,}]/);
+      const sentimentMatch = jsonStr.match(/"sentiment_score"\s*:\s*(\d+)/);
       
-      let commentary = commentaryMatch ? commentaryMatch[1].trim() : "";
-      if (commentary) {
-        return {
-          agent_commentary: commentary.replace(/\\n/g, '\n').replace(/\\"/g, '"').replace(/^"|"$/g, '').trim(),
-          sentiment_score: sentimentMatch ? parseInt(sentimentMatch[1], 10) : 50,
-          tags: ['Perspective']
-        };
-      }
-      throw e;
+      return { 
+        agent_commentary: commentaryMatch ? commentaryMatch[1].replace(/\\n/g, '\n').replace(/\\"/g, '"') : response, 
+        sentiment_score: sentimentMatch ? parseInt(sentimentMatch[1], 10) : 50, 
+        tags: ['Perspective'] 
+      };
     }
-  } catch (e) {
-    console.error('Failed to parse Perspective LLM JSON:', e.message);
-    return {
-      agent_commentary: response,
-      sentiment_score: 50,
-      tags: ['Perspective']
-    };
+  } catch (err) {
+    console.error('[LLM] generateAgentPerspective failed completely:', err);
+    return { agent_commentary: response || "Analysis unavailable.", sentiment_score: 50, tags: ['Error'] };
   }
 }
 
@@ -483,12 +476,23 @@ Return ONLY the JSON object.`;
     temperature: 0.9,
     responseMimeType: "application/json"
   });
+  
+  await new Promise(r => setTimeout(r, 1000));
+
   const responseB = await generateLLMResponse(buildPrompt(agentB, agentA.name), userMsg, { 
     maxTokens: 300, 
     temperature: 0.9,
     responseMimeType: "application/json"
   });
-  const questionRaw = await generateLLMResponse(questionPrompt, [{ role: 'user', content: 'Debate question.' }], { maxTokens: 60, temperature: 0.8 });
+
+  await new Promise(r => setTimeout(r, 500));
+
+  let questionRaw = article.title;
+  try {
+    questionRaw = await generateLLMResponse(questionPrompt, [{ role: 'user', content: 'Debate question.' }], { maxTokens: 60, temperature: 0.8 });
+  } catch (qErr) {
+    console.warn('[LLM] Question generation failed, using article title.', qErr);
+  }
 
   const parse = (raw, fallback) => {
     try {

@@ -11,8 +11,8 @@ export async function GET(request) {
 
   // Optional auth
   if (process.env.CRON_SECRET) {
-    const authHeader = request.headers.get('Authorization');
-    if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    const authHeader = request.headers.get('authorization');
+    if (authHeader !== `Bearer ${SETTINGS.CRON_TOKEN}`) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
   }

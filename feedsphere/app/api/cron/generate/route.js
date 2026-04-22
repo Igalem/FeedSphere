@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { fetchFeedItems } from '@/lib/rss';
-import { generateAgentPost, resetLLMMaster } from '@/lib/llm';
+import { generateAgentPost, generateAgentPerspective, resetLLMMaster } from '@/lib/llm';
 import { SETTINGS } from '@/lib/settings';
 
 
@@ -67,40 +67,100 @@ export async function GET(request) {
             articles = await fetchFeedItems(feed.url, 5);
           } catch (e) { continue; }
 
+          if (articles.length === 0) {
+            console.log(`[${agent.name}] No articles found in feed: ${feed.url}`);
+            continue;
+          }
+
           for (const article of articles) {
-            if (!article.link || !article.imageUrl || postedInThisRound || agent.postCount >= 2) continue;
+            if (!article.link || postedInThisRound || agent.postCount >= 2) continue;
 
             const { data: existing } = await db.from('posts').select('id', { article_url: article.link });
             if (existing?.length > 0) continue;
 
             try {
-              const llmOutput = await generateAgentPost(agent, {
-                title: article.title,
-                snippet: article.snippet || '',
-                sourceName: feed.name
-              });
+              // --- PERSPECTIVE MODE (Probability Check) ---
+              const isPerspectiveRun = article.imageUrl && Math.random() < SETTINGS.PERSPECTIVE_PROBABILITY;
+              
+              if (isPerspectiveRun) {
+                console.log(`[Perspective] Generating for ${agent.name}...`);
+                const perspective = await generateAgentPerspective(agent, [article]);
+                
+                await db.from('posts').insert({
+                  agent_id: agent.id,
+                  article_title: article.title,
+                  article_url: article.link,
+                  article_image_url: article.imageUrl,
+                  article_excerpt: article.excerpt || article.snippet || '',
+                  source_name: feed.name,
+                  agent_commentary: perspective.agent_commentary,
+                  sentiment_score: perspective.sentiment_score,
+                  tags: perspective.tags,
+                  type: 'perspective',
+                  published_at: article.pubDate ? new Date(article.pubDate).toISOString() : new Date().toISOString()
+                });
+                
+                results.details.push(`🌟 [${agent.name}] POSTED PERSPECTIVE: ${article.title}`);
+              } else {
+                // Standard Reaction Post
+                const llmOutput = await generateAgentPost(agent, {
+                  title: article.title,
+                  snippet: article.snippet || '',
+                  sourceName: feed.name
+                });
 
-              await db.from('posts').insert({
-                agent_id: agent.id,
-                article_title: article.title,
-                article_url: article.link,
-                article_image_url: article.imageUrl,
-                article_excerpt: article.excerpt || article.snippet || '',
-                source_name: feed.name,
-                agent_commentary: llmOutput.agent_commentary,
-                sentiment_score: llmOutput.sentiment_score,
-                tags: llmOutput.tags,
-                type: 'reaction',
-                published_at: article.pubDate ? new Date(article.pubDate).toISOString() : new Date().toISOString()
-              });
+                await db.from('posts').insert({
+                  agent_id: agent.id,
+                  article_title: article.title,
+                  article_url: article.link,
+                  article_image_url: article.imageUrl || null,
+                  article_excerpt: article.excerpt || article.snippet || '',
+                  source_name: feed.name,
+                  agent_commentary: llmOutput.agent_commentary,
+                  sentiment_score: llmOutput.sentiment_score,
+                  tags: llmOutput.tags,
+                  type: 'reaction',
+                  published_at: article.pubDate ? new Date(article.pubDate).toISOString() : new Date().toISOString()
+                });
+                
+                results.details.push(`✅ [${agent.name}] Posted: ${article.title}`);
+              }
 
               results.posted++;
               agent.postCount++;
               postedInThisRound = true;
-              results.details.push(`✅ [${agent.name}] Posted: ${article.title}`);
-            } catch (err) { console.error(err); }
+              
+              // Small delay to avoid hitting LLM rate limits too hard
+              await new Promise(r => setTimeout(r, 1000));
+            } catch (err) { 
+              console.error(`[${agent.name}] Generation failed:`, err);
+              results.errors++;
+            }
           }
         }
+      }
+    }
+
+    // 4. DEBATE TRIGGER (Global chance)
+    if (Math.random() < SETTINGS.DEBATE_PROBABILITY) {
+      console.log('Triggering global debate generation...');
+      try {
+        // Internal fetch to the debates generate endpoint
+        const debateUrl = `${SETTINGS.API_BASE_URL}/api/debates/generate`;
+        const authHeader = `Bearer ${SETTINGS.CRON_TOKEN}`;
+        
+        const debateRes = await fetch(debateUrl, {
+          headers: { 'Authorization': authHeader }
+        });
+        
+        if (debateRes.ok) {
+          const debateData = await debateRes.json();
+          results.details.push(`🔥 GLOBAL DEBATE CREATED: ${debateData.debate?.topic || 'Success'}`);
+        } else {
+          console.warn('Debate generation trigger failed:', await debateRes.text());
+        }
+      } catch (debErr) {
+        console.error('Debate trigger error:', debErr);
       }
     }
 
