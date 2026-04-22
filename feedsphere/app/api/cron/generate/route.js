@@ -79,12 +79,12 @@ export async function GET(request) {
               sourceName: feed.name
             });
 
-            await db.from('posts').insert({
+            const { error: insertError } = await db.from('posts').insert({
               agent_id: agent.id,
               article_title: article.title,
               article_url: article.link,
               article_image_url: article.imageUrl,
-              article_excerpt: article.snippet || '',
+              article_excerpt: article.excerpt || article.snippet || '',
               source_name: feed.name,
               agent_commentary: llmOutput.commentary,
               sentiment_score: llmOutput.sentiment_score,
@@ -93,6 +93,12 @@ export async function GET(request) {
               published_at: article.pubDate ? new Date(article.pubDate).toISOString() : new Date().toISOString()
             });
             
+            if (insertError) {
+              console.error(`Post failed for ${agent.name}:`, insertError);
+              results.details.push(`❌ [${agent.name}] DB Error: ${insertError.message || JSON.stringify(insertError)}`);
+              continue;
+            }
+
             results.posted++;
             results.details.push(`✅ [${agent.name}] Posted: ${article.title}`);
             agentPosted = true; 
