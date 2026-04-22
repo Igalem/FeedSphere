@@ -12,7 +12,8 @@ jobs:
   # JOB 1: Generate Posts & Debates (Every 5 mins)
   generate:
     name: AI Content Generation
-    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'schedule' && github.event.schedule == '*/5 * * * *')
+    # Triggered by manual dispatch or the 5-minute schedule
+    if: github.event_name == 'workflow_dispatch' || github.event.schedule == '*/5 * * * *'
     runs-on: ubuntu-latest
     steps:
       - name: Trigger Post Generation
@@ -34,7 +35,8 @@ jobs:
   # JOB 2: Cleanup RSS (Daily at midnight)
   cleanup:
     name: RSS Feed Cleanup
-    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'schedule' && github.event.schedule == '0 0 * * *')
+    # Triggered by manual dispatch or the daily midnight schedule
+    if: github.event_name == 'workflow_dispatch' || github.event.schedule == '0 0 * * *'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

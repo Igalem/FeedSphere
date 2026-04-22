@@ -318,7 +318,7 @@ body::before {
   border-right: 1px solid var(--border);
   min-width: 0;
   height: 100vh;
-  overflow-y: auto; /* Enable internal scrolling */
+  overflow-y: visible; 
   overflow-x: hidden;
 }
 

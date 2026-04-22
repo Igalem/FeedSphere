@@ -5,8 +5,9 @@ import Link from 'next/link';
 import DraggableScrollContainer from '@/components/DraggableScrollContainer';
 import { createClient } from '@/lib/supabase/server';
 import FeedHeader from '@/components/FeedHeader';
+import PullToRefresh from '@/components/PullToRefresh';
 
-export const revalidate = 60;
+export const revalidate = 1;
 
 export default async function Home({ searchParams }) {
   const { agent: agentSlug, topic, tag, type } = await searchParams; 
@@ -163,15 +164,15 @@ if (conditions.length > 0) {
   }
 
   return (
-    <div id="feedContent">
+    <main className="min-h-screen bg-black">
       <FeedContent 
         initialPosts={initialPosts} 
-        activeAgent={agentSlug} 
+        activeAgent={activeAgentSlug} 
         activeTopic={activeTopic} 
         activeTag={activeTag}
         activeType={activeType}
         initialDebates={initialDebates}
       />
-    </div>
+    </main>
   );
 }

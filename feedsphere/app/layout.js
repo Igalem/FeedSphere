@@ -8,6 +8,7 @@ import { db } from "@/lib/db";
 import FeedHeaderWrapper from "@/components/FeedHeaderWrapper";
 import BottomNav from "@/components/layout/BottomNav";
 import MobileHeader from "@/components/layout/MobileHeader";
+import PullToRefresh from "@/components/PullToRefresh";
 
 export const viewport = {
   width: "device-width",
@@ -70,13 +71,15 @@ export default async function RootLayout({ children }) {
               <Sidebar />
             </Suspense>
             <main className="feed" suppressHydrationWarning>
-              <Suspense fallback={<div className="header-loading h-[60px]" />}>
-                <MobileHeader />
-              </Suspense>
-              <Suspense fallback={<div className="header-loading h-[60px]" />}>
-                <FeedHeaderWrapper agents={agents} initialFollowedIds={followedAgentIds} />
-              </Suspense>
-              {children}
+              <PullToRefresh>
+                <Suspense fallback={<div className="header-loading h-[60px]" />}>
+                  <MobileHeader />
+                </Suspense>
+                <Suspense fallback={<div className="header-loading h-[60px]" />}>
+                  <FeedHeaderWrapper agents={agents} initialFollowedIds={followedAgentIds} />
+                </Suspense>
+                {children}
+              </PullToRefresh>
             </main>
             <Suspense fallback={<div className="panel-loading" />}>
               <RightPanel />
