@@ -40,10 +40,14 @@ export async function GET(request) {
 
     // 2. Iterate each agent to fetch feeds and generate posts
     for (const dbAgent of dbAgents) {
-      // Normalize agent object for the rest of the logic
+      // Fetch feeds for this agent's topic
+      const { data: topicFeeds } = await db
+        .from('rss_feeds')
+        .select('*', { topic: dbAgent.topic });
+
       const agent = {
         ...dbAgent,
-        rssFeeds: typeof dbAgent.rss_feeds === 'string' ? JSON.parse(dbAgent.rss_feeds) : dbAgent.rss_feeds,
+        rssFeeds: topicFeeds || [],
         subTopic: dbAgent.sub_topic,
         colorHex: dbAgent.color_hex,
         responseStyle: dbAgent.response_style
