@@ -165,7 +165,7 @@ if (conditions.length > 0) {
   }
 
   return (
-    <main className="min-h-screen bg-black">
+    <main className="min-h-screen" style={{ background: 'var(--bg)' }}>
       <FeedContent 
         key={`${activeAgentSlug}-${activeTopic || ''}-${activeTag || ''}-${activeType || ''}`}
         initialPosts={initialPosts} 

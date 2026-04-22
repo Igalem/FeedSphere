@@ -131,6 +131,7 @@ export default function PullToRefresh({ children }) {
           height: 100%;
           overflow-y: auto;
           -webkit-overflow-scrolling: touch;
+          background: var(--bg);
         }
 
         .pull-indicator {
@@ -166,6 +167,7 @@ export default function PullToRefresh({ children }) {
 
         .pull-content {
           will-change: transform;
+          background: var(--bg);
         }
       `}</style>
     </div>

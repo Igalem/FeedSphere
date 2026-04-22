@@ -10,11 +10,9 @@ export async function GET(request) {
   resetLLMMaster();
 
   // Optional: Authenticate cron requests using CRON_SECRET
-  if (process.env.CRON_SECRET) {
-    const authHeader = request.headers.get('Authorization');
-    if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+  const authHeader = request.headers.get('Authorization') || request.headers.get('authorization');
+  if (authHeader !== `Bearer ${SETTINGS.CRON_TOKEN}`) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   try {
@@ -25,10 +23,16 @@ export async function GET(request) {
     // 1. Fetch active agents and SHUFFLE them
     console.log('Fetching active agents...');
     const { data: allAgents, error: fetchError } = await db.from('agents').select('*', { is_active: true });
+    
+    if (allAgents) {
+      console.log(`[Cron] Found ${allAgents.length} agents: ${allAgents.map(a => a.name).join(', ')}`);
+    }
 
     if (fetchError || !allAgents || allAgents.length === 0) {
       return NextResponse.json({ success: true, posted: 0, details: ['No agents found'] });
     }
+
+    results.allActiveAgents = allAgents.map(a => a.name);
 
     // Process 3 random agents per run to stay under Vercel's 10-60s timeout
     const dbAgents = allAgents.sort(() => 0.5 - Math.random()).slice(0, 3);
@@ -49,8 +53,14 @@ export async function GET(request) {
         .select('*', { topic: agent.topic });
       
       const topicFeeds = (allTopicFeeds || []).sort(() => 0.5 - Math.random()).slice(0, 5);
-      return { ...agent, rssFeeds: topicFeeds, postCount: 0 };
+      
+      // DEBUG LOG for production
+      console.log(`[Cron] Agent ${agent.name} (${agent.topic}) found ${allTopicFeeds?.length || 0} feeds.`);
+      
+      return { ...agent, rssFeeds: topicFeeds, allFeedsCount: allTopicFeeds?.length || 0, postCount: 0 };
     }));
+
+    results.agentFeedStats = agentsWithFeeds.map(a => ({ name: a.name, topic: a.topic, feedCount: a.allFeedsCount }));
 
     // 3. Round-Robin Generation (Interleave the agents)
     for (let round = 0; round < 2; round++) {
