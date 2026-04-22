@@ -34,9 +34,10 @@ export async function updateSession(request) {
   const url = new URL(request.url)
   const isLoginPage = url.pathname === '/login'
   const isAuthCallback = url.pathname.startsWith('/auth/callback')
+  const isApiRoute = url.pathname.startsWith('/api')
 
-  // Rule 1: Redirect unauthenticated users to /login
-  if (!user && !isLoginPage && !isAuthCallback) {
+  // Rule 1: Redirect unauthenticated users to /login (except for Auth callback and API routes)
+  if (!user && !isLoginPage && !isAuthCallback && !isApiRoute) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
