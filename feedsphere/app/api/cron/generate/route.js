@@ -34,75 +34,71 @@ export async function GET(request) {
     const dbAgents = allAgents.sort(() => 0.5 - Math.random()).slice(0, 3);
     console.log(`Processing ${dbAgents.length} random agents.`);
 
-    for (const dbAgent of dbAgents) {
-      // Fetch and SHUFFLE feeds for this agent's topic
+    // 2. Pre-prepare agents and their feeds
+    const agents = dbAgents.map(dbAgent => ({
+      ...dbAgent,
+      subTopic: dbAgent.sub_topic,
+      colorHex: dbAgent.color_hex,
+      responseStyle: dbAgent.response_style
+    }));
+
+    // Fetch feeds for all agents in parallel
+    const agentsWithFeeds = await Promise.all(agents.map(async (agent) => {
       const { data: allTopicFeeds } = await db
         .from('rss_feeds')
-        .select('*', { topic: dbAgent.topic });
-
-      // Limit to 5 random feeds per agent per run
-      const topicFeeds = (allTopicFeeds || []).sort(() => 0.5 - Math.random()).slice(0, 5);
-
-      const agent = {
-        ...dbAgent,
-        rssFeeds: topicFeeds,
-        subTopic: dbAgent.sub_topic,
-        colorHex: dbAgent.color_hex,
-        responseStyle: dbAgent.response_style
-      };
+        .select('*', { topic: agent.topic });
       
-      console.log(`🔍 [${agent.name}] checking ${topicFeeds.length} feeds in ${agent.topic}...`);
-      results.details.push(`🔍 [${agent.name}] checking ${topicFeeds.length} feeds...`);
+      const topicFeeds = (allTopicFeeds || []).sort(() => 0.5 - Math.random()).slice(0, 5);
+      return { ...agent, rssFeeds: topicFeeds, postCount: 0 };
+    }));
 
-      let agentPostCount = 0;
+    // 3. Round-Robin Generation (Interleave the agents)
+    for (let round = 0; round < 2; round++) {
+      for (const agent of agentsWithFeeds) {
+        if (agent.postCount >= 2) continue;
 
-      for (const feed of agent.rssFeeds) {
-        if (agentPostCount >= 2) break; // Max 2 posts per agent per run
-
-        console.log(`[${agent.name}] Fetching: ${feed.name}`);
-        let articles = [];
-        try {
-          articles = await fetchFeedItems(feed.url, 3);
-        } catch (e) { continue; }
+        let postedInThisRound = false;
         
-        for (const article of articles) {
-          if (!article.link || !article.imageUrl || agentPostCount >= 2) continue;
+        for (const feed of agent.rssFeeds) {
+          if (postedInThisRound || agent.postCount >= 2) break;
 
-          // Check if post already exists
-          const { data: existing } = await db.from('posts').select('id', { article_url: article.link });
-          if (existing?.length > 0) continue;
-
+          let articles = [];
           try {
-            const llmOutput = await generateAgentPost(agent, {
-              title: article.title,
-              snippet: article.snippet || '',
-              sourceName: feed.name
-            });
+            articles = await fetchFeedItems(feed.url, 5);
+          } catch (e) { continue; }
 
-            const { error: insertError } = await db.from('posts').insert({
-              agent_id: agent.id,
-              article_title: article.title,
-              article_url: article.link,
-              article_image_url: article.imageUrl,
-              article_excerpt: article.excerpt || article.snippet || '',
-              source_name: feed.name,
-              agent_commentary: llmOutput.agent_commentary,
-              sentiment_score: llmOutput.sentiment_score,
-              tags: llmOutput.tags,
-              type: 'reaction',
-              published_at: article.pubDate ? new Date(article.pubDate).toISOString() : new Date().toISOString()
-            });
-            
-            if (insertError) {
-              console.error(`Post failed for ${agent.name}:`, insertError);
-              continue;
-            }
+          for (const article of articles) {
+            if (!article.link || !article.imageUrl || postedInThisRound || agent.postCount >= 2) continue;
 
-            results.posted++;
-            results.details.push(`✅ [${agent.name}] Posted: ${article.title}`);
-            agentPostCount++;
-          } catch (agentError) {
-            console.error(`Post failed:`, agentError);
+            const { data: existing } = await db.from('posts').select('id', { article_url: article.link });
+            if (existing?.length > 0) continue;
+
+            try {
+              const llmOutput = await generateAgentPost(agent, {
+                title: article.title,
+                snippet: article.snippet || '',
+                sourceName: feed.name
+              });
+
+              await db.from('posts').insert({
+                agent_id: agent.id,
+                article_title: article.title,
+                article_url: article.link,
+                article_image_url: article.imageUrl,
+                article_excerpt: article.excerpt || article.snippet || '',
+                source_name: feed.name,
+                agent_commentary: llmOutput.agent_commentary,
+                sentiment_score: llmOutput.sentiment_score,
+                tags: llmOutput.tags,
+                type: 'reaction',
+                published_at: article.pubDate ? new Date(article.pubDate).toISOString() : new Date().toISOString()
+              });
+
+              results.posted++;
+              agent.postCount++;
+              postedInThisRound = true;
+              results.details.push(`✅ [${agent.name}] Posted: ${article.title}`);
+            } catch (err) { console.error(err); }
           }
         }
       }

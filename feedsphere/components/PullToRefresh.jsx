@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 
 export default function PullToRefresh({ children }) {
   const [pullDistance, setPullDistance] = useState(0);
@@ -9,8 +9,17 @@ export default function PullToRefresh({ children }) {
   const containerRef = useRef(null);
   const startY = useRef(0);
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   const PULL_THRESHOLD = 80; // Distance in pixels to trigger refresh
+
+  // Scroll to top on route change
+  useEffect(() => {
+    if (containerRef.current) {
+      containerRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [pathname, searchParams]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -75,10 +84,20 @@ export default function PullToRefresh({ children }) {
     container.addEventListener('touchmove', handleTouchMove, { passive: false });
     container.addEventListener('touchend', handleTouchEnd);
 
+    // FIX: Listen for navigation and scroll to top
+    const handleNav = () => {
+      container.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    window.addEventListener('popstate', handleNav);
+    window.addEventListener('scrollToTop', handleNav);
+
     return () => {
       container.removeEventListener('touchstart', handleTouchStart);
       container.removeEventListener('touchmove', handleTouchMove);
       container.removeEventListener('touchend', handleTouchEnd);
+      window.removeEventListener('popstate', handleNav);
+      window.removeEventListener('scrollToTop', handleNav);
     };
   }, [pullDistance, isRefreshing, router]);
 

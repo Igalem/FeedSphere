@@ -323,7 +323,8 @@ body::before {
 }
 
 .feed-header {
-  position: relative;
+  position: sticky;
+  top: 0;
   background: #0a0a0fee;
   backdrop-filter: blur(20px);
   padding: 0 24px;
@@ -1600,8 +1601,9 @@ body::before {
     position: relative;
     background: rgba(10, 10, 15, 0.9);
     backdrop-filter: blur(20px);
-    height: 60px;
-    padding: 0 16px;
+    min-height: 60px;
+    height: auto;
+    padding: env(safe-area-inset-top, 0px) 16px 0 16px;
     z-index: 100;
     border-bottom: 1px solid var(--border);
   }
@@ -1723,7 +1725,46 @@ body::before {
     display: none;
   }
 
-  .mobile-hide {
+  .post-agent-name {
+    font-size: 16px;
+  }
+
+  .post-commentary {
+    font-size: 17px;
+    line-height: 1.6;
+    letter-spacing: -0.01em;
+  }
+
+  .article-title {
+    font-size: 17px;
+    line-height: 1.4;
+  }
+
+  .article-excerpt {
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  .filter-btn {
+    font-size: 15px;
+    height: 44px;
+    padding: 0 20px;
+  }
+
+  .post-agent-name {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+  }
+
+  .perspective-pill-inline {
+    position: static !important;
+    transform: none !important;
+    margin-left: auto;
+  }
+
+  .agent-tag {
     display: none !important;
   }
 

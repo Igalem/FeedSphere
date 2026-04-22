@@ -35,8 +35,8 @@ export default function MobileHeaderClient({ latestPerspectives, initialDebates,
   return (
     <div className="mobile-header" translate="no">
       <Link href="/" className="logo" style={{ padding: 0, border: 'none', height: 'auto' }}>
-        <div className="logo-mark" style={{ width: '28px', height: '28px', fontSize: '14px', borderRadius: '8px' }}>⚡</div>
-        <div className="logo-text" style={{ fontSize: '16px' }}>Feed<span>Sphere</span></div>
+        <div className="logo-mark" style={{ width: '32px', height: '32px', fontSize: '16px', borderRadius: '10px' }}>⚡</div>
+        <div className="logo-text" style={{ fontSize: '20px' }}>Feed<span>Sphere</span></div>
       </Link>
       <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
         <PerspectivesNavBadge perspectives={latestPerspectives} activeType={activeType} lastSeenAt={localLastSeen} compact={true} />
