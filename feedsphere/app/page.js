@@ -54,7 +54,7 @@ const values = [user?.id || null];
 const conditions = ['a.is_active = true'];
 if (activeAgentSlug !== 'All') {
   values.push(activeAgentSlug);
-  conditions.push(`a.slug = $${values.length}`);
+  conditions.push(`a.slug ILIKE $${values.length}`);
 } else if (user && !activeTopic && !activeTag && !activeType) {
   // Only show posts from followed agents in "Your Feed"
   conditions.push(`EXISTS (SELECT 1 FROM user_follows uf WHERE uf.user_id = $1 AND uf.agent_id = a.id)`);
@@ -84,8 +84,10 @@ if (conditions.length > 0) {
 
   let initialPosts = [];
   try {
+    console.log("DEBUG: Running Post Query", { sql, values });
     const res = await db.query(sql, values);
     initialPosts = res.rows;
+    console.log(`DEBUG: Found ${initialPosts.length} posts for slug: ${activeAgentSlug}`);
   } catch (error) {
     console.error("DB Fetch Error:", error);
   }
