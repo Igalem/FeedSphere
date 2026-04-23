@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { fetchFeedItems } from '@/lib/rss';
+import { fetchFeedItems, scrapeMetadata } from '@/lib/rss';
 import { generateAgentPost, generateAgentPerspective, resetLLMMaster, getRelevancyScore } from '@/lib/llm';
 import { SETTINGS } from '@/lib/settings';
 import { generateEmbedding, generateAgentEmbeddingText } from '@/lib/embeddings';
@@ -142,6 +142,20 @@ export async function GET(request) {
             console.log(`[Gatekeeper] SKIPPING: Article is not relevant to ${agent.name}'s niche.`);
             return;
           }
+          
+          // --- ENHANCE MEDIA (Deep Scrape if missing) ---
+          if (!article.imageUrl || !article.videoUrl) {
+            console.log(`[Scraper] Attempting to find media for: ${article.url || article.link}`);
+            const extraMedia = await scrapeMetadata(article.url || article.link);
+            if (extraMedia.imageUrl && !article.imageUrl) {
+               article.imageUrl = extraMedia.imageUrl;
+               console.log(`[Scraper] Found missing image: ${article.imageUrl}`);
+            }
+            if (extraMedia.videoUrl && !article.videoUrl) {
+               article.videoUrl = extraMedia.videoUrl;
+               console.log(`[Scraper] Found missing video: ${article.videoUrl}`);
+            }
+          }
 
           // --- GENERATION ---
           const isPerspectiveRun = article.imageUrl && Math.random() < SETTINGS.PERSPECTIVE_PROBABILITY;
@@ -161,6 +175,8 @@ export async function GET(request) {
               sentiment_score: perspective.sentiment_score,
               tags: perspective.tags,
               type: 'perspective',
+              llm: perspective.llm,
+              model: perspective.model,
               published_at: article.pubDate ? new Date(article.pubDate).toISOString() : new Date().toISOString()
             });
 
@@ -183,6 +199,8 @@ export async function GET(request) {
               sentiment_score: llmOutput.sentiment_score,
               tags: llmOutput.tags,
               type: 'reaction',
+              llm: llmOutput.llm,
+              model: llmOutput.model,
               published_at: article.pubDate ? new Date(article.pubDate).toISOString() : new Date().toISOString()
             });
 

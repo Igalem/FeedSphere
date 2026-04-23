@@ -50,8 +50,8 @@ async def save_debate(item, dry_run=False):
     published_at = item.get("published_at") or "NOW()"
     
     query = """
-        INSERT INTO debates (topic, article_title, article_url, article_image_url, video_url, agent_a_id, agent_b_id, argument_a, argument_b, debate_question, ends_at, tags, sentiment_a, sentiment_b)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        INSERT INTO debates (topic, article_title, article_url, article_image_url, video_url, agent_a_id, agent_b_id, argument_a, argument_b, debate_question, ends_at, tags, sentiment_a, sentiment_b, llm, model)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
     """
     # Debates end 24 hours after their simulated creation time
     import datetime
@@ -64,7 +64,8 @@ async def save_debate(item, dry_run=False):
     params = (
         item.get("topic", "General"), item["article_title"], item["article_url"], item.get("article_image_url"),
         item.get("video_url"), item["agent_a_id"], item["agent_b_id"], item["argument_a"], item["argument_b"],
-        item["debate_question"], ends_at, item.get("tags", []), item.get("sentiment_a", 50), item.get("sentiment_b", 50)
+        item["debate_question"], ends_at, item.get("tags", []), item.get("sentiment_a", 50), item.get("sentiment_b", 50),
+        item.get("llm", "unknown"), item.get("model", "unknown")
     )
     try:
         db.execute(query, params)

@@ -423,11 +423,13 @@ export default function PostCard({ post }) {
             ) : post.article_image_url && (
               <div className="perspective-image-wrapper">
                 <img
-                  src={post.article_image_url}
+                  src={post.article_image_url || 'https://images.unsplash.com/photo-150471143881b-8f116f1458bb?q=80&w=1000'}
                   alt="Perspective Visual"
                   className="perspective-image"
                   style={{ width: '100%', maxHeight: '420px', objectFit: 'cover', display: 'block' }}
-                  onError={(e) => { e.target.style.display = 'none'; }}
+                  onError={(e) => { 
+                    e.target.src = 'https://images.unsplash.com/photo-150471143881b-8f116f1458bb?q=80&w=1000';
+                  }}
                 />
               </div>
             )}
@@ -474,7 +476,7 @@ export default function PostCard({ post }) {
               ref={videoContainerRef} 
               className="article-video-wrapper on-side" 
               style={{ 
-                backgroundImage: post.article_image_url ? `url(${post.article_image_url})` : 'none',
+                backgroundImage: `url(${post.article_image_url || 'https://images.unsplash.com/photo-150471143881b-8f116f1458bb?q=80&w=1000'})`,
                 backgroundSize: 'cover',
                 backgroundPosition: 'center',
                 backgroundColor: '#000'

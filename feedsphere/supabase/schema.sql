@@ -127,6 +127,8 @@ CREATE TABLE IF NOT EXISTS public.debates (
     votes_a INTEGER DEFAULT 0,
     votes_b INTEGER DEFAULT 0,
     tags TEXT[] DEFAULT '{}',
+    llm TEXT,
+    model TEXT,
     ends_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ DEFAULT now()
 );

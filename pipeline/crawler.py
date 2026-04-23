@@ -318,6 +318,8 @@ class Crawler:
                                 tag = page_soup.find(tag_type, attrs=attrs)
                                 if tag and (tag.get("content") or tag.get("href")):
                                     image_url = tag.get("content") or tag.get("href")
+                                    if image_url:
+                                        image_url = urljoin(target_url, image_url)
                                     break
                             
                             # Last ditch: Find largest image in article
@@ -328,7 +330,7 @@ class Crawler:
                                     # Avoid images with 'logo' in them unless they are large (heuristic)
                                     candidates = [i for i in images if (".jpg" in i["src"].lower() or ".png" in i["src"].lower()) and "logo" not in i["src"].lower()]
                                     if candidates:
-                                        image_url = candidates[0]["src"]
+                                        image_url = urljoin(target_url, candidates[0]["src"])
 
                         # 5b. Robust Excerpt Extraction (if RSS summary is poor)
                         if len(clean_summary) < 200:
@@ -387,12 +389,12 @@ class Crawler:
                                 image_url = urljoin(url, image_url)
 
                         if not video_url:
-                            # 3. Search for iframes in likely content areas
+                            # 3. Search for iframes or native video tags in likely content areas
                             content_selectors = ['article', '.article-content', '.post-content', '.entry-content', '.content', '#main-content']
                             for selector in content_selectors:
                                 area = page_soup.select_one(selector)
                                 if area:
-                                    # Look for youtube iframes
+                                    # Look for iframes
                                     iframes = area.find_all("iframe", src=True)
                                     for iframe in iframes:
                                         src = iframe["src"]
@@ -401,17 +403,26 @@ class Crawler:
                                             if video_url: break
                                     if video_url: break
 
+                                    # Look for native video tags
+                                    v_tags = area.find_all("video")
+                                    for v in v_tags:
+                                        # Check src attribute on video tag or child source tags
+                                        v_src = v.get("src")
+                                        if not v_src:
+                                            sources = v.find_all("source", src=True)
+                                            if sources: v_src = sources[0]["src"]
+                                        
+                                        if v_src:
+                                            video_url = urljoin(target_url, v_src)
+                                            break
+                                    if video_url: break
+
                         if not video_url:
                             # 3. Last Resort: Global Page search but ONLY for embed patterns
                             yt_match = re.search(r'youtube\.com/embed/([a-zA-Z0-9_-]{11})', page_res.text)
                             if yt_match:
                                 video_id = yt_match.group(1)
                                 video_url = f"https://www.youtube.com/embed/{video_id}"
-                                # logger.info(f"Scraped YouTube embed from page text: {video_id}")
-                            
-                            # Removed aggressive Yahoo global page search for video IDs as it often picks up unrelated sidebars.
-                            # We now rely on meta tags and content-area iframes above.
-                            pass
                 except Exception as e:
                     logger.debug(f"Scraping failed for {url}: {e}")
                     pass
@@ -467,6 +478,16 @@ class Crawler:
                 if image_url and "b-cdn.net" in image_url and "/tmb/" in image_url:
                     image_url = image_url.replace("/tmb/", "/800a/")
                     logger.info(f"Upgraded b-cdn.net image resolution: {image_url}")
+
+                # Upgrade YouTube thumbnail quality if it's low-res
+                if image_url and "img.youtube.com/vi/" in image_url:
+                    # hq720.jpg is generally more reliable than maxresdefault (which can 404) 
+                    # but much better than hqdefault/mqdefault
+                    for low_res in ["default.jpg", "mqdefault.jpg", "hqdefault.jpg", "sddefault.jpg"]:
+                        if image_url.endswith(low_res):
+                            image_url = image_url.replace(low_res, "hq720.jpg")
+                            logger.info(f"Upgraded YouTube thumbnail to HQ: {image_url}")
+                            break
 
             if not image_url:
                 # Fallback to topic-based images with significantly more variety

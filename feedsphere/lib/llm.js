@@ -107,7 +107,11 @@ export async function generateLLMResponse(systemPrompt, userMessages, options = 
         const data = await response.json();
         const content = data.choices?.[0]?.message?.content || '';
         if (content) {
-          return cleanLLMResponse(content);
+          return {
+            content: cleanLLMResponse(content),
+            provider: 'cerebras',
+            model: 'llama3.1-8b'
+          };
         }
         throw new Error('Empty response');
 
@@ -164,7 +168,11 @@ export async function generateLLMResponse(systemPrompt, userMessages, options = 
 
           const content = result.response.text();
           if (content) {
-            return cleanLLMResponse(content);
+            return {
+              content: cleanLLMResponse(content),
+              provider: 'gemini',
+              model: 'gemini-2.0-flash'
+            };
           }
           throw new Error('Empty response');
 
@@ -234,7 +242,11 @@ export async function generateLLMResponse(systemPrompt, userMessages, options = 
           const data = await response.json();
           const content = data.choices?.[0]?.message?.content || '';
           if (content) {
-             return cleanLLMResponse(content);
+             return {
+               content: cleanLLMResponse(content),
+               provider: 'groq',
+               model: groqModel
+             };
           }
           throw new Error('Empty response');
 
@@ -327,7 +339,7 @@ Return ONLY the JSON object. Do not include any explanations or other text.`;
     }
   ];
 
-  const response = await generateLLMResponse(systemPrompt, userMessages, { 
+  const { content: response, provider, model } = await generateLLMResponse(systemPrompt, userMessages, { 
     maxTokens: 1200, 
     temperature: 0.8,
     responseMimeType: "application/json"
@@ -341,7 +353,9 @@ Return ONLY the JSON object. Do not include any explanations or other text.`;
         return {
           agent_commentary: data.agent_commentary || data.commentary || "",
           sentiment_score: data.sentiment_score || 50,
-          tags: (data.tags || []).map(formatTag).slice(0, 5)
+          tags: (data.tags || []).map(formatTag).slice(0, 5),
+          llm: provider,
+          model: model
         };
       } catch (parseErr) {
         // Fallback: try to extract fields with regex if JSON is malformed
@@ -355,16 +369,18 @@ Return ONLY the JSON object. Do not include any explanations or other text.`;
           return {
             agent_commentary: commentary.replace(/\\"/g, '"').replace(/\\n/g, '\n').replace(/^"|"$/g, ''),
             sentiment_score: sentimentMatch ? parseInt(sentimentMatch[1], 10) : 50,
-            tags: tagsMatch ? tagsMatch[1].split(',').map(t => formatTag(t.trim().replace(/^"|"$/g, ''))) : []
+            tags: tagsMatch ? tagsMatch[1].split(',').map(t => formatTag(t.trim().replace(/^"|"$/g, ''))) : [],
+            llm: provider,
+            model: model
           };
         }
         throw parseErr;
       }
     }
-    return { agent_commentary: response, sentiment_score: 50, tags: [] };
+    return { agent_commentary: response, sentiment_score: 50, tags: [], llm: provider, model: model };
   } catch (e) {
     console.error('Failed to parse LLM JSON:', e);
-    return { agent_commentary: response, sentiment_score: 50, tags: [] };
+    return { agent_commentary: response, sentiment_score: 50, tags: [], llm: provider, model: model };
   }
 }
 
@@ -403,7 +419,7 @@ Return ONLY the JSON object.`;
     }
   ];
 
-  const response = await generateLLMResponse(systemPrompt, userMessages, { 
+  const { content: response, provider, model } = await generateLLMResponse(systemPrompt, userMessages, { 
     maxTokens: 1200, 
     temperature: 0.85,
     responseMimeType: "application/json"
@@ -443,10 +459,12 @@ Return ONLY the JSON object.`;
         return {
           agent_commentary: finalCommentary,
           sentiment_score: sentiment,
-          tags: tags
+          tags: tags,
+          llm: provider,
+          model: model
         };
       }
-      return { agent_commentary: commentary || response, sentiment_score: sentiment, tags: tags };
+      return { agent_commentary: commentary || response, sentiment_score: sentiment, tags: tags, llm: provider, model: model };
     } catch (e) {
       console.error('[LLM] Perspective JSON parse failed, attempting regex fallback:', e);
       // Regex extraction logic for robustness
@@ -456,12 +474,14 @@ Return ONLY the JSON object.`;
       return { 
         agent_commentary: commentaryMatch ? commentaryMatch[1].replace(/\\n/g, '\n').replace(/\\"/g, '"') : response, 
         sentiment_score: sentimentMatch ? parseInt(sentimentMatch[1], 10) : 50, 
-        tags: ['Perspective'] 
+        tags: ['Perspective'],
+        llm: provider,
+        model: model
       };
     }
   } catch (err) {
     console.error('[LLM] generateAgentPerspective failed completely:', err);
-    return { agent_commentary: response || "Analysis unavailable.", sentiment_score: 50, tags: ['Error'] };
+    return { agent_commentary: response || "Analysis unavailable.", sentiment_score: 50, tags: ['Error'], llm: provider, model: model };
   }
 }
 
@@ -500,7 +520,7 @@ Return ONLY the JSON object.`;
   ];
 
   // Run sequentially to avoid rate limits (429) on Free Tier
-  const responseA = await generateLLMResponse(buildPrompt(agentA, agentB.name), userMsg, { 
+  const { content: responseA, provider: providerA, model: modelA } = await generateLLMResponse(buildPrompt(agentA, agentB.name), userMsg, { 
     maxTokens: 300, 
     temperature: 0.9,
     responseMimeType: "application/json"
@@ -508,7 +528,7 @@ Return ONLY the JSON object.`;
   
   await new Promise(r => setTimeout(r, 1000));
 
-  const responseB = await generateLLMResponse(buildPrompt(agentB, agentA.name), userMsg, { 
+  const { content: responseB, provider: providerB, model: modelB } = await generateLLMResponse(buildPrompt(agentB, agentA.name), userMsg, { 
     maxTokens: 300, 
     temperature: 0.9,
     responseMimeType: "application/json"
@@ -518,7 +538,8 @@ Return ONLY the JSON object.`;
 
   let questionRaw = article.title;
   try {
-    questionRaw = await generateLLMResponse(questionPrompt, [{ role: 'user', content: 'Debate question.' }], { maxTokens: 60, temperature: 0.8 });
+    const { content: qResponse } = await generateLLMResponse(questionPrompt, [{ role: 'user', content: 'Debate question.' }], { maxTokens: 60, temperature: 0.8 });
+    questionRaw = qResponse;
   } catch (qErr) {
     console.warn('[LLM] Question generation failed, using article title.', qErr);
   }
@@ -559,6 +580,8 @@ Return ONLY the JSON object.`;
     sentiment_a: parsedA.sentiment_score,
     sentiment_b: parsedB.sentiment_score,
     debate_question: questionRaw.replace(/^["']|["']$/g, '').trim(),
+    llm: providerA, // Track first agent's provider for simplicity, or we could track both
+    model: modelA
   };
 }
 
@@ -573,7 +596,8 @@ Rules: 1-2 sentences max, authentic voice, stay in character, no dashes.`;
     }
   ];
 
-  return generateLLMResponse(systemPrompt, userMessages, { maxTokens: 800, temperature: 0.6 });
+  const { content } = await generateLLMResponse(systemPrompt, userMessages, { maxTokens: 800, temperature: 0.6 });
+  return content;
 }
 
 export async function generateAgentMetadata(userInput) {
@@ -639,7 +663,7 @@ Return ONLY the JSON.`;
     }
   ];
 
-  const response = await generateLLMResponse(systemPrompt, userMessages, {
+  const { content: response } = await generateLLMResponse(systemPrompt, userMessages, {
     maxTokens: 3000,
     temperature: 0.7,
     responseMimeType: "application/json",
@@ -706,7 +730,7 @@ export async function getRelevancyScore(agent, article) {
   ];
 
   try {
-    const response = await generateLLMResponse(systemPrompt, userMessages, {
+    const { content: response } = await generateLLMResponse(systemPrompt, userMessages, {
       maxTokens: 500,
       temperature: 0.2,
       responseMimeType: "application/json",
