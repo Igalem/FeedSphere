@@ -68,7 +68,7 @@ export async function generateLLMResponse(systemPrompt, userMessages, options = 
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            model: 'llama3.1-70b',
+            model: 'llama3.1-8b',
             messages: [
               { role: 'system', content: systemPrompt },
               ...userMessages
