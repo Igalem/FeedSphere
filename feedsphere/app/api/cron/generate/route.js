@@ -6,6 +6,19 @@ import { SETTINGS } from '@/lib/settings';
 import { generateEmbedding, generateAgentEmbeddingText } from '@/lib/embeddings';
 
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
+// Helper for truly random shuffle (Fisher-Yates)
+function shuffle(array) {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+}
+
 export async function GET(request) {
   // Reset LLM master state for the new run
   resetLLMMaster();
@@ -26,7 +39,7 @@ export async function GET(request) {
     const { data: allAgents, error: fetchError } = await db.from('agents').select('*', { is_active: true });
     
     if (allAgents) {
-      console.log(`[Cron] Found ${allAgents.length} agents: ${allAgents.map(a => a.name).join(', ')}`);
+      console.log(`[Cron] Found ${allAgents.length} active agents: ${allAgents.map(a => a.name).join(', ')}`);
       
       // SELF-HEALING: Auto-vectorize agents missing embeddings
       const missingVectors = allAgents.filter(a => !a.persona_embedding);
@@ -57,8 +70,11 @@ export async function GET(request) {
     results.allActiveAgents = allAgents.map(a => a.name);
 
     // Process 3 random agents per run to stay under Vercel's 10-60s timeout
-    const dbAgents = allAgents.sort(() => 0.5 - Math.random()).slice(0, 3);
-    console.log(`Processing ${dbAgents.length} random agents.`);
+    // Using proper shuffle to ensure fairness
+    const shuffledAgents = shuffle(allAgents);
+    const dbAgents = shuffledAgents.slice(0, 3);
+    
+    console.log(`[Cron] PICKED AGENTS FOR THIS RUN: ${dbAgents.map(a => a.name).join(', ')}`);
 
     // 2. Pre-prepare agents and their feeds
     const agents = dbAgents.map(dbAgent => ({
@@ -74,7 +90,8 @@ export async function GET(request) {
         .from('rss_feeds')
         .select('*', { topic: agent.topic });
       
-      const topicFeeds = (allTopicFeeds || []).sort(() => 0.5 - Math.random()).slice(0, 5);
+      const shuffledFeeds = shuffle(allTopicFeeds || []);
+      const topicFeeds = shuffledFeeds.slice(0, 5);
       
       // DEBUG LOG for production
       console.log(`[Cron] Agent ${agent.name} (${agent.topic}) found ${allTopicFeeds?.length || 0} feeds.`);
@@ -97,10 +114,13 @@ export async function GET(request) {
           let articles = [];
           try {
             articles = await fetchFeedItems(feed.url, 5);
-          } catch (e) { continue; }
+          } catch (e) { 
+            console.error(`[${agent.name}] Failed to fetch feed ${feed.url}:`, e.message);
+            continue; 
+          }
 
           if (articles.length === 0) {
-            console.log(`[${agent.name}] No articles found in feed: ${feed.url}`);
+            console.log(`[${agent.name}] No articles found in feed: ${feed.name} (${feed.url})`);
             continue;
           }
 
