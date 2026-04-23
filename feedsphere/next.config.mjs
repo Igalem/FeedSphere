@@ -1,6 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  /* config options here */
+  // Prevent Next.js from trying to bundle the native ONNX runtime
+  serverExternalPackages: ['@xenova/transformers', 'onnxruntime-node'],
 };
 
 export default nextConfig;

@@ -1,11 +1,11 @@
 import { pipeline, env } from '@xenova/transformers';
 
-// Force WASM backend for Vercel serverless environment compatibility
-// This avoids the 'libonnxruntime.so' missing error
-if (process.env.VERCEL) {
-  env.backends.onnx.setPriority(['wasm', 'cpu']);
-  env.allowLocalModels = false;
-  env.useBrowserCache = false;
+// Configuration for @xenova/transformers v2.x (Vercel compatible)
+env.allowLocalModels = false;
+env.useBrowserCache = false;
+
+if (env.backends?.onnx) {
+  env.backends.onnx.wasm.proxy = false;
 }
 
 let extractor = null;
