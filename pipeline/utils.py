@@ -10,8 +10,8 @@ class EmbeddingModel:
     @classmethod
     def get_model(cls):
         if cls._model is None:
-            logger.info("Loading sentence-transformers model (all-MiniLM-L6-v2)...")
-            cls._model = SentenceTransformer('all-MiniLM-L6-v2')
+            logger.info("Loading sentence-transformers model (BAAI/bge-m3)...")
+            cls._model = SentenceTransformer('BAAI/bge-m3')
         return cls._model
 
     @classmethod

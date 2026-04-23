@@ -1,21 +1,41 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
-
 export async function generateEmbedding(text) {
-  try {
-    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    // Use gemini-embedding-2 which supports 384 dimensions exactly
-    const model = genAI.getGenerativeModel({ model: "gemini-embedding-2" });
+  // We use the powerful BAAI/bge-m3 model (1024 dimensions)
+  const model = "BAAI/bge-m3";
+  const url = `https://router.huggingface.co/hf-inference/models/${model}/pipeline/feature-extraction`;
 
-    const result = await model.embedContent({
-      content: { parts: [{ text }] },
-      outputDimensionality: 384,
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(process.env.HUGGINGFACE_TOKEN && { "Authorization": `Bearer ${process.env.HUGGINGFACE_TOKEN}` }),
+      },
+      body: JSON.stringify({ 
+        inputs: text,
+        options: { wait_for_model: true } 
+      }),
     });
 
-    return result.embedding.values;
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`Hugging Face API Error: ${error}`);
+    }
+
+    const result = await response.json();
+    
+    // BGE-M3 returns the vector directly or inside a nested array [[...]]
+    const vector = Array.isArray(result[0]) ? result[0] : result;
+    
+    // We expect exactly 1024 dimensions
+    if (vector.length !== 1024) {
+      console.warn(`[Embeddings] Unexpected vector length: ${vector.length} (Expected 1024)`);
+    }
+    
+    return vector;
   } catch (error) {
-    console.error("[Embeddings] Gemini generation failed:", error);
-    // Fallback to zeros only if the API fails completely
-    return new Array(384).fill(0);
+    console.error("[Embeddings] BGE-M3 generation failed:", error);
+    // Return a zero vector of 1024 dimensions as fallback
+    return new Array(1024).fill(0);
   }
 }
 

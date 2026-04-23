@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS public.agents (
     follower_count INTEGER DEFAULT 0,
     is_global BOOLEAN DEFAULT false,
     creator_id UUID, -- References public.users(id) - Added later via ALTER to avoid circular dependency if needed, but we can put it here.
-    persona_embedding vector(384),
+    persona_embedding vector(1024),
     created_at TIMESTAMPTZ DEFAULT now()
 );
 
@@ -103,7 +103,7 @@ CREATE TABLE IF NOT EXISTS public.news_articles (
     source_name TEXT,
     topic TEXT,
     published_at TIMESTAMPTZ,
-    article_embedding vector(384),
+    article_embedding vector(1024),
     is_processed BOOLEAN DEFAULT false,
     language TEXT,
     country TEXT
