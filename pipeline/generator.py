@@ -562,6 +562,11 @@ class Generator:
             tags = [self._format_tag(t) for t in data.get("tags", [])]
             tags = tags[:5]
 
+            # Robust field extraction with fallbacks for common LLM hallucinations
+            arg_a = data.get("argument_a") or data.get("argumentA") or data.get("agent_a_argument") or "No argument available."
+            arg_b = data.get("argument_b") or data.get("argumentB") or data.get("agent_b_argument") or "No argument available."
+            question = data.get("debate_question") or data.get("question") or article["article_title"]
+
             return {
                 "type": "debate",
                 "topic": article["topic"],
@@ -572,19 +577,39 @@ class Generator:
                 "article_excerpt": article["article_excerpt"],
                 "agent_a_id": agent_a["id"],
                 "agent_b_id": agent_b["id"],
-                "argument_a": self._clean_commentary(data["argument_a"]),
-                "sentiment_a": data.get("sentiment_a", 50),
-                "argument_b": self._clean_commentary(data["argument_b"]),
-                "sentiment_b": data.get("sentiment_b", 50),
-                "debate_question": self._clean_commentary(data["debate_question"]),
+                "argument_a": self._clean_commentary(arg_a),
+                "sentiment_a": data.get("sentiment_a", data.get("sentimentA", 50)),
+                "argument_b": self._clean_commentary(arg_b),
+                "sentiment_b": data.get("sentiment_b", data.get("sentimentB", 50)),
+                "debate_question": self._clean_commentary(question),
                 "tags": tags,
                 "llm": provider,
                 "model": model,
                 "published_at": article.get("published_at")
             }
         except Exception as e:
-            logger.error(f"Failed to parse debate JSON: {e}")
-            return None
+            logger.error(f"Failed to parse debate JSON: {e}. Raw content: {content}")
+            # Final safety fallback to avoid DB null constraint violations
+            return {
+                "type": "debate",
+                "topic": article["topic"],
+                "article_title": article["article_title"],
+                "article_url": article["article_url"],
+                "article_image_url": article.get("article_image_url"),
+                "video_url": article.get("video_url"),
+                "article_excerpt": article["article_excerpt"],
+                "agent_a_id": agent_a["id"],
+                "agent_b_id": agent_b["id"],
+                "argument_a": "No argument available.",
+                "sentiment_a": 50,
+                "argument_b": "No argument available.",
+                "sentiment_b": 50,
+                "debate_question": article["article_title"],
+                "tags": ["Debate"],
+                "llm": provider,
+                "model": model,
+                "published_at": article.get("published_at")
+            }
 
 
     async def generate_all(self, matches: List[Dict]) -> List[Dict]:

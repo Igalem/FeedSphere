@@ -188,13 +188,14 @@ class Crawler:
                         video_url = l_href
                         break
 
-            # Helper to convert youtube to embed
+            # Helper to convert various video URLs to embed format
             def to_embed(url):
                 if not url: return None
                 # Handle protocol-less
                 if url.startswith('//'):
                     url = 'https:' + url
                 
+                # YouTube
                 if "youtube.com/shorts/" in url:
                     return url.replace("youtube.com/shorts/", "youtube.com/embed/").split('?')[0]
                 if "youtube.com/watch?v=" in url:
@@ -203,6 +204,18 @@ class Crawler:
                     return url.replace("youtu.be/", "youtube.com/embed/").split('?')[0]
                 if "youtube.com/v/" in url:
                     return url.replace("youtube.com/v/", "youtube.com/embed/").split('?')[0]
+                
+                # Vimeo
+                if "vimeo.com/" in url and "player.vimeo.com" not in url:
+                    v_id = url.split("vimeo.com/")[1].split("?")[0].split("/")[0]
+                    if v_id.isdigit():
+                        return f"https://player.vimeo.com/video/{v_id}"
+                
+                # Dailymotion
+                if "dailymotion.com/video/" in url:
+                    v_id = url.split("dailymotion.com/video/")[1].split("?")[0].split("/")[0]
+                    return f"https://www.dailymotion.com/embed/video/{v_id}"
+
                 return url
 
             video_url = to_embed(video_url)
@@ -229,6 +242,8 @@ class Crawler:
             # --- PRIORITY 2: Standalone media_thumbnail ---
             if not image_url and 'media_thumbnail' in entry and entry.media_thumbnail:
                 image_url = entry.media_thumbnail[0].get('url')
+                if image_url:
+                    image_url = urljoin(url, image_url)
             
             # --- PRIORITY 3: Actual image in enclosures ---
             if not image_url:
@@ -236,7 +251,9 @@ class Crawler:
                     e_type = enclosure.get('type', '')
                     if e_type.startswith('image'):
                         image_url = enclosure.get('href')
-                        break
+                        if image_url:
+                            image_url = urljoin(url, image_url)
+                            break
             
             # --- PRIORITY 4: Specific image types in media_content ---
             if not image_url and 'media_content' in entry:
@@ -245,7 +262,9 @@ class Crawler:
                     m_type = mc.get('type', '')
                     if m_type.startswith('image') or m_url.lower().endswith(('.jpg', '.jpeg', '.png', '.webp', '.gif')):
                         image_url = m_url
-                        break
+                        if image_url:
+                            image_url = urljoin(url, image_url)
+                            break
             
             # --- PRIORITY 4.5: Find image tags in summary/description ---
             if not image_url and summary:

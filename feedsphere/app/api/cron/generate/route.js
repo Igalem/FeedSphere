@@ -108,34 +108,39 @@ export async function GET(request) {
       console.log(`[Cron] Processing Agent: ${agent.name} (Topic: ${agent.topic})`);
 
       // A. Try to find relevant articles from the DB POOL first (News Articles)
-      // This is much more efficient and allows for better matching
+      // We use both Topic and Keyword matching (from the 10 sub-topics) for maximum recall
+      const subTopicTerms = (agent.sub_topic || "").split(',').map(t => t.trim()).filter(t => t.length > 0);
+      const keywordSql = subTopicTerms.length > 0 
+        ? `OR (${subTopicTerms.map((_, i) => `title ILIKE $${i + 2}`).join(' OR ')})` 
+        : '';
+      
       const { rows: dbArticles } = await db.query(`
         SELECT title, url, excerpt, image_url as "imageUrl", source_name as "sourceName", published_at as "pubDate"
         FROM news_articles
-        WHERE LOWER(topic) = LOWER($1)
-        AND published_at > NOW() - INTERVAL '2 days'
+        WHERE (LOWER(topic) = LOWER($1) ${keywordSql})
+        AND published_at > NOW() - INTERVAL '7 days'
         ORDER BY published_at DESC
-        LIMIT 30
-      `, [agent.topic]);
+        LIMIT 50
+      `, [agent.topic, ...subTopicTerms.map(t => `%${t}%`)]);
 
       const candidates = dbArticles || [];
       console.log(`[Cron] Found ${candidates.length} candidate articles in DB for ${agent.name}`);
 
-      for (const article of candidates) {
-        if (agent.postCount >= 2) break;
+      const processArticle = async (article) => {
+        if (agent.postCount >= 2) return;
 
         // Check if already posted
-        const { rows: existing } = await db.query('SELECT id FROM posts WHERE agent_id = $1 AND article_url = $2', [agent.id, article.url]);
-        if (existing.length > 0) continue;
+        const { rows: existing } = await db.query('SELECT id FROM posts WHERE agent_id = $1 AND article_url = $2', [agent.id, article.url || article.link]);
+        if (existing.length > 0) return;
 
         try {
-          // --- RELEVANCY GATEKEEPER (Critical Fix for Precision) ---
+          // --- RELEVANCY GATEKEEPER ---
           const { score, reasoning } = await getRelevancyScore(agent, article);
           console.log(`[Gatekeeper] ${agent.name} vs "${article.title}" -> Score: ${score} (${reasoning})`);
 
           if (score < 70) {
             console.log(`[Gatekeeper] SKIPPING: Article is not relevant to ${agent.name}'s niche.`);
-            continue;
+            return;
           }
 
           // --- GENERATION ---
@@ -148,10 +153,10 @@ export async function GET(request) {
             await db.from('posts').insert({
               agent_id: agent.id,
               article_title: article.title,
-              article_url: article.url,
+              article_url: article.url || article.link,
               article_image_url: article.imageUrl,
-              article_excerpt: article.excerpt || '',
-              source_name: article.sourceName,
+              article_excerpt: article.excerpt || article.snippet || '',
+              source_name: article.sourceName || 'News',
               agent_commentary: perspective.agent_commentary,
               sentiment_score: perspective.sentiment_score,
               tags: perspective.tags,
@@ -163,17 +168,17 @@ export async function GET(request) {
           } else {
             const llmOutput = await generateAgentPost(agent, {
               title: article.title,
-              snippet: article.excerpt || '',
-              sourceName: article.sourceName
+              snippet: article.excerpt || article.snippet || '',
+              sourceName: article.sourceName || 'News'
             });
 
             await db.from('posts').insert({
               agent_id: agent.id,
               article_title: article.title,
-              article_url: article.url,
+              article_url: article.url || article.link,
               article_image_url: article.imageUrl || null,
-              article_excerpt: article.excerpt || '',
-              source_name: article.sourceName,
+              article_excerpt: article.excerpt || article.snippet || '',
+              source_name: article.sourceName || 'News',
               agent_commentary: llmOutput.agent_commentary,
               sentiment_score: llmOutput.sentiment_score,
               tags: llmOutput.tags,
@@ -187,19 +192,36 @@ export async function GET(request) {
           results.posted++;
           agent.postCount++;
           
-          // Small delay to avoid rate limits
           await new Promise(r => setTimeout(r, 1500));
         } catch (err) {
           console.error(`[${agent.name}] Generation failed:`, err);
           results.errors++;
         }
+      };
+
+      // 1. Process DB articles
+      for (const article of candidates) {
+        if (agent.postCount >= 2) break;
+        await processArticle(article);
       }
 
-      // B. Fallback to RSS if still needed (Optional, but keeps coverage high)
+      // 2. Fallback to RSS if still needed (keeps coverage high if DB is empty or filters too strict)
       if (agent.postCount < 1) {
-          console.log(`[Cron] Agent ${agent.name} still needs posts. Falling back to RSS feeds...`);
-          // ... (simplified fallback logic could go here, but DB pool is usually enough)
+        console.log(`[Cron] Agent ${agent.name} still needs posts. Falling back to RSS feeds...`);
+        for (const feed of agent.rssFeeds) {
+          if (agent.postCount >= 1) break;
+          try {
+            const articles = await fetchFeedItems(feed.url, 5);
+            for (const article of articles) {
+              if (agent.postCount >= 1) break;
+              await processArticle({ ...article, sourceName: feed.name });
+            }
+          } catch (e) {
+            console.error(`[RSS Fallback] Failed for ${feed.name}:`, e.message);
+          }
+        }
       }
+    }
     }
 
     // 4. DEBATE TRIGGER (Global chance)

@@ -526,15 +526,24 @@ Return ONLY the JSON object.`;
   const parse = (raw, fallback) => {
     try {
       const match = raw.match(/\{[\s\S]*\}/);
-      if (match) return JSON.parse(match[0].replace(/,\s*([\}\]])/g, '$1'));
+      if (match) {
+        const parsed = JSON.parse(match[0].replace(/,\s*([\}\]])/g, '$1'));
+        return {
+          argument: parsed.argument || parsed.commentary || parsed.text || parsed.content || fallback,
+          sentiment_score: parsed.sentiment_score || parsed.sentiment || 50
+        };
+      }
     } catch (_) {
-      // Fallback regex for debate argument
+      // Fallback regex for debate argument if JSON is slightly broken
       const match = raw.match(/\{[\s\S]*\}/);
       if (match) {
-        const argMatch = match[0].match(/"argument"\s*:\s*"([\s\S]*)"\s*,\s*"sentiment_score"/);
-        const sentMatch = match[0].match(/"sentiment_score"\s*:\s*(-?\d+)/);
+        const argMatch = match[0].match(/"(?:argument|commentary|content|text)"\s*:\s*"([\s\S]*?)"\s*(?:,|\s*\})/);
+        const sentMatch = match[0].match(/"(?:sentiment_score|sentiment)"\s*:\s*(-?\d+)/);
         if (argMatch) {
-          return { argument: argMatch[1].replace(/\\"/g, '"'), sentiment_score: sentMatch ? parseInt(sentMatch[1], 10) : 50 };
+          return { 
+            argument: argMatch[1].replace(/\\"/g, '"').replace(/\\n/g, '\n').trim() || fallback, 
+            sentiment_score: sentMatch ? parseInt(sentMatch[1], 10) : 50 
+          };
         }
       }
     }
