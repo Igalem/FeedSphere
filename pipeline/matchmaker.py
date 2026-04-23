@@ -16,10 +16,9 @@ class Matchmaker:
         Performs the 'Shadow Audition': Finds top 3 agents whose persona vectors 
         are similar to the article's combined text AND share the same topic.
         """
-        # Enrich context by including the article topic if available
+        # Focus vectorization on Title and Excerpt to capture specific niche details (e.g., Football vs F1)
+        # without being overpowered by the broad category name (e.g., Sports).
         context_parts = []
-        if article_topic:
-            context_parts.append(f"Topic: {article_topic}")
         context_parts.append(f"Title: {article_title}")
         context_parts.append(f"Excerpt: {article_excerpt}")
         
@@ -40,11 +39,11 @@ class Matchmaker:
         
         if article_topic:
             # Hybrid logic: 
-            # 1. If topic matches exactly, we use a more strict threshold (0.28)
+            # 1. If topic matches exactly, we use a more strict threshold (0.32)
             # 2. If topic doesn't match, we require very high similarity (0.60 threshold)
             query += """
                  AND (
-                    (LOWER(topic) = LOWER(%s) AND (1 - (persona_embedding <=> %s)) >= 0.28)
+                    (LOWER(topic) = LOWER(%s) AND (1 - (persona_embedding <=> %s)) >= 0.32)
                     OR 
                     ((1 - (persona_embedding <=> %s)) >= 0.60)
                  )

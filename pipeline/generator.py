@@ -86,22 +86,23 @@ class Generator:
 
         self.relevancy_prompt = ChatPromptTemplate.from_messages([
             ("system", "You are an intelligent Relevancy Filter for an AI agent's news feed.\n"
+                       "Agent Name: {agent_name}\n"
                        "Agent Topic: {topic}\n"
                        "Agent Niche: {sub_topic}\n"
                        "Agent Persona: {persona}\n\n"
-                       "Relevancy rules:\n"
-                       "1. If Agent Niche is 'N/A' or 'None', the agent is a GENERALIST in their topic. They should match any significant or trending news within the '{topic}' category.\n"
-                       "2. If Agent Niche is a specific subject (e.g., 'Gaming'), they care ONLY about that niche. General news in the same category (e.g., Music, Movies, or TV news in 'Entertainment & Gaming') is NOT RELEVANT unless it directly features or impacts the niche (e.g., a video game adaptation).\n"
-                       "3. Be extremely strict. If an article doesn't directly mention key elements of the agent's niche, score it 0-40.\n"
-                       "4. DO NOT allow 'tangential' connections like 'this music festival is like a gaming convention'. That is NOT relevant."),
+                       "CRITICAL RELEVANCY RULES:\n"
+                       "1. SPORT MISMATCH: If the Agent's Niche/Sub-Topic focuses on a specific sport (e.g., 'Football', 'Soccer', 'Basketball') and the article is about a DIFFERENT sport (e.g., 'F1', 'Tennis', 'Golf', 'Cricket', 'NBA'), the score MUST be 0. There are NO exceptions. A football agent NEVER posts about F1.\n"
+                       "2. RIVAL TEAMS & LEAGUE NEWS: If the article is about a rival team in the SAME sport (e.g., 'Real Madrid' for a Barcelona agent) or major news in the same league (e.g., 'La Liga'), it IS RELEVANT. Fans want to hear about their competition. Score these 70-85.\n"
+                       "3. SUB-TOPIC ALIGNMENT: Use the 10 niche terms provided in 'Agent Niche' ({sub_topic}) as a primary filter. If the article title or excerpt matches these terms, it is highly relevant (90-100).\n"
+                       "4. GENERALIST RULE: If Agent Niche is 'N/A' or 'None', the agent matches any significant news within the '{topic}' category.\n"
+                       "5. Be strict but logical. Don't block rival teams if they are in the same sport, but ALWAYS block different sports.\n\n"
+                       "Scoring Guide:\n"
+                       "- 90-100: Bullseye. Direct match to the primary team or niche.\n"
+                       "- 70-89: Relevant. Rival team in the same sport, or significant league-wide news.\n"
+                       "- 0-69: NOT RELEVANT. Different sport, unrelated category, or completely tangential."),
             ("user", "Determine if this article is relevant to the agent based on the rules above.\n\n"
                      "Article Title: {article_title}\n"
                      "Article Excerpt: {article_excerpt}\n\n"
-                     "Scoring Guide (BE UNFORGIVING):\n"
-                     "- 100: Absolute bullseye. Directly mentions the niche and is a major event for that specific subject.\n"
-                     "- 90-99: Highly relevant. Strong connection to the niche, involving key figures or core subject matter.\n"
-                     "- 80-89: Technically relevant but minor. Matches the niche but might be a routine update or low-impact news.\n"
-                     "- 0-79: NOT RELEVANT. If it's just 'in the same ballpark' but doesn't hit the niche directly, score it LOW. No tangential points awarded.\n\n"
                      "Response format: JSON object with 'relevance_score' (int 0-100) and 'reasoning' (string).\n"
                      "IMPORTANT: Return ONLY valid JSON.")
         ])
@@ -354,6 +355,7 @@ class Generator:
         logger.info(f"Running LLM Relevancy Gatekeeper for agent: {agent['slug']} against article: {article['article_title']}")
         
         content, _, _ = await self._generate_llm_response(self.relevancy_prompt, {
+            "agent_name": agent.get("name", "Unknown"),
             "topic": agent.get("topic", "General"),
             "sub_topic": agent.get("sub_topic", "N/A"),
             "persona": agent["persona"],

@@ -1,6 +1,27 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { sanitizeTopic } from "./topics.js";
 
+const RELEVANCY_PROMPT = `You are an intelligent Relevancy Filter for an AI agent's news feed.
+Agent Name: {agent_name}
+Agent Topic: {topic}
+Agent Niche: {sub_topic}
+Agent Persona: {persona}
+
+CRITICAL RELEVANCY RULES:
+1. SPORT MISMATCH: If the Agent's Niche/Sub-Topic focuses on a specific sport (e.g., 'Football', 'Soccer', 'Basketball') and the article is about a DIFFERENT sport (e.g., 'F1', 'Tennis', 'Golf', 'Cricket', 'NBA'), the score MUST be 0. There are NO exceptions. A football agent NEVER posts about F1.
+2. RIVAL TEAMS & LEAGUE NEWS: If the article is about a rival team in the SAME sport (e.g., 'Real Madrid' for a Barcelona agent) or major news in the same league (e.g., 'La Liga'), it IS RELEVANT. Fans want to hear about their competition. Score these 70-85.
+3. SUB-TOPIC ALIGNMENT: Use the 10 niche terms provided in 'Agent Niche' ({sub_topic}) as a primary filter. If the article title or excerpt matches these terms, it is highly relevant (90-100).
+4. GENERALIST RULE: If Agent Niche is 'N/A' or 'None', the agent matches any significant news within the '{topic}' category.
+5. Be strict but logical. Don't block rival teams if they are in the same sport, but ALWAYS block different sports.
+
+Scoring Guide:
+- 90-100: Bullseye. Direct match to the primary team or niche.
+- 70-89: Relevant. Rival team in the same sport, or significant league-wide news.
+- 0-69: NOT RELEVANT. Different sport, unrelated category, or completely tangential.
+
+Response format: JSON object with 'relevance_score' (int 0-100) and 'reasoning' (string).
+IMPORTANT: Return ONLY valid JSON.`;
+
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const CEREBRAS_API_KEY = process.env.CEREBRAS_API_KEY;
@@ -659,5 +680,41 @@ Return ONLY the JSON.`;
   } catch (e) {
     console.error('Failed to parse Agent Metadata JSON:', e);
     throw new Error('AI Generation failed to produce valid agent metadata');
+  }
+}
+export async function getRelevancyScore(agent, article) {
+  const systemPrompt = RELEVANCY_PROMPT
+    .replace('{agent_name}', agent.name)
+    .replace('{topic}', agent.topic)
+    .replace('{sub_topic}', agent.sub_topic || agent.subTopic || 'N/A')
+    .replace('{persona}', agent.persona);
+
+  const userMessages = [
+    {
+      role: 'user',
+      content: `Determine if this article is relevant to the agent based on the rules above.\n\nArticle Title: ${article.title}\nArticle Excerpt: ${article.excerpt || article.snippet || ''}\n\nReturn JSON.`
+    }
+  ];
+
+  try {
+    const response = await generateLLMResponse(systemPrompt, userMessages, {
+      maxTokens: 500,
+      temperature: 0.2,
+      responseMimeType: "application/json",
+      useProvider: 'gemini' // Use faster/cheaper model for filter
+    });
+
+    const jsonMatch = response.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      const data = JSON.parse(jsonMatch[0].replace(/,\s*([\}\]])/g, '$1'));
+      return {
+        score: parseInt(data.relevance_score || data.score || 0, 10),
+        reasoning: data.reasoning || ""
+      };
+    }
+    return { score: 0, reasoning: "Failed to parse relevancy score" };
+  } catch (e) {
+    console.error('[LLM] Relevancy check failed:', e);
+    return { score: 0, reasoning: "Error in relevancy check" };
   }
 }
