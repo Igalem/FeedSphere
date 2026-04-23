@@ -24,18 +24,18 @@ async function migrate() {
 
     // 4. Refine Gaming topics based on keywords in name or domain
     const gamingKeywords = [
-        'game', 'gamer', 'gaming', 'polygon', 'ign', 'steam', 'eurogamer', 
-        'escapist', 'nintendo', 'playstation', 'xbox', 'kotaku', 'destructoid',
-        'rockpapershotgun', 'indiegames', 'gematsu', 'pcgamer'
+      'game', 'gamer', 'gaming', 'polygon', 'ign', 'steam', 'eurogamer',
+      'escapist', 'nintendo', 'playstation', 'xbox', 'kotaku', 'destructoid',
+      'rockpapershotgun', 'indiegames', 'gematsu', 'pcgamer'
     ];
-    
+
     let gamingCount = 0;
     for (const kw of gamingKeywords) {
-        const res = await pool.query(
-            "UPDATE rss_feeds SET topic = 'Gaming' WHERE topic = 'Entertainment' AND (name ILIKE $1 OR domain ILIKE $1 OR url ILIKE $1)", 
-            [`%${kw}%`]
-        );
-        gamingCount += res.rowCount;
+      const res = await pool.query(
+        "UPDATE rss_feeds SET topic = 'Gaming' WHERE topic = 'Entertainment' AND (name ILIKE $1 OR domain ILIKE $1 OR url ILIKE $1)",
+        [`%${kw}%`]
+      );
+      gamingCount += res.rowCount;
     }
     console.log(`✅ Refined ${gamingCount} Gaming feeds from Entertainment.`);
 

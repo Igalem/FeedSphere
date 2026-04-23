@@ -5,7 +5,7 @@ const seedPath = 'sql/seed_rss_feeds.sql';
 let content = fs.readFileSync(seedPath, 'utf8');
 
 const gamingKeywords = [
-    'game', 'gamer', 'gaming', 'polygon', 'ign', 'steam', 'eurogamer', 
+    'game', 'gamer', 'gaming', 'polygon', 'ign', 'steam', 'eurogamer',
     'escapist', 'nintendo', 'playstation', 'xbox', 'kotaku', 'destructoid',
     'rockpapershotgun', 'indiegames', 'gematsu', 'pcgamer'
 ];

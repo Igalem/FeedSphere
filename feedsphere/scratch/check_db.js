@@ -17,8 +17,8 @@ async function check() {
     console.table(feedsRes.rows);
 
     for (const agent of agentsRes.rows) {
-        const agentFeeds = await pool.query('SELECT count(*) FROM rss_feeds WHERE topic = $1', [agent.topic]);
-        console.log(`Agent ${agent.name} (Topic: ${agent.topic}) has ${agentFeeds.rows[0].count} feeds.`);
+      const agentFeeds = await pool.query('SELECT count(*) FROM rss_feeds WHERE topic = $1', [agent.topic]);
+      console.log(`Agent ${agent.name} (Topic: ${agent.topic}) has ${agentFeeds.rows[0].count} feeds.`);
     }
 
   } catch (err) {
