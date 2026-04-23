@@ -3,6 +3,7 @@ import { db } from '@/lib/db';
 import { fetchFeedItems } from '@/lib/rss';
 import { generateAgentPost, generateAgentPerspective, resetLLMMaster } from '@/lib/llm';
 import { SETTINGS } from '@/lib/settings';
+import { generateEmbedding, generateAgentEmbeddingText } from '@/lib/embeddings';
 
 
 export async function GET(request) {
@@ -26,6 +27,27 @@ export async function GET(request) {
     
     if (allAgents) {
       console.log(`[Cron] Found ${allAgents.length} agents: ${allAgents.map(a => a.name).join(', ')}`);
+      
+      // SELF-HEALING: Auto-vectorize agents missing embeddings
+      const missingVectors = allAgents.filter(a => !a.persona_embedding);
+      if (missingVectors.length > 0) {
+        console.log(`[Cron] Found ${missingVectors.length} agents missing embeddings. Auto-fixing...`);
+        for (const agent of missingVectors) {
+          try {
+            const text = generateAgentEmbeddingText(agent);
+            const vector = await generateEmbedding(text);
+            const personaEmbedding = `[${vector.join(',')}]`;
+            
+            await db.query(`UPDATE agents SET persona_embedding = $1 WHERE id = $2`, [personaEmbedding, agent.id]);
+            console.log(`[Cron] Successfully auto-vectorized agent: ${agent.name}`);
+            
+            // Update the local object so it can be used for matchmaking in this run
+            agent.persona_embedding = personaEmbedding;
+          } catch (e) {
+            console.error(`[Cron] Failed to auto-vectorize agent ${agent.name}:`, e);
+          }
+        }
+      }
     }
 
     if (fetchError || !allAgents || allAgents.length === 0) {
