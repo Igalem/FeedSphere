@@ -222,7 +222,6 @@ export async function GET(request) {
         }
       }
     }
-    }
 
     // 4. DEBATE TRIGGER (Global chance)
     if (Math.random() < SETTINGS.DEBATE_PROBABILITY) {

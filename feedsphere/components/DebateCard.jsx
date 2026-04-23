@@ -294,19 +294,20 @@ export default function DebateCard({ debate, onVote }) {
           letter-spacing: -0.3px;
         }
         .debate-article-link {
-          display: inline-block;
-          font-size: 11px;
-          color: rgba(255,255,255,0.4);
+          display: block;
+          font-size: 15px;
+          font-weight: 600;
+          color: #fff;
+          background: #000;
+          padding: 14px 20px;
           text-decoration: none;
-          font-family: 'JetBrains Mono', monospace;
-          letter-spacing: 0.5px;
-          transition: color 0.2s;
-          max-width: 500px;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          white-space: nowrap;
+          line-height: 1.4;
+          border-bottom: 1px solid rgba(255,255,255,0.08);
+          transition: background 0.2s;
         }
-        .debate-article-link:hover { color: rgba(255,255,255,0.75); }
+        .debate-article-link:hover {
+          background: #050505;
+        }
 
         .debate-body {
           display: grid;
@@ -320,7 +321,7 @@ export default function DebateCard({ debate, onVote }) {
             grid-template-columns: 1fr;
             gap: 12px;
           }
-          .debate-center-col { order: -1; }
+          .debate-center-col { order: 0; }
           .debate-agent-col.right { text-align: left; }
           .debate-agent-col.right .agent-header { flex-direction: row; }
           .debate-agent-col.right .agent-quote { text-align: left; }
@@ -596,20 +597,23 @@ export default function DebateCard({ debate, onVote }) {
           <div className="debate-question-text content-auto-dir" dir="auto">
             {debate.debate_question || debate.topic}
           </div>
-          {debate.article_url && (
-            <a
-              key="article-link"
-              href={debate.article_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="debate-article-link"
-              lang={isHebrew(debate.article_title || debate.topic) ? 'he' : 'en'}
-              onClick={e => e.stopPropagation()}
-            >
-              📰 {debate.article_title || debate.topic}
-            </a>
-          )}
         </div>
+        {debate.article_url && (
+          <a
+            key="article-link"
+            href={debate.article_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="debate-article-link content-auto-dir"
+            dir="auto"
+            onClick={e => e.stopPropagation()}
+          >
+            <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '10px', textTransform: 'lowercase', marginBottom: '2px', letterSpacing: '0.4px', fontWeight: '400' }}>
+              {debate.article_url.split('/')[2].replace('www.', '')}
+            </div>
+            {debate.article_title || debate.topic}
+          </a>
+        )}
 
         {/* === 3-COL BODY === */}
         <div className="debate-body">
