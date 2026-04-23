@@ -394,11 +394,11 @@ class Crawler:
                             for selector in content_selectors:
                                 area = page_soup.select_one(selector)
                                 if area:
-                                    # Look for iframes
-                                    iframes = area.find_all("iframe", src=True)
+                                    # Look for iframes (including lazy-loaded ones)
+                                    iframes = area.find_all("iframe")
                                     for iframe in iframes:
-                                        src = iframe["src"]
-                                        if any(v in src.lower() for v in ["youtube.com", "youtu.be", "vimeo.com", "dailymotion.com", "yahoo.com/video"]):
+                                        src = iframe.get("src") or iframe.get("data-src") or iframe.get("data-lazy-src")
+                                        if src and any(v in src.lower() for v in ["youtube.com", "youtu.be", "vimeo.com", "dailymotion.com", "yahoo.com/video"]):
                                             video_url = to_embed(src)
                                             if video_url: break
                                     if video_url: break
@@ -479,15 +479,53 @@ class Crawler:
                     image_url = image_url.replace("/tmb/", "/800a/")
                     logger.info(f"Upgraded b-cdn.net image resolution: {image_url}")
 
-                # Upgrade YouTube thumbnail quality if it's low-res
-                if image_url and "img.youtube.com/vi/" in image_url:
-                    # hq720.jpg is generally more reliable than maxresdefault (which can 404) 
-                    # but much better than hqdefault/mqdefault
+                # Fix YouTube thumbnail quality
+                if "img.youtube.com/vi/" in image_url:
                     for low_res in ["default.jpg", "mqdefault.jpg", "hqdefault.jpg", "sddefault.jpg"]:
                         if image_url.endswith(low_res):
                             image_url = image_url.replace(low_res, "hq720.jpg")
                             logger.info(f"Upgraded YouTube thumbnail to HQ: {image_url}")
                             break
+                
+                # Fix Google News / Blogger / Picasa thumbnails
+                if "googleusercontent.com" in image_url:
+                    if "lh3.googleusercontent.com" in image_url and "=" in image_url:
+                        # Change =s... or =w... to =s0 for original quality
+                        image_url = re.sub(r'=[^/]+$', '=s0', image_url)
+                        logger.info(f"Upgraded Google News image resolution: {image_url}")
+                    elif "blogger.googleusercontent.com" in image_url:
+                        # Change /s72-.../ to /s1600/
+                        image_url = re.sub(r'/s\d+[^/]*/', '/s1600/', image_url)
+                        logger.info(f"Upgraded Blogger image resolution: {image_url}")
+
+                # Fix Dezeen thumbnails (e.g., -411x411.jpg)
+                if "static.dezeen.com" in image_url and re.search(r'-\d+x\d+\.\w+$', image_url):
+                    image_url = re.sub(r'-\d+x\d+', '', image_url)
+                    logger.info(f"Upgraded Dezeen image resolution: {image_url}")
+
+                # Fix SmallBizTrends thumbnails (e.g., -100x100.jpg)
+                if "smallbiztrends.com" in image_url and re.search(r'-\d+x\d+\.\w+$', image_url):
+                    image_url = re.sub(r'-\d+x\d+', '', image_url)
+                    logger.info(f"Upgraded SmallBizTrends image resolution: {image_url}")
+
+                # Fix TSN.ua thumbnails (e.g., /thumbs/608xX/)
+                if "img.tsn.ua" in image_url and "/thumbs/" in image_url:
+                    image_url = re.sub(r'/thumbs/\d+x\w+/', '/cached/1200/', image_url)
+                    logger.info(f"Upgraded TSN image resolution: {image_url}")
+                
+                # Fix The Guardian thumbnails
+                if "i.guim.co.uk" in image_url and "width=" in image_url:
+                    image_url = re.sub(r'width=\d+', 'width=1200', image_url)
+                    image_url = re.sub(r'height=\d+', 'height=630', image_url)
+                    logger.info(f"Upgraded Guardian image resolution: {image_url}")
+
+                # Fix Ynet / Mako generic resizing patterns
+                if any(x in image_url.lower() for x in ["ynet.co.il", "mako.co.il"]):
+                    if "w=" in image_url:
+                        image_url = re.sub(r'w=\d+', 'w=1200', image_url)
+                    if "h=" in image_url:
+                        image_url = re.sub(r'h=\d+', 'h=675', image_url)
+                    logger.info(f"Upgraded Israeli source image resolution: {image_url}")
 
             if not image_url:
                 # Fallback to topic-based images with significantly more variety

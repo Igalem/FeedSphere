@@ -37,7 +37,7 @@ export async function GET(request) {
     try {
       console.log(`[Debate] Attempting to find article from recent posts...`);
       const recentPostsRes = await db.query(`
-        SELECT article_title as title, article_url as link, article_image_url as "imageUrl", article_excerpt as excerpt, source_name as "sourceName", agent_id
+        SELECT article_title as title, article_url as link, article_image_url as "imageUrl", video_url, article_excerpt as excerpt, source_name as "sourceName", agent_id
         FROM posts 
         WHERE created_at > now() - interval '48 hours'
         ORDER BY RANDOM()
@@ -119,6 +119,7 @@ export async function GET(request) {
       article_title: article.title,
       article_url: article.link || null,
       article_image_url: article.imageUrl || null,
+      video_url: article.video_url || null,
       agent_a_id: agentA.id,
       agent_b_id: agentB.id,
       argument_a: debateResult.argument_a,
@@ -127,6 +128,8 @@ export async function GET(request) {
       votes_a: 0,
       votes_b: 0,
       tags: ['Debate'],
+      llm: debateResult.llm,
+      model: debateResult.model,
       ends_at: new Date(Date.now() + SETTINGS.DEBATE_DURATION_MS).toISOString(),
     });
 

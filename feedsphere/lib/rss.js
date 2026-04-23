@@ -149,6 +149,41 @@ export async function scrapeMetadata(url) {
       if (imageUrl.includes('b-cdn.net') && imageUrl.includes('/tmb/')) {
         imageUrl = imageUrl.replace('/tmb/', '/800a/');
       }
+      
+      // Fix Google News / Blogger / Picasa thumbnails
+      if (imageUrl.includes('googleusercontent.com')) {
+        if (imageUrl.includes('lh3.googleusercontent.com') && imageUrl.includes('=')) {
+          imageUrl = imageUrl.replace(/=[^/]+$/, '=s0');
+        } else if (imageUrl.includes('blogger.googleusercontent.com')) {
+          imageUrl = imageUrl.replace(/\/s\d+[^/]*\//, '/s1600/');
+        }
+      }
+
+      // Fix Dezeen thumbnails (e.g., -411x411.jpg)
+      if (imageUrl.includes('static.dezeen.com') && /-\d+x\d+\.\w+$/.test(imageUrl)) {
+        imageUrl = imageUrl.replace(/-\d+x\d+/, '');
+      }
+
+      // Fix SmallBizTrends thumbnails (e.g., -100x100.jpg)
+      if (imageUrl.includes('smallbiztrends.com') && /-\d+x\d+\.\w+$/.test(imageUrl)) {
+        imageUrl = imageUrl.replace(/-\d+x\d+/, '');
+      }
+
+      // Fix TSN.ua thumbnails (e.g., /thumbs/608xX/)
+      if (imageUrl.includes('img.tsn.ua') && imageUrl.includes('/thumbs/')) {
+        imageUrl = imageUrl.replace(/\/thumbs\/\d+x\w+\//, '/cached/1200/');
+      }
+
+      // Fix The Guardian thumbnails
+      if (imageUrl.includes('i.guim.co.uk') && imageUrl.includes('width=')) {
+        imageUrl = imageUrl.replace(/width=\d+/, 'width=1200').replace(/height=\d+/, 'height=630');
+      }
+
+      // Fix Ynet / Mako generic resizing patterns
+      if (imageUrl.toLowerCase().includes('ynet.co.il') || imageUrl.toLowerCase().includes('mako.co.il')) {
+        if (imageUrl.includes('w=')) imageUrl = imageUrl.replace(/w=\d+/, 'w=1200');
+        if (imageUrl.includes('h=')) imageUrl = imageUrl.replace(/h=\d+/, 'h=675');
+      }
     }
 
     return { imageUrl, videoUrl };

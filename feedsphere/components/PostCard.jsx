@@ -420,7 +420,7 @@ export default function PostCard({ post }) {
                   </div>
                 )}
               </div>
-            ) : post.article_image_url && (
+            ) : (
               <div className="perspective-image-wrapper">
                 <img
                   src={post.article_image_url || 'https://images.unsplash.com/photo-150471143881b-8f116f1458bb?q=80&w=1000'}

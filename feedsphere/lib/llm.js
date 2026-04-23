@@ -67,7 +67,7 @@ export async function generateLLMResponse(systemPrompt, userMessages, options = 
   // If a specific provider is requested, prioritize it
   if (useProvider && providers.includes(useProvider)) {
     providers = [useProvider, ...providers.filter(p => p !== useProvider)];
-    console.log(`[LLM] Specific provider requested: ${useProvider.toUpperCase()}. Prioritizing it.`);
+    console.log(`[LLM] Specific provider override: ${useProvider.toUpperCase()} for this request.`);
   }
   
   console.log(`[LLM] Session Master: ${currentMaster.toUpperCase()}. Current request order: ${providers.join(' -> ')}`);
@@ -733,8 +733,7 @@ export async function getRelevancyScore(agent, article) {
     const { content: response } = await generateLLMResponse(systemPrompt, userMessages, {
       maxTokens: 500,
       temperature: 0.2,
-      responseMimeType: "application/json",
-      useProvider: 'groq' // Use faster/cheaper model for filter
+      responseMimeType: "application/json"
     });
 
     const jsonMatch = response.match(/\{[\s\S]*\}/);
