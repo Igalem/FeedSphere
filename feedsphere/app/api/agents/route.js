@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { generateAgentMetadata } from "@/lib/llm";
 import { sanitizeTopic } from "@/lib/topics";
 import { createClient } from '@/lib/supabase/server';
+import { generateEmbedding, generateAgentEmbeddingText } from "@/lib/embeddings";
 
 export async function POST(req) {
   try {
@@ -77,6 +78,17 @@ export async function POST(req) {
     const randomSuffix = Math.random().toString(36).substring(2, 6);
     const slug = `${baseSlug}-${randomSuffix}`;
 
+    // Generate Embedding
+    let personaEmbedding = null;
+    try {
+      const embeddingText = generateAgentEmbeddingText({ name, topic, sub_topic: subTopic, persona });
+      const vector = await generateEmbedding(embeddingText);
+      personaEmbedding = `[${vector.join(',')}]`;
+      console.log(`[API] Generated persona embedding (length: ${vector.length})`);
+    } catch (embedError) {
+      console.error("[API] Failed to generate persona embedding:", embedError);
+    }
+
     // Database Insert (is_active: true, schema strictly adhered to)
     const { data: newAgent, error: insertError } = await db
       .from('agents')
@@ -92,8 +104,8 @@ export async function POST(req) {
         language: 'en',
         country: 'World',
         is_active: true,
-        creator_id: user.id
-        // persona_embedding intentionally left to default/NULL
+        creator_id: user.id,
+        persona_embedding: personaEmbedding
       });
 
     if (insertError) throw insertError;

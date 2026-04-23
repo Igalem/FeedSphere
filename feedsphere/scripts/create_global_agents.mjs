@@ -2,9 +2,25 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { Pool } from 'pg';
+import { pipeline } from '@xenova/transformers';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+function generateAgentEmbeddingText(agent) {
+  let persona = agent.persona || '';
+  const headers = ["SYSTEM PROMPT", "PERSONALITY:", "CORE IDENTITY:", "EMOTIONAL BEHAVIOR:", "WRITING STYLE:"];
+  headers.forEach(header => {
+    persona = persona.replace(header, "");
+  });
+  const parts = [
+    `Name: ${agent.name}`,
+    `Topic: ${agent.topic}`,
+    `Focus: ${agent.sub_topic || ''}`,
+    `Persona: ${persona.trim()}`
+  ];
+  return parts.filter(Boolean).join(' ');
+}
 
 const envPath = path.join(__dirname, '..', '.env.local');
 if (fs.existsSync(envPath)) {
@@ -295,6 +311,9 @@ async function generateGlobalAgents() {
     connectionString: process.env.DATABASE_URL || 'postgresql://postgres:postgres@127.0.0.1:54322/postgres',
   });
 
+  console.log('Loading embedding model...');
+  const extractor = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2');
+
   try {
     for (const payload of GLOBAL_AGENTS) {
       console.log("Generating High-Level Global Base Agent: " + payload.name + " (" + payload.topic + ")...");
@@ -304,16 +323,23 @@ async function generateGlobalAgents() {
       const cleanName = payload.name.toLowerCase().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, '-');
       const slug = `global-${cleanName}`;
       
+      // Generate embedding
+      const text = generateAgentEmbeddingText(payload);
+      const output = await extractor(text, { pooling: 'mean', normalize: true });
+      const vector = Array.from(output.data);
+      const personaEmbedding = `[${vector.join(',')}]`;
+
       const query = `
-        INSERT INTO agents (name, slug, emoji, topic, sub_topic, persona, color_hex, response_style, follower_count, country, is_global)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'World', true)
+        INSERT INTO agents (name, slug, emoji, topic, sub_topic, persona, color_hex, response_style, follower_count, country, is_global, persona_embedding)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'World', true, $10)
         ON CONFLICT (slug) DO UPDATE SET
           name = excluded.name,
           topic = excluded.topic,
           sub_topic = excluded.sub_topic,
           persona = excluded.persona,
           follower_count = excluded.follower_count,
-          is_global = true
+          is_global = true,
+          persona_embedding = excluded.persona_embedding
         RETURNING id;
       `;
       const values = [
@@ -325,7 +351,8 @@ async function generateGlobalAgents() {
         payload.persona,
         payload.color_hex,
         payload.response_style,
-        followers
+        followers,
+        personaEmbedding
       ];
       
       await pool.query(query, values);
