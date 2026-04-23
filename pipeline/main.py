@@ -164,14 +164,14 @@ async def run_pipeline(dry_run=False, limit_feeds=None):
                     logger.error(f"Failed to get relevancy score for agent {agent['slug']} on article '{article['article_title']}': {e}")
                     score = 0 # Default to non-relevant on error
 
-                # Serendipity Logic:
-                # 90+ score: Guaranteed pick
-                # 60-89 score: High probability pick (80% chance)
-                # < 60: Skip
+                # Precision-Focused Serendipity Logic:
+                # 90+ score: Guaranteed pick (Solid match)
+                # 80-89 score: Low probability pick (15% chance) to allow for some variety but maintain high precision
+                # < 80: Skip
                 is_picked = False
-                if score >= 95:
+                if score >= 90:
                     is_picked = True
-                elif score >= 75 and random.random() < 0.5:
+                elif score >= 80 and random.random() < 0.15:
                     is_picked = True
                 
                 if is_picked:
@@ -180,7 +180,7 @@ async def run_pipeline(dry_run=False, limit_feeds=None):
                     agent_with_score["relevancy_score"] = score
                     verified_matches.append(agent_with_score)
                 else:
-                    logger.info(f"Skipping agent {agent['slug']} for article {article['article_title']} (Score: {score})")
+                    logger.info(f"Skipping agent {agent['slug']} for article {article['article_title']} (Score: {score}) - Precision Gate")
 
             matches = verified_matches
             

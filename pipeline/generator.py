@@ -97,11 +97,11 @@ class Generator:
             ("user", "Determine if this article is relevant to the agent based on the rules above.\n\n"
                      "Article Title: {article_title}\n"
                      "Article Excerpt: {article_excerpt}\n\n"
-                     "Scoring:\n"
-                     "- 100: Perfect match. Specific to the niche (if any) or a major story in their general topic.\n"
-                     "- 90-99: Highly related. Involves key players, rivals, or significant sectoral shifts.\n"
-                     "- 70-89: Related but generic. Same category and niche, but low priority.\n"
-                     "- 0-69: NOT RELEVANT. Wrong category, or completely outside the specific niche (e.g. music news for a gaming agent).\n\n"
+                     "Scoring Guide (BE UNFORGIVING):\n"
+                     "- 100: Absolute bullseye. Directly mentions the niche and is a major event for that specific subject.\n"
+                     "- 90-99: Highly relevant. Strong connection to the niche, involving key figures or core subject matter.\n"
+                     "- 80-89: Technically relevant but minor. Matches the niche but might be a routine update or low-impact news.\n"
+                     "- 0-79: NOT RELEVANT. If it's just 'in the same ballpark' but doesn't hit the niche directly, score it LOW. No tangential points awarded.\n\n"
                      "Response format: JSON object with 'relevance_score' (int 0-100) and 'reasoning' (string).\n"
                      "IMPORTANT: Return ONLY valid JSON.")
         ])

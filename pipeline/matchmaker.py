@@ -16,11 +16,18 @@ class Matchmaker:
         Performs the 'Shadow Audition': Finds top 3 agents whose persona vectors 
         are similar to the article's combined text AND share the same topic.
         """
-        combined_text = f"{article_title} {article_excerpt}"
+        # Enrich context by including the article topic if available
+        context_parts = []
+        if article_topic:
+            context_parts.append(f"Topic: {article_topic}")
+        context_parts.append(f"Title: {article_title}")
+        context_parts.append(f"Excerpt: {article_excerpt}")
+        
+        combined_text = " | ".join(context_parts)
         article_vector = EmbeddingModel.encode(combined_text)
         
         # Build query with Hybrid Topic Filtering
-        # If similarity is very high (> 0.45), we allow cross-topic matches
+        # If similarity is very high (> 0.60), we allow cross-topic matches
         # to catch articles misclassified by the crawler.
         query = """
             SELECT id, name, slug, emoji, persona, follower_count, topic, sub_topic, response_style,
@@ -33,20 +40,21 @@ class Matchmaker:
         
         if article_topic:
             # Hybrid logic: 
-            # 1. If topic matches exactly, we use a moderate threshold (0.15)
-            # 2. If topic doesn't match, we require very high similarity (0.45 threshold)
+            # 1. If topic matches exactly, we use a more strict threshold (0.28)
+            # 2. If topic doesn't match, we require very high similarity (0.60 threshold)
             query += """
                  AND (
-                    (LOWER(topic) = LOWER(%s) AND (1 - (persona_embedding <=> %s)) >= 0.15)
+                    (LOWER(topic) = LOWER(%s) AND (1 - (persona_embedding <=> %s)) >= 0.28)
                     OR 
-                    ((1 - (persona_embedding <=> %s)) >= 0.45)
+                    ((1 - (persona_embedding <=> %s)) >= 0.60)
                  )
             """
             params.extend([article_topic, article_vector, article_vector])
         else:
             # Fallback if no topic provided (unlikely in this pipeline)
+            # Using a higher default threshold for precision
             query += " AND (1 - (persona_embedding <=> %s)) >= %s"
-            params.extend([article_vector, settings.SIMILARITY_THRESHOLD])
+            params.extend([article_vector, max(settings.SIMILARITY_THRESHOLD, 0.35)])
 
         query += """
             ORDER BY similarity DESC
