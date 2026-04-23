@@ -19,37 +19,68 @@ export async function GET(request) {
 
   try {
     // Fetch all agents
-    const agentsRes = await db.query(`SELECT * FROM agents WHERE is_active = true ORDER BY RANDOM() LIMIT 10`);
+    const agentsRes = await db.query(`SELECT * FROM agents WHERE is_active = true ORDER BY RANDOM() LIMIT 15`);
     const allAgents = agentsRes.rows;
 
     if (allAgents.length < 2) {
       return NextResponse.json({ error: 'Not enough agents to debate' }, { status: 400 });
     }
 
-    // Pick 2 different agents randomly
-    const agentA = allAgents[0];
-    const agentB = allAgents[1];
-
-    // Fetch a recent article from agentA's feeds
-    const feedsA = typeof agentA.rss_feeds === 'string' 
-      ? JSON.parse(agentA.rss_feeds) 
-      : agentA.rss_feeds || [];
-
     let article = null;
-    for (const feed of feedsA.slice(0, 3)) {
-      try {
-        const items = await fetchFeedItems(feed.url, 5);
-        if (items && items.length > 0) {
-          // Pick a random item for variety
-          article = items[Math.floor(Math.random() * items.length)];
-          if (article?.title) break;
+    let agentA = null;
+    let agentB = null;
+
+    // Shuffle agents to try different "initiators"
+    const shuffledAgents = [...allAgents].sort(() => Math.random() - 0.5);
+
+    console.log(`[Debate] Attempting to find article from up to 8 of ${shuffledAgents.length} active agents...`);
+
+    for (let i = 0; i < Math.min(shuffledAgents.length, 8); i++) {
+      const candidateA = shuffledAgents[i];
+      
+      const feedsA = typeof candidateA.rss_feeds === 'string' 
+        ? JSON.parse(candidateA.rss_feeds) 
+        : candidateA.rss_feeds || [];
+
+      if (feedsA.length === 0) {
+        console.log(`[Debate] Agent ${candidateA.name} has no feeds, skipping.`);
+        continue;
+      }
+
+      let foundForThisAgent = false;
+      for (const feed of feedsA.slice(0, 3)) {
+        try {
+          console.log(`[Debate] Trying agent ${candidateA.name} feed: ${feed.url}`);
+          const items = await fetchFeedItems(feed.url, 5);
+          if (items && items.length > 0) {
+            // Pick a random item for variety
+            const validItems = items.filter(item => item && item.title);
+            if (validItems.length > 0) {
+              article = validItems[Math.floor(Math.random() * validItems.length)];
+              agentA = candidateA;
+              console.log(`[Debate] SUCCESS: Found article for ${candidateA.name}: "${article.title}"`);
+              foundForThisAgent = true;
+              break;
+            }
+          }
+        } catch (e) {
+          console.error(`[Debate] Feed error for ${candidateA.name} (${feed.url}):`, e.message);
         }
-      } catch (_) {}
+      }
+
+      if (foundForThisAgent) break;
     }
 
-    if (!article?.title) {
-      return NextResponse.json({ error: 'Could not fetch articles for debate' }, { status: 400 });
+    if (!article?.title || !agentA) {
+      return NextResponse.json({ error: 'Could not fetch articles for debate from any agent' }, { status: 400 });
     }
+
+    // Pick a different agent B as opponent
+    const remainingAgents = allAgents.filter(a => a.id !== agentA.id);
+    if (remainingAgents.length === 0) {
+      return NextResponse.json({ error: 'No opponent found for debate' }, { status: 400 });
+    }
+    agentB = remainingAgents[Math.floor(Math.random() * remainingAgents.length)];
 
     console.log(`[Debate] Generating: ${agentA.name} vs ${agentB.name} on "${article.title}"`);
 
