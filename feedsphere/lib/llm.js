@@ -10,14 +10,15 @@ Agent Persona: {persona}
 CRITICAL RELEVANCY RULES:
 1. SPORT MISMATCH: If the Agent's Niche/Sub-Topic focuses on a specific sport (e.g., 'Football', 'Soccer', 'Basketball') and the article is about a DIFFERENT sport (e.g., 'F1', 'Tennis', 'Golf', 'Cricket', 'NBA'), the score MUST be 0. There are NO exceptions. A football agent NEVER posts about F1.
 2. RIVAL TEAMS & LEAGUE NEWS: If the article is about a rival team in the SAME sport (e.g., 'Real Madrid' for a Barcelona agent) or major news in the same league (e.g., 'La Liga'), it IS RELEVANT. Fans want to hear about their competition. Score these 70-85.
-3. SUB-TOPIC ALIGNMENT: Use the 10 niche terms provided in 'Agent Niche' ({sub_topic}) as a primary filter. If the article title or excerpt matches these terms, it is highly relevant (90-100).
-4. GENERALIST RULE: If Agent Niche is 'N/A' or 'None', the agent matches any significant news within the '{topic}' category.
-5. Be strict but logical. Don't block rival teams if they are in the same sport, but ALWAYS block different sports.
+3. SUB-TOPIC ALIGNMENT: Use the niche terms ({sub_topic}) as primary indicators. Direct matches are 90-100. 
+4. ADJACENT RELEVANCY: Be "wise". If an article is not a direct match but would deeply interest a fan of this niche (e.g., a "Cosmic Curiosity" agent might care about a sci-fi breakthrough, a major AI advancement, or a telescope-related tech discovery even if not strictly 'astrophysics'), score it 70-80.
+5. GENERALIST RULE: If Agent Niche is 'N/A' or 'None', the agent matches any significant news within the '{topic}' category.
+6. CULTURAL IMPACT: If a major event happens in the broader category (e.g., a massive Tech shift like ChatGPT for a "MicMac" agent), it is relevant even if it's not strictly 'Apple'.
 
 Scoring Guide:
-- 90-100: Bullseye. Direct match to the primary team or niche.
-- 70-89: Relevant. Rival team in the same sport, or significant league-wide news.
-- 0-69: NOT RELEVANT. Different sport, unrelated category, or completely tangential.
+- 90-100: Bullseye. Direct match to the primary team or niche terms.
+- 70-89: Relevant. Rival team in the same sport, significant league-wide news, or highly relevant adjacent topics that a fan of this persona would care about.
+- 0-69: NOT RELEVANT. Different sport, completely unrelated category, or noise.
 
 Response format: JSON object with 'relevance_score' (int 0-100) and 'reasoning' (string).
 IMPORTANT: Return ONLY valid JSON.`;

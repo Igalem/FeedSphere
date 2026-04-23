@@ -34,12 +34,19 @@ export async function GET(request) {
 
     // 0. Static agent sync removed. Agents are now dynamic and created via UI.
 
-    // 1. Fetch active agents and SHUFFLE them
-    console.log('Fetching active agents...');
-    const { data: allAgents, error: fetchError } = await db.from('agents').select('*', { is_active: true });
+    // 1. Fetch active agents prioritized by their LAST POST DATE (Hungry agents first)
+    console.log('Fetching active agents with priority...');
+    const { rows: allAgents } = await db.query(`
+      SELECT a.*, MAX(p.published_at) as last_post_at
+      FROM agents a
+      LEFT JOIN posts p ON a.id = p.agent_id
+      WHERE a.is_active = true
+      GROUP BY a.id
+      ORDER BY last_post_at ASC NULLS FIRST
+    `);
 
-    if (allAgents) {
-      console.log(`[Cron] Found ${allAgents.length} active agents: ${allAgents.map(a => a.name).join(', ')}`);
+    if (allAgents && allAgents.length > 0) {
+      console.log(`[Cron] Found ${allAgents.length} active agents. Top hungry: ${allAgents.slice(0, 5).map(a => `${a.name} (${a.last_post_at || 'Never'})`).join(', ')}`);
 
       // SELF-HEALING: Auto-vectorize agents missing embeddings
       const missingVectors = allAgents.filter(a => !a.persona_embedding);
@@ -63,18 +70,18 @@ export async function GET(request) {
       }
     }
 
-    if (fetchError || !allAgents || allAgents.length === 0) {
+    if (!allAgents || allAgents.length === 0) {
       return NextResponse.json({ success: true, posted: 0, details: ['No agents found'] });
     }
 
     results.allActiveAgents = allAgents.map(a => a.name);
 
-    // Process 3 random agents per run to stay under Vercel's 10-60s timeout
-    // Using proper shuffle to ensure fairness
-    const shuffledAgents = shuffle(allAgents);
-    const dbAgents = shuffledAgents.slice(0, 3);
+    // Process top 4 "hungry" agents per run (Increased from 3 for better coverage)
+    // We still shuffle the top 6 to add a bit of variety while maintaining priority
+    const hungryPool = allAgents.slice(0, 6);
+    const dbAgents = shuffle(hungryPool).slice(0, 4);
 
-    console.log(`[Cron] PICKED AGENTS FOR THIS RUN: ${dbAgents.map(a => a.name).join(', ')}`);
+    console.log(`[Cron] PICKED AGENTS FOR THIS RUN (Prioritizing hungry): ${dbAgents.map(a => a.name).join(', ')}`);
 
     // 2. Pre-prepare agents and their feeds
     const agents = dbAgents.map(dbAgent => ({
@@ -111,7 +118,7 @@ export async function GET(request) {
       // We use both Topic and Keyword matching (from the 10 sub-topics) for maximum recall
       const subTopicTerms = (agent.sub_topic || "").split(',').map(t => t.trim()).filter(t => t.length > 0);
       const keywordSql = subTopicTerms.length > 0 
-        ? `OR (${subTopicTerms.map((_, i) => `title ILIKE $${i + 2}`).join(' OR ')})` 
+        ? `OR (${subTopicTerms.map((_, i) => `(title ILIKE $${i + 2} OR excerpt ILIKE $${i + 2})`).join(' OR ')})` 
         : '';
       
       const { rows: dbArticles } = await db.query(`
@@ -138,7 +145,7 @@ export async function GET(request) {
           const { score, reasoning } = await getRelevancyScore(agent, article);
           console.log(`[Gatekeeper] ${agent.name} vs "${article.title}" -> Score: ${score} (${reasoning})`);
 
-          if (score < 70) {
+          if (score < 65) {
             console.log(`[Gatekeeper] SKIPPING: Article is not relevant to ${agent.name}'s niche.`);
             return;
           }
