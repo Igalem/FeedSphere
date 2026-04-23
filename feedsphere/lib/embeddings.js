@@ -3,6 +3,12 @@ export async function generateEmbedding(text) {
   const model = "BAAI/bge-m3";
   const url = `https://router.huggingface.co/hf-inference/models/${model}/pipeline/feature-extraction`;
 
+  console.log("[Embeddings] Token check:", 
+    process.env.HUGGINGFACE_TOKEN 
+      ? `Exists (starts with ${process.env.HUGGINGFACE_TOKEN.substring(0, 4)}...)` 
+      : "MISSING"
+  );
+
   try {
     const response = await fetch(url, {
       method: "POST",
