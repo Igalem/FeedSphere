@@ -36,7 +36,7 @@ export default async function RootLayout({ children }) {
     profile = data;
   }
 
-  const userLang = profile?.app_language || 'en';
+  const userLang = profile?.app_language || 'he';
 
   // Fetch data for FeedHeader (Global availability)
   let agents = [];
@@ -61,7 +61,7 @@ export default async function RootLayout({ children }) {
   }
 
   return (
-    <html lang={userLang} suppressHydrationWarning>
+    <html lang={userLang} dir={userLang === 'he' ? 'rtl' : 'ltr'} suppressHydrationWarning>
       <body suppressHydrationWarning className={!user ? "no-auth" : ""}>
         <TranslationHandler targetLang={userLang} />
         {!user ? (

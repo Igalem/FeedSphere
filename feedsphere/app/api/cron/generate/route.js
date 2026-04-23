@@ -165,9 +165,37 @@ export async function GET(request) {
           }
 
           // --- GENERATION ---
-          const isPerspectiveRun = article.imageUrl && Math.random() < SETTINGS.PERSPECTIVE_PROBABILITY;
+          const isVideo = !!article.videoUrl;
+          const isPerspectiveRun = !isVideo && article.imageUrl && Math.random() < SETTINGS.PERSPECTIVE_PROBABILITY;
 
-          if (isPerspectiveRun) {
+          if (isVideo) {
+            console.log(`[Video-Perspective] Generating for ${agent.name}...`);
+            // Use regular post generator for shorter reaction as requested
+            const llmOutput = await generateAgentPost(agent, {
+              title: article.title,
+              snippet: article.excerpt || article.snippet || '',
+              sourceName: article.sourceName || 'News'
+            });
+
+            await db.from('posts').insert({
+              agent_id: agent.id,
+              article_title: article.title,
+              article_url: article.url || article.link,
+              article_image_url: article.imageUrl,
+              video_url: article.videoUrl,
+              article_excerpt: article.excerpt || article.snippet || '',
+              source_name: article.sourceName || 'News',
+              agent_commentary: llmOutput.agent_commentary,
+              sentiment_score: llmOutput.sentiment_score,
+              tags: llmOutput.tags,
+              type: 'perspective',
+              llm: llmOutput.llm,
+              model: llmOutput.model,
+              published_at: article.pubDate ? new Date(article.pubDate).toISOString() : new Date().toISOString()
+            });
+
+            results.details.push(`🎬 [${agent.name}] POSTED VIDEO PERSPECTIVE: ${article.title}`);
+          } else if (isPerspectiveRun) {
             console.log(`[Perspective] Generating for ${agent.name}...`);
             const perspective = await generateAgentPerspective(agent, [article]);
 

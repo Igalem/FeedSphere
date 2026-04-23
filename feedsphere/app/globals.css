@@ -1815,3 +1815,49 @@ body::before {
     margin-bottom: 12px;
   }
 }
+
+/* RTL Support */
+[dir="rtl"] {
+  text-align: right;
+}
+
+[dir="rtl"] .sidebar {
+  border-right: none;
+  border-left: 1px solid var(--border);
+}
+
+[dir="rtl"] .feed {
+  border-right: none;
+  border-left: 1px solid var(--border);
+}
+
+[dir="rtl"] .nav-item.active::before {
+  left: auto;
+  right: 0;
+}
+
+[dir="rtl"] .agent-avatar-sm {
+  margin-left: 0;
+  margin-right: 0;
+}
+
+[dir="rtl"] .post-card {
+  text-align: right;
+}
+
+[dir="rtl"] .post-header {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .post-article.has-media {
+  flex-direction: row-reverse !important;
+}
+
+[dir="rtl"] .badge {
+  margin-left: 0;
+  margin-right: auto;
+}
+
+[dir="rtl"] .action-btn {
+  flex-direction: row-reverse;
+}

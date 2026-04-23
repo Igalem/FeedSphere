@@ -26,6 +26,8 @@ IMPORTANT: Return ONLY valid JSON.`;
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const CEREBRAS_API_KEY = process.env.CEREBRAS_API_KEY;
+const CEREBRAS_API_KEY2 = process.env.CEREBRAS_API_KEY2;
+const CEREBRAS_KEYS = [CEREBRAS_API_KEY, CEREBRAS_API_KEY2].filter(Boolean);
 
 let currentMaster = 'cerebras';
 let masterFailureCount = 0;
@@ -76,63 +78,88 @@ export async function generateLLMResponse(systemPrompt, userMessages, options = 
   for (const provider of providers) {
     // --- CEREBRAS PROVIDER ---
     if (provider === 'cerebras') {
-      if (!CEREBRAS_API_KEY) {
-        console.warn('[Cerebras] Key missing. Skipping.');
+      if (CEREBRAS_KEYS.length === 0) {
+        console.warn('[Cerebras] Keys missing. Skipping.');
         continue;
       }
 
-      try {
-        console.log(`[Cerebras] Attempting generation...`);
-        const response = await fetch('https://api.cerebras.ai/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${CEREBRAS_API_KEY}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            model: 'llama3.1-8b',
-            messages: [
-              { role: 'system', content: systemPrompt },
-              ...userMessages
-            ],
-            max_tokens: Math.min(maxTokens, 8192),
-            temperature: temperature,
-            ...(options.responseMimeType === 'application/json' ? { response_format: { type: "json_object" } } : {})
-          })
-        });
+      let cerebrasSuccess = false;
+      let cerebrasContent = '';
 
-        if (!response.ok) {
-          throw new Error(`Cerebras API Error: ${response.status}`);
-        }
+      for (let k = 0; k < CEREBRAS_KEYS.length; k++) {
+        const apiKey = CEREBRAS_KEYS[k];
+        try {
+          console.log(`[Cerebras] Attempting generation with key ${k + 1}/${CEREBRAS_KEYS.length}...`);
+          const response = await fetch('https://api.cerebras.ai/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${apiKey}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              model: 'llama3.1-8b',
+              messages: [
+                { role: 'system', content: systemPrompt },
+                ...userMessages
+              ],
+              max_tokens: Math.min(maxTokens, 8192),
+              temperature: temperature,
+              ...(options.responseMimeType === 'application/json' ? { response_format: { type: "json_object" } } : {})
+            })
+          });
 
-        const data = await response.json();
-        const content = data.choices?.[0]?.message?.content || '';
-        if (content) {
-          return {
-            content: cleanLLMResponse(content),
-            provider: 'cerebras',
-            model: 'llama3.1-8b'
-          };
-        }
-        throw new Error('Empty response');
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            const errorMsg = errorData.error?.message || response.statusText;
+            console.warn(`[Cerebras] Key ${k + 1} failed: ${response.status} - ${errorMsg}`);
+            
+            if (response.status === 429 || response.status >= 500) {
+              if (k < CEREBRAS_KEYS.length - 1) {
+                console.warn(`[Cerebras] Retrying with next available key...`);
+                continue;
+              }
+            }
+            throw new Error(`Cerebras API Error: ${response.status} - ${errorMsg}`);
+          }
 
-      } catch (error) {
-        lastError = error;
-        console.warn(`[Cerebras] Failed: ${error.message}.`);
-        
-        if (currentMaster === 'cerebras') {
-          masterFailureCount++;
-          console.warn(`⚠️ [LLM] Master (Cerebras) failure count: ${masterFailureCount}/3`);
-          if (masterFailureCount >= 3) {
-            currentMaster = 'groq';
-            masterFailureCount = 0;
-            console.error('🚨 [LLM] Master failed 3 times. SWAPPING MASTER TO GROQ for the rest of this session.');
+          const data = await response.json();
+          cerebrasContent = data.choices?.[0]?.message?.content || '';
+          if (cerebrasContent) {
+            cerebrasSuccess = true;
+            break;
+          }
+          throw new Error('Empty response');
+
+        } catch (error) {
+          lastError = error;
+          console.warn(`[Cerebras] Error with key ${k + 1}: ${error.message}.`);
+          if (k < CEREBRAS_KEYS.length - 1) {
+            console.warn(`[Cerebras] Falling back to next key...`);
+          } else {
+            // All keys failed
+            if (currentMaster === 'cerebras') {
+              masterFailureCount++;
+              console.warn(`⚠️ [LLM] Master (Cerebras) total failure count: ${masterFailureCount}/3`);
+              if (masterFailureCount >= 3) {
+                currentMaster = 'groq';
+                masterFailureCount = 0;
+                console.error('🚨 [LLM] Master failed 3 times. SWAPPING MASTER TO GROQ for the rest of this session.');
+              }
+            }
           }
         }
-        
-        console.warn(`[LLM] Falling back to next available provider...`);
-        continue;
       }
+
+      if (cerebrasSuccess) {
+        return {
+          content: cleanLLMResponse(cerebrasContent),
+          provider: 'cerebras',
+          model: 'llama3.1-8b'
+        };
+      }
+      
+      console.warn(`[LLM] All Cerebras keys failed. Falling back to next available provider...`);
+      continue;
     }
 
     // --- GEMINI PROVIDER ---

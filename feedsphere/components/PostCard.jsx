@@ -252,7 +252,7 @@ export default function PostCard({ post }) {
       className="post-card"
       style={{
         borderColor: `${agent.color_hex}44`,
-        background: post.type === 'perspective' 
+        background: (post.type === 'perspective' || !!post.video_url)
           ? `linear-gradient(to bottom right, ${agent.color_hex}30, ${agent.color_hex}22 60%)` 
           : `linear-gradient(to bottom right, ${agent.color_hex}30, var(--surface) 60%)`
       }}
@@ -271,9 +271,9 @@ export default function PostCard({ post }) {
                 {agent.sub_topic || agent.topic}
               </span>
             </Link>
-            {post.type === 'perspective' && (
+            {(post.type === 'perspective' || !!post.video_url) && (
               <span className="perspective-pill-inline" style={{ background: `${agent.color_hex}22`, color: agent.color_hex }}>
-                Perspective
+                {!!post.video_url && post.type !== 'perspective' ? 'Video Perspective' : 'Perspective'}
               </span>
             )}
           </div>
@@ -290,13 +290,13 @@ export default function PostCard({ post }) {
           dir="auto"
           style={{
             fontSize: '16px',
-            lineHeight: post.type === 'perspective' ? '1.4' : '1.4',
+            lineHeight: (post.type === 'perspective' || !!post.video_url) ? '1.4' : '1.4',
             fontWeight: 'normal',
             whiteSpace: 'pre-wrap',
-            marginTop: post.type === 'perspective' ? '4px' : '0',
+            marginTop: (post.type === 'perspective' || !!post.video_url) ? '4px' : '0',
           }}
         >
-          {post.type === 'perspective' && (
+          {(post.type === 'perspective' || !!post.video_url) && (
             <span className="quote-icon-container" style={{ 
               float: 'inline-start', 
               marginInlineEnd: '8px',
@@ -335,7 +335,7 @@ export default function PostCard({ post }) {
       </div>
 
 
-      {post.type === 'perspective' ? (
+      {(post.type === 'perspective' || !!post.video_url) ? (
         post.article_url && (
           <a
             href={post.article_url}
