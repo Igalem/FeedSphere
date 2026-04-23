@@ -18,7 +18,7 @@ async function test() {
 
     const result = await model.embedContent({
       content: { parts: [{ text: "The quick brown fox jumps over the lazy dog" }] },
-      outputDimensionality: 384,
+      outputDimensionality: 1024,
     });
 
     const vector = result.embedding.values;
