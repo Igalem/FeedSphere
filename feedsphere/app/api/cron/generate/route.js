@@ -76,10 +76,10 @@ export async function GET(request) {
 
     results.allActiveAgents = allAgents.map(a => a.name);
 
-    // Process top 4 "hungry" agents per run (Increased from 3 for better coverage)
-    // We still shuffle the top 6 to add a bit of variety while maintaining priority
-    const hungryPool = allAgents.slice(0, 6);
-    const dbAgents = shuffle(hungryPool).slice(0, 4);
+    // Process top 7 "hungry" agents per run (Increased from 4 to target ~15 total posts)
+    // We still shuffle the top 10 to add a bit of variety while maintaining priority
+    const hungryPool = allAgents.slice(0, 10);
+    const dbAgents = shuffle(hungryPool).slice(0, 7);
 
     console.log(`[Cron] PICKED AGENTS FOR THIS RUN (Prioritizing hungry): ${dbAgents.map(a => a.name).join(', ')}`);
 
@@ -122,7 +122,7 @@ export async function GET(request) {
         : '';
       
       const { rows: dbArticles } = await db.query(`
-        SELECT title, url, excerpt, image_url as "imageUrl", source_name as "sourceName", published_at as "pubDate"
+        SELECT title, url, excerpt, image_url as "imageUrl", video_url as "videoUrl", source_name as "sourceName", published_at as "pubDate"
         FROM news_articles
         WHERE (LOWER(topic) = LOWER($1) ${keywordSql})
         AND published_at > NOW() - INTERVAL '7 days'
@@ -176,6 +176,7 @@ export async function GET(request) {
               article_title: article.title,
               article_url: article.url || article.link,
               article_image_url: article.imageUrl,
+              video_url: article.videoUrl || null,
               article_excerpt: article.excerpt || article.snippet || '',
               source_name: article.sourceName || 'News',
               agent_commentary: perspective.agent_commentary,
@@ -200,6 +201,7 @@ export async function GET(request) {
               article_title: article.title,
               article_url: article.url || article.link,
               article_image_url: article.imageUrl || null,
+              video_url: article.videoUrl || null,
               article_excerpt: article.excerpt || article.snippet || '',
               source_name: article.sourceName || 'News',
               agent_commentary: llmOutput.agent_commentary,
@@ -248,26 +250,27 @@ export async function GET(request) {
       }
     }
 
-    // 4. DEBATE TRIGGER (Global chance)
-    if (Math.random() < SETTINGS.DEBATE_PROBABILITY) {
-      console.log('Triggering global debate generation...');
-      try {
-        // Internal fetch to the debates generate endpoint
-        const debateUrl = `${SETTINGS.API_BASE_URL}/api/debates/generate`;
-        const authHeader = `Bearer ${SETTINGS.CRON_TOKEN}`;
+    // 4. DEBATE TRIGGER (Global chance - Now runs twice for 0-2 debates)
+    for (let i = 0; i < 2; i++) {
+      if (Math.random() < SETTINGS.DEBATE_PROBABILITY) {
+        console.log(`Triggering debate generation (Attempt ${i + 1})...`);
+        try {
+          const debateUrl = `${SETTINGS.API_BASE_URL}/api/debates/generate`;
+          const authHeader = `Bearer ${SETTINGS.CRON_TOKEN}`;
 
-        const debateRes = await fetch(debateUrl, {
-          headers: { 'Authorization': authHeader }
-        });
+          const debateRes = await fetch(debateUrl, {
+            headers: { 'Authorization': authHeader }
+          });
 
-        if (debateRes.ok) {
-          const debateData = await debateRes.json();
-          results.details.push(`🔥 GLOBAL DEBATE CREATED: ${debateData.debate?.topic || 'Success'}`);
-        } else {
-          console.warn('Debate generation trigger failed:', await debateRes.text());
+          if (debateRes.ok) {
+            const debateData = await debateRes.json();
+            results.details.push(`🔥 GLOBAL DEBATE CREATED: ${debateData.debate?.topic || 'Success'}`);
+          } else {
+            console.warn('Debate generation trigger failed:', await debateRes.text());
+          }
+        } catch (debErr) {
+          console.error('Debate trigger error:', debErr);
         }
-      } catch (debErr) {
-        console.error('Debate trigger error:', debErr);
       }
     }
 
