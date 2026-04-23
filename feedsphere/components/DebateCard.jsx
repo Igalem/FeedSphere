@@ -63,13 +63,31 @@ export default function DebateCard({ debate, onVote }) {
     if (!url) return '';
     let cleanUrl = url;
     if (url.startsWith('//')) cleanUrl = 'https:' + url;
+
+    // YouTube
     if (cleanUrl.includes('youtube.com/watch?v=')) {
       cleanUrl = cleanUrl.replace('youtube.com/watch?v=', 'youtube.com/embed/').split('&')[0];
     } else if (cleanUrl.includes('youtu.be/')) {
       cleanUrl = cleanUrl.replace('youtu.be/', 'youtube.com/embed/').split('?')[0];
     } else if (cleanUrl.includes('youtube.com/shorts/')) {
       cleanUrl = cleanUrl.replace('youtube.com/shorts/', 'youtube.com/embed/').split('?')[0];
+    } else if (cleanUrl.includes('youtube.com/v/')) {
+      cleanUrl = cleanUrl.replace('youtube.com/v/', 'youtube.com/embed/').split('?')[0];
     }
+
+    // Vimeo
+    if (cleanUrl.includes('vimeo.com/') && !cleanUrl.includes('player.vimeo.com')) {
+      const vimeoId = cleanUrl.split('vimeo.com/')[1].split('?')[0].split('/')[0];
+      if (/^\d+$/.test(vimeoId)) {
+        cleanUrl = `https://player.vimeo.com/video/${vimeoId}`;
+      }
+    }
+
+    // Dailymotion
+    if (cleanUrl.includes('dailymotion.com/video/')) {
+       cleanUrl = cleanUrl.replace('dailymotion.com/video/', 'dailymotion.com/embed/video/');
+    }
+
     if (cleanUrl.includes('youtube.com/embed')) {
       const separator = cleanUrl.includes('?') ? '&' : '?';
       return `${cleanUrl}${separator}enablejsapi=1&mute=1&autoplay=1`;
@@ -80,10 +98,13 @@ export default function DebateCard({ debate, onVote }) {
 
   const isEmbeddable = (url) => {
     if (!url) return false;
-    if (url.includes('youtube.com') || url.includes('youtu.be')) return true;
-    if (url.includes('vimeo.com')) return true;
-    if (url.includes('yahoo.com')) return false;
-    return true;
+    const low = url.toLowerCase();
+    if (low.includes('youtube.com') || low.includes('youtu.be')) return true;
+    if (low.includes('vimeo.com')) return true;
+    if (low.includes('dailymotion.com')) return true;
+    if (low.includes('/embed/')) return true;
+    if (low.includes('yahoo.com/video')) return true;
+    return false;
   };
 
   useEffect(() => {
@@ -464,6 +485,17 @@ export default function DebateCard({ debate, onVote }) {
           border: 1px solid rgba(255,255,255,0.1);
           box-shadow: 0 4px 20px rgba(0,0,0,0.4);
           flex-shrink: 0;
+          transition: all 0.3s ease;
+        }
+        .debate-thumbnail-wrap.has-video {
+          width: 140px;
+          height: 90px;
+        }
+        @media (max-width: 600px) {
+          .debate-thumbnail-wrap.has-video {
+            width: 100px;
+            height: 65px;
+          }
         }
         .debate-thumbnail-wrap img { width: 100%; height: 100%; object-fit: cover; }
         .debate-thumbnail-placeholder {
@@ -627,7 +659,7 @@ export default function DebateCard({ debate, onVote }) {
 
           {/* Center */}
           <div className="debate-center-col">
-            <div className="debate-thumbnail-wrap" ref={videoContainerRef} style={{
+            <div className={`debate-thumbnail-wrap ${debate.video_url && isEmbeddable(debate.video_url) ? 'has-video' : ''}`} ref={videoContainerRef} style={{
               backgroundImage: debate.article_image_url ? `url(${debate.article_image_url})` : 'none',
               backgroundSize: 'cover',
               backgroundPosition: 'center',

@@ -52,13 +52,28 @@ export default function PostCard({ post }) {
     let cleanUrl = url;
     if (url.startsWith('//')) cleanUrl = 'https:' + url;
 
-    // Safety net: convert watch?v= or youtu.be to embed format if they slipped through
+    // YouTube
     if (cleanUrl.includes('youtube.com/watch?v=')) {
       cleanUrl = cleanUrl.replace('youtube.com/watch?v=', 'youtube.com/embed/').split('&')[0];
     } else if (cleanUrl.includes('youtu.be/')) {
       cleanUrl = cleanUrl.replace('youtu.be/', 'youtube.com/embed/').split('?')[0];
     } else if (cleanUrl.includes('youtube.com/shorts/')) {
       cleanUrl = cleanUrl.replace('youtube.com/shorts/', 'youtube.com/embed/').split('?')[0];
+    } else if (cleanUrl.includes('youtube.com/v/')) {
+      cleanUrl = cleanUrl.replace('youtube.com/v/', 'youtube.com/embed/').split('?')[0];
+    }
+
+    // Vimeo
+    if (cleanUrl.includes('vimeo.com/') && !cleanUrl.includes('player.vimeo.com')) {
+      const vimeoId = cleanUrl.split('vimeo.com/')[1].split('?')[0].split('/')[0];
+      if (/^\d+$/.test(vimeoId)) {
+        cleanUrl = `https://player.vimeo.com/video/${vimeoId}`;
+      }
+    }
+
+    // Dailymotion
+    if (cleanUrl.includes('dailymotion.com/video/')) {
+       cleanUrl = cleanUrl.replace('dailymotion.com/video/', 'dailymotion.com/embed/video/');
     }
 
     if (cleanUrl.includes('youtube.com/embed')) {
@@ -72,9 +87,6 @@ export default function PostCard({ post }) {
         const videoId = match[1];
         return `https://finance.yahoo.com/video/player/embed/v/${videoId}?format=embed&autoplay=1&mute=1`;
       }
-      const separator = cleanUrl.includes('?') ? '&' : '?';
-      const base = cleanUrl.includes('format=embed') ? cleanUrl : `${cleanUrl}${separator}format=embed`;
-      return `${base}${base.includes('?') ? '&' : '?'}autoplay=1&mute=1`;
     }
 
     const separator = cleanUrl.includes('?') ? '&' : '?';
@@ -83,12 +95,15 @@ export default function PostCard({ post }) {
 
   const isEmbeddable = (url) => {
     if (!url) return false;
-    if (url.includes('youtube.com') || url.includes('youtu.be')) return true;
-    if (url.includes('vimeo.com')) return true;
-    // Yahoo and Expansion generally block iframes via X-Frame-Options: sameorigin
-    if (url.includes('yahoo.com')) return false;
-    if (url.includes('expansion.com')) return false;
-    return true; // Default to true for others
+    const low = url.toLowerCase();
+    if (low.includes('youtube.com') || low.includes('youtu.be')) return true;
+    if (low.includes('vimeo.com')) return true;
+    if (low.includes('dailymotion.com')) return true;
+    if (low.includes('/embed/')) return true;
+    if (low.includes('yahoo.com/video')) return true;
+    // Direct video links are NOT embeddable in an iframe usually, but we can try if they are on a known CDN
+    if (low.endsWith('.mp4') || low.endsWith('.m3u8')) return true; 
+    return false; // Default to false for unknown news sites that likely block iframes
   };
 
   // Sync count if prop changes
@@ -522,10 +537,12 @@ export default function PostCard({ post }) {
           ) : post.article_image_url && (
             <div className="article-image-wrapper">
               <img
-                src={post.article_image_url}
+                src={post.article_image_url || 'https://images.unsplash.com/photo-150471143881b-8f116f1458bb?q=80&w=1000'}
                 alt="Article"
                 className="article-image"
-                onError={(e) => { e.target.style.display = 'none'; }}
+                onError={(e) => { 
+                  e.target.src = 'https://images.unsplash.com/photo-150471143881b-8f116f1458bb?q=80&w=1000';
+                }}
               />
             </div>
           )}

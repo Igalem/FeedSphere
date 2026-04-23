@@ -13,7 +13,9 @@ from .utils import sanitize_topic
 from datetime import datetime, timezone
 import base64
 import urllib.parse
+from urllib.parse import urljoin, urlparse
 from langdetect import detect
+import hashlib
 
 # Set global socket timeout to prevent hang on slow feeds
 socket.setdefaulttimeout(10)
@@ -204,9 +206,18 @@ class Crawler:
                 return url
 
             video_url = to_embed(video_url)
+            
+            # Ensure video_url is absolute if it exists
+            if video_url and not video_url.startswith(('http', '//')):
+                video_url = urljoin(url, video_url)
+            
+            # If we found a youtube video but no image, generate a thumbnail URL
+            image_url = None
+            if video_url and "youtube.com/embed/" in video_url and not image_url:
+                video_id = video_url.split("youtube.com/embed/")[1].split("?")[0].split("/")[0]
+                image_url = f"https://img.youtube.com/vi/{video_id}/maxresdefault.jpg"
 
             # 2. Extract best possible Image (Prioritizing static images/thumbnails)
-            image_url = None
             
             # --- PRIORITY 1: media_thumbnail within media_content ---
             if 'media_content' in entry and entry.media_content:
@@ -281,21 +292,14 @@ class Crawler:
                                 ("meta", {"name": "twitter:image"}),
                                 ("meta", {"property": "twitter:image"}),
                                 ("meta", {"name": "thumbnail"}),
-                                ("link", {"rel": "image_src"}),
-                                ("meta", {"itemprop": "image"}),
-                                ("link", {"rel": "preload", "as": "image"}),
-                                ("meta", {"name": "sailthru.image"}),
-                                ("meta", {"name": "sailthru.image.full"}),
-                                ("meta", {"name": "sailthru.image.thumb"})
+                                ("meta", {"name": "twitter:image:src"}),
+                                ("link", {"rel": "image_src"})
                             ]
                             for tag_type, attrs in meta_candidates:
                                 tag = page_soup.find(tag_type, attrs=attrs)
-                                if tag:
-                                    candidate = tag.get("content") or tag.get("href")
-                                    # Relax 'logo' rejection but still avoid ads/tiny svgs/icons
-                                    if candidate and not any(v in candidate.lower() for v in ["doubleclick.net", "ads.", ".svg", "icon"]): 
-                                        image_url = candidate
-                                        break
+                                if tag and (tag.get("content") or tag.get("href")):
+                                    image_url = tag.get("content") or tag.get("href")
+                                    break
                             
                             # Last ditch: Find largest image in article
                             if not image_url:
@@ -335,6 +339,7 @@ class Crawler:
                                 ("meta", {"property": "og:video"}),
                                 ("meta", {"property": "og:video:secure_url"}),
                                 ("meta", {"property": "og:video:url"}),
+                                ("meta", {"property": "og:video:type"}),
                                 ("meta", {"name": "twitter:player"}),
                                 ("meta", {"property": "twitter:player"}),
                                 ("meta", {"name": "twitter:player:stream"}),
@@ -347,9 +352,23 @@ class Crawler:
                                     if v_cand:
                                         video_url = to_embed(v_cand)
                                         if video_url: break
+                            
+                            # 2. Try to find iframes (YouTube/Vimeo)
+                            if not video_url:
+                                for iframe in page_soup.find_all("iframe"):
+                                    src = iframe.get("src")
+                                    if src and any(v in src.lower() for v in ["youtube.com", "youtu.be", "vimeo.com", "dailymotion.com"]):
+                                        video_url = to_embed(src)
+                                        break
+                            
+                            # Ensure absolute URLs
+                            if video_url:
+                                video_url = urljoin(url, video_url)
+                            if image_url:
+                                image_url = urljoin(url, image_url)
 
                         if not video_url:
-                            # 2. Search for iframes in likely content areas
+                            # 3. Search for iframes in likely content areas
                             content_selectors = ['article', '.article-content', '.post-content', '.entry-content', '.content', '#main-content']
                             for selector in content_selectors:
                                 area = page_soup.select_one(selector)

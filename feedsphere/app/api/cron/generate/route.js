@@ -109,7 +109,7 @@ export async function GET(request) {
 
       // A. Try to find relevant articles from the DB POOL first (News Articles)
       // This is much more efficient and allows for better matching
-      const { data: dbArticles } = await db.query(`
+      const { rows: dbArticles } = await db.query(`
         SELECT title, url, excerpt, image_url as "imageUrl", source_name as "sourceName", published_at as "pubDate"
         FROM news_articles
         WHERE LOWER(topic) = LOWER($1)
