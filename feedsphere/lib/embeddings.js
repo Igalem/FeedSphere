@@ -1,37 +1,20 @@
-export async function generateEmbedding(text) {
-  // Correct Hugging Face Inference API URL for feature extraction
-  const model = "sentence-transformers/all-MiniLM-L6-v2";
-  const url = `https://api-inference.huggingface.co/pipeline/feature-extraction/${model}`;
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
+export async function generateEmbedding(text) {
   try {
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...(process.env.HUGGINGFACE_TOKEN && { "Authorization": `Bearer ${process.env.HUGGINGFACE_TOKEN}` }),
-      },
-      body: JSON.stringify({ 
-        inputs: text,
-        options: { wait_for_model: true } 
-      }),
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    // Use gemini-embedding-2 which supports 384 dimensions exactly
+    const model = genAI.getGenerativeModel({ model: "gemini-embedding-2" });
+
+    const result = await model.embedContent({
+      content: { parts: [{ text }] },
+      outputDimensionality: 384,
     });
 
-    if (!response.ok) {
-      const error = await response.text();
-      throw new Error(`Hugging Face API Error: ${error}`);
-    }
-
-    const result = await response.json();
-    
-    // The API returns [[vector]] for this task
-    if (Array.isArray(result) && Array.isArray(result[0])) {
-      return result[0];
-    }
-    
-    return result;
+    return result.embedding.values;
   } catch (error) {
-    console.error("[Embeddings] Generation failed:", error);
-    // Return a zero vector as fallback to keep the cron running
+    console.error("[Embeddings] Gemini generation failed:", error);
+    // Fallback to zeros only if the API fails completely
     return new Array(384).fill(0);
   }
 }
