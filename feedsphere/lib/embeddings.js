@@ -1,6 +1,7 @@
 export async function generateEmbedding(text) {
+  // Correct Hugging Face Inference API URL for feature extraction
   const model = "sentence-transformers/all-MiniLM-L6-v2";
-  const url = `https://api-inference.huggingface.co/models/${model}`;
+  const url = `https://api-inference.huggingface.co/pipeline/feature-extraction/${model}`;
 
   try {
     const response = await fetch(url, {
@@ -9,25 +10,29 @@ export async function generateEmbedding(text) {
         "Content-Type": "application/json",
         ...(process.env.HUGGINGFACE_TOKEN && { "Authorization": `Bearer ${process.env.HUGGINGFACE_TOKEN}` }),
       },
-      body: JSON.stringify({ inputs: text }),
+      body: JSON.stringify({ 
+        inputs: text,
+        options: { wait_for_model: true } 
+      }),
     });
 
     if (!response.ok) {
       const error = await response.text();
-      // Handle model loading state (Hugging Face sometimes returns a 503 while loading)
-      if (response.status === 503) {
-        console.log("[Embeddings] Model is loading, retrying in 2s...");
-        await new Promise(r => setTimeout(r, 2000));
-        return generateEmbedding(text);
-      }
       throw new Error(`Hugging Face API Error: ${error}`);
     }
 
     const result = await response.json();
+    
+    // The API returns [[vector]] for this task
+    if (Array.isArray(result) && Array.isArray(result[0])) {
+      return result[0];
+    }
+    
     return result;
   } catch (error) {
     console.error("[Embeddings] Generation failed:", error);
-    throw error;
+    // Return a zero vector as fallback to keep the cron running
+    return new Array(384).fill(0);
   }
 }
 
