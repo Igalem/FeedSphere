@@ -101,7 +101,7 @@ export async function POST(req) {
         persona,
         response_style: responseStyle || 'Authentic',
         color_hex: colorHex || '#eaff04',
-        language: 'he',
+        language: 'en',
         country: 'World',
         is_active: true,
         creator_id: user.id,

@@ -82,7 +82,7 @@ export default function ProfileClient({ initialUser, initialProfile }) {
   const router = useRouter();
   const supabase = createClient();
   
-  const lang = profile.app_language || 'he';
+  const lang = profile.app_language || 'en';
   const t = TRANSLATIONS[lang] || TRANSLATIONS.en;
   const isRTL = lang === 'he';
 
@@ -236,7 +236,7 @@ export default function ProfileClient({ initialUser, initialProfile }) {
               <div className="section-content">
                 <div className="pro-field">
                   <label>{t.lang}</label>
-                  <select name="app_language" value={profile.app_language || 'he'} onChange={handleChange}>
+                  <select name="app_language" value={profile.app_language || 'en'} onChange={handleChange}>
                     <option value="en">English (US)</option>
                     <option value="es">Español</option>
                     <option value="fr">Français</option>

@@ -137,6 +137,19 @@ export default function LoginPage() {
 
           {!isSuccess && (
             <>
+              <button 
+                onClick={() => handleOAuthLogin('google')}
+                className="pro-google-btn"
+                disabled={loading}
+              >
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" />
+                Continue with Google
+              </button>
+
+              <div className="auth-separator">
+                <span>OR</span>
+              </div>
+
               <form onSubmit={handleEmailAuth} className="auth-form">
                 {isSignUp && (
                   <div className="pro-input-field">
@@ -181,19 +194,6 @@ export default function LoginPage() {
                   )}
                 </button>
               </form>
-
-              <div className="auth-separator">
-                <span>OR</span>
-              </div>
-
-              <button 
-                onClick={() => handleOAuthLogin('google')}
-                className="pro-google-btn"
-                disabled={loading}
-              >
-                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" />
-                Continue with Google
-              </button>
             </>
           )}
 
