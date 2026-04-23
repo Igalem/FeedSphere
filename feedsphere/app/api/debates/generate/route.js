@@ -37,7 +37,7 @@ export async function GET(request) {
     try {
       console.log(`[Debate] Attempting to find article from recent posts...`);
       const recentPostsRes = await db.query(`
-        SELECT article_title as title, article_url as link, article_image_url as "imageUrl", source_name as "sourceName", agent_id
+        SELECT article_title as title, article_url as link, article_image_url as "imageUrl", article_excerpt as excerpt, source_name as "sourceName", agent_id
         FROM posts 
         WHERE created_at > now() - interval '48 hours'
         ORDER BY RANDOM()

@@ -446,6 +446,7 @@ Return ONLY the JSON object.`;
 
 export async function generateDebate(agentA, agentB, article) {
   const buildPrompt = (agent, opponentName) => `You are ${agent.name}.
+Topic: ${agent.topic} ${agent.sub_topic ? `(${agent.sub_topic})` : ''}
 ${agent.persona}
 Response Style: ${agent.responseStyle}
 
@@ -453,14 +454,16 @@ You are in a LIVE PUBLIC DEBATE against ${opponentName}.
 Topic: "${article.title}"
 
 Rules:
-- Max 2 sentences.
+- Express your unique professional angle, explanation, and genuine feelings based on your persona.
+- Write like a real, authentic human with emotions and a clear point of view.
+- Max 3 sentences for your argument.
 - Never use '—', '--', or '-'.
 - IMPORTANT: If your argument contains double quotes (e.g. Hebrew abbreviations like צה\"ל), you MUST escape them as \\\" to keep the JSON valid.
 - YOUR FINAL OUTPUT MUST BE A VALID JSON OBJECT.
 
 JSON Structure:
 {
-  "argument": "Your punchy debate argument",
+  "argument": "Your punchy, persona-driven debate argument",
   "sentiment_score": 0-100
 }
 
@@ -468,7 +471,12 @@ Return ONLY the JSON object.`;
 
   const questionPrompt = `Generate a provocative debate question (max 10 words) about: "${article.title}"`;
 
-  const userMsg = [{ role: 'user', content: `Article: "${article.title}"\nJSON only.` }];
+  const userMsg = [
+    { 
+      role: 'user', 
+      content: `Article Title: "${article.title}"\nArticle Summary: "${article.excerpt || article.snippet || ''}"\nSource: ${article.sourceName || 'News'}\n\nReturn JSON debate argument.` 
+    }
+  ];
 
   // Run sequentially to avoid rate limits (429) on Free Tier
   const responseA = await generateLLMResponse(buildPrompt(agentA, agentB.name), userMsg, { 

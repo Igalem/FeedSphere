@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 function getOrCreateSessionId() {
   if (typeof window === 'undefined') return null;
@@ -41,6 +41,50 @@ export default function DebateCard({ debate, onVote }) {
 
   const [endsAt, setEndsAt] = useState(debate.ends_at);
   const countdown = useCountdown(endsAt);
+  const [loadVideo, setLoadVideo] = useState(false);
+  const videoContainerRef = useRef(null);
+  const videoRef = useRef(null);
+
+  useEffect(() => {
+    if (!debate.video_url) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setLoadVideo(entry.isIntersecting);
+      },
+      { rootMargin: '3000px 0px', threshold: 0 }
+    );
+    if (videoContainerRef.current) {
+      observer.observe(videoContainerRef.current);
+    }
+    return () => observer.disconnect();
+  }, [debate.video_url]);
+
+  const getEmbedUrl = (url) => {
+    if (!url) return '';
+    let cleanUrl = url;
+    if (url.startsWith('//')) cleanUrl = 'https:' + url;
+    if (cleanUrl.includes('youtube.com/watch?v=')) {
+      cleanUrl = cleanUrl.replace('youtube.com/watch?v=', 'youtube.com/embed/').split('&')[0];
+    } else if (cleanUrl.includes('youtu.be/')) {
+      cleanUrl = cleanUrl.replace('youtu.be/', 'youtube.com/embed/').split('?')[0];
+    } else if (cleanUrl.includes('youtube.com/shorts/')) {
+      cleanUrl = cleanUrl.replace('youtube.com/shorts/', 'youtube.com/embed/').split('?')[0];
+    }
+    if (cleanUrl.includes('youtube.com/embed')) {
+      const separator = cleanUrl.includes('?') ? '&' : '?';
+      return `${cleanUrl}${separator}enablejsapi=1&mute=1&autoplay=1`;
+    }
+    const separator = cleanUrl.includes('?') ? '&' : '?';
+    return `${cleanUrl}${separator}autoplay=1&mute=1`;
+  };
+
+  const isEmbeddable = (url) => {
+    if (!url) return false;
+    if (url.includes('youtube.com') || url.includes('youtu.be')) return true;
+    if (url.includes('vimeo.com')) return true;
+    if (url.includes('yahoo.com')) return false;
+    return true;
+  };
 
   useEffect(() => {
     if (!debate.ends_at) {
@@ -583,11 +627,69 @@ export default function DebateCard({ debate, onVote }) {
 
           {/* Center */}
           <div className="debate-center-col">
-            <div className="debate-thumbnail-wrap">
-              {debate.article_image_url
-                ? <img key="debate-img" src={debate.article_image_url} alt="Debate topic" />
-                : <div key="debate-img-placeholder" className="debate-thumbnail-placeholder">⚔️</div>
-              }
+            <div className="debate-thumbnail-wrap" ref={videoContainerRef} style={{
+              backgroundImage: debate.article_image_url ? `url(${debate.article_image_url})` : 'none',
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              backgroundColor: '#000'
+            }}>
+              {debate.video_url && isEmbeddable(debate.video_url) ? (
+                loadVideo ? (
+                  <iframe
+                    ref={videoRef}
+                    width="100%"
+                    height="100%"
+                    src={getEmbedUrl(debate.video_url)}
+                    title="Video player"
+                    frameBorder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    allowFullScreen
+                    style={{ 
+                      borderRadius: '8px',
+                      opacity: 0,
+                      transition: 'opacity 0.5s ease-in-out'
+                    }}
+                    onLoad={(e) => {
+                      e.target.style.opacity = 1;
+                    }}
+                  ></iframe>
+                ) : (
+                  <div className="video-play-overlay-mini" style={{
+                    position: 'absolute',
+                    inset: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    background: 'rgba(0,0,0,0.1)',
+                    pointerEvents: 'none'
+                  }}>
+                    <div style={{
+                      width: '32px',
+                      height: '32px',
+                      borderRadius: '50%',
+                      background: 'rgba(255,255,255,0.2)',
+                      backdropFilter: 'blur(4px)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      border: '1px solid rgba(255,255,255,0.3)'
+                    }}>
+                       <div style={{
+                        width: '0',
+                        height: '0',
+                        borderTop: '6px solid transparent',
+                        borderBottom: '6px solid transparent',
+                        borderLeft: '10px solid white',
+                        marginLeft: '2px'
+                      }}></div>
+                    </div>
+                  </div>
+                )
+              ) : debate.article_image_url ? (
+                <img key="debate-img" src={debate.article_image_url} alt="Debate topic" />
+              ) : (
+                <div key="debate-img-placeholder" className="debate-thumbnail-placeholder">⚔️</div>
+              )}
             </div>
             <div className="vs-circle">VS</div>
           </div>

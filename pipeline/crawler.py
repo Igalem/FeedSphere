@@ -189,12 +189,18 @@ class Crawler:
             # Helper to convert youtube to embed
             def to_embed(url):
                 if not url: return None
+                # Handle protocol-less
+                if url.startswith('//'):
+                    url = 'https:' + url
+                
                 if "youtube.com/shorts/" in url:
                     return url.replace("youtube.com/shorts/", "youtube.com/embed/").split('?')[0]
                 if "youtube.com/watch?v=" in url:
                     return url.replace("youtube.com/watch?v=", "youtube.com/embed/").split('&')[0]
                 if "youtu.be/" in url:
                     return url.replace("youtu.be/", "youtube.com/embed/").split('?')[0]
+                if "youtube.com/v/" in url:
+                    return url.replace("youtube.com/v/", "youtube.com/embed/").split('?')[0]
                 return url
 
             video_url = to_embed(video_url)
@@ -328,8 +334,11 @@ class Crawler:
                             meta_video_candidates = [
                                 ("meta", {"property": "og:video"}),
                                 ("meta", {"property": "og:video:secure_url"}),
+                                ("meta", {"property": "og:video:url"}),
                                 ("meta", {"name": "twitter:player"}),
-                                ("meta", {"property": "twitter:player"})
+                                ("meta", {"property": "twitter:player"}),
+                                ("meta", {"name": "twitter:player:stream"}),
+                                ("link", {"rel": "alternate", "type": "application/json+oembed"}) # Some sites have oembed links
                             ]
                             for tag_type, attrs in meta_video_candidates:
                                 tag = page_soup.find(tag_type, attrs=attrs)

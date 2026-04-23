@@ -48,31 +48,47 @@ export default function PostCard({ post }) {
 
   const getEmbedUrl = (url) => {
     if (!url) return '';
-    if (url.includes('youtube.com/embed')) {
-      const separator = url.includes('?') ? '&' : '?';
-      return `${url}${separator}enablejsapi=1&mute=1&autoplay=1`;
+    
+    let cleanUrl = url;
+    if (url.startsWith('//')) cleanUrl = 'https:' + url;
+
+    // Safety net: convert watch?v= or youtu.be to embed format if they slipped through
+    if (cleanUrl.includes('youtube.com/watch?v=')) {
+      cleanUrl = cleanUrl.replace('youtube.com/watch?v=', 'youtube.com/embed/').split('&')[0];
+    } else if (cleanUrl.includes('youtu.be/')) {
+      cleanUrl = cleanUrl.replace('youtu.be/', 'youtube.com/embed/').split('?')[0];
+    } else if (cleanUrl.includes('youtube.com/shorts/')) {
+      cleanUrl = cleanUrl.replace('youtube.com/shorts/', 'youtube.com/embed/').split('?')[0];
     }
-    if (url.includes('yahoo.com/video')) {
-      const match = url.match(/\/video\/(?:.*-)?([a-f0-9-]{36}|[a-f0-9]{32}|\d+)\.html/);
+
+    if (cleanUrl.includes('youtube.com/embed')) {
+      const separator = cleanUrl.includes('?') ? '&' : '?';
+      return `${cleanUrl}${separator}enablejsapi=1&mute=1&autoplay=1`;
+    }
+
+    if (cleanUrl.includes('yahoo.com/video')) {
+      const match = cleanUrl.match(/\/video\/(?:.*-)?([a-f0-9-]{36}|[a-f0-9]{32}|\d+)\.html/);
       if (match) {
         const videoId = match[1];
         return `https://finance.yahoo.com/video/player/embed/v/${videoId}?format=embed&autoplay=1&mute=1`;
       }
-      const separator = url.includes('?') ? '&' : '?';
-      const base = url.includes('format=embed') ? url : `${url}${separator}format=embed`;
+      const separator = cleanUrl.includes('?') ? '&' : '?';
+      const base = cleanUrl.includes('format=embed') ? cleanUrl : `${cleanUrl}${separator}format=embed`;
       return `${base}${base.includes('?') ? '&' : '?'}autoplay=1&mute=1`;
     }
-    const separator = url.includes('?') ? '&' : '?';
-    return `${url}${separator}autoplay=1&mute=1`;
+
+    const separator = cleanUrl.includes('?') ? '&' : '?';
+    return `${cleanUrl}${separator}autoplay=1&mute=1`;
   };
 
   const isEmbeddable = (url) => {
     if (!url) return false;
-    if (url.includes('youtube.com')) return true;
+    if (url.includes('youtube.com') || url.includes('youtu.be')) return true;
+    if (url.includes('vimeo.com')) return true;
     // Yahoo and Expansion generally block iframes via X-Frame-Options: sameorigin
     if (url.includes('yahoo.com')) return false;
     if (url.includes('expansion.com')) return false;
-    return true; // Default to true for others, but YouTube is the safest
+    return true; // Default to true for others
   };
 
   // Sync count if prop changes
@@ -321,7 +337,7 @@ export default function PostCard({ post }) {
               position: 'relative'
             }}
           >
-            {post.video_url ? (
+            {post.video_url && isEmbeddable(post.video_url) ? (
               <div 
                 ref={videoContainerRef} 
                 className="perspective-video-wrapper" 
@@ -336,7 +352,7 @@ export default function PostCard({ post }) {
                   overflow: 'hidden'
                 }}
               >
-                {loadVideo && isEmbeddable(post.video_url) ? (
+                {loadVideo ? (
                   <iframe
                     ref={videoRef}
                     width="100%"
@@ -357,38 +373,36 @@ export default function PostCard({ post }) {
                     }}
                   ></iframe>
                 ) : (
-                  isEmbeddable(post.video_url) && (
-                    <div className="video-play-overlay" style={{
-                      position: 'absolute',
-                      inset: 0,
+                  <div className="video-play-overlay" style={{
+                    position: 'absolute',
+                    inset: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    background: 'rgba(0,0,0,0.2)',
+                    pointerEvents: 'none'
+                  }}>
+                    <div style={{
+                      width: '60px',
+                      height: '60px',
+                      borderRadius: '50%',
+                      background: 'rgba(255,255,255,0.2)',
+                      backdropFilter: 'blur(4px)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      background: 'rgba(0,0,0,0.2)',
-                      pointerEvents: 'none'
+                      border: '1px solid rgba(255,255,255,0.3)'
                     }}>
                       <div style={{
-                        width: '60px',
-                        height: '60px',
-                        borderRadius: '50%',
-                        background: 'rgba(255,255,255,0.2)',
-                        backdropFilter: 'blur(4px)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        border: '1px solid rgba(255,255,255,0.3)'
-                      }}>
-                        <div style={{
-                          width: '0',
-                          height: '0',
-                          borderTop: '10px solid transparent',
-                          borderBottom: '10px solid transparent',
-                          borderLeft: '16px solid white',
-                          marginLeft: '4px'
-                        }}></div>
-                      </div>
+                        width: '0',
+                        height: '0',
+                        borderTop: '10px solid transparent',
+                        borderBottom: '10px solid transparent',
+                        borderLeft: '16px solid white',
+                        marginLeft: '4px'
+                      }}></div>
                     </div>
-                  )
+                  </div>
                 )}
               </div>
             ) : post.article_image_url && (
@@ -440,7 +454,7 @@ export default function PostCard({ post }) {
             <div className="article-title content-auto-dir" dir="auto">{post.article_title}</div>
             <div className="article-excerpt content-auto-dir" dir="auto">{post.article_excerpt}</div>
           </div>
-          {post.video_url ? (
+          {post.video_url && isEmbeddable(post.video_url) ? (
             <div 
               ref={videoContainerRef} 
               className="article-video-wrapper on-side" 
@@ -452,7 +466,7 @@ export default function PostCard({ post }) {
               }} 
               onClick={(e) => e.stopPropagation()}
             >
-               {loadVideo && isEmbeddable(post.video_url) ? (
+               {loadVideo ? (
                  <iframe
                     ref={videoRef}
                     width="100%"
@@ -473,7 +487,6 @@ export default function PostCard({ post }) {
                     }}
                   ></iframe>
                ) : (
-                 isEmbeddable(post.video_url) && (
                   <div className="video-play-overlay-mini" style={{
                     position: 'absolute',
                     inset: 0,
@@ -504,7 +517,6 @@ export default function PostCard({ post }) {
                       }}></div>
                     </div>
                   </div>
-                 )
                )}
             </div>
           ) : post.article_image_url && (
