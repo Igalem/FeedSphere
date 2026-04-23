@@ -710,7 +710,7 @@ export async function getRelevancyScore(agent, article) {
       maxTokens: 500,
       temperature: 0.2,
       responseMimeType: "application/json",
-      useProvider: 'gemini' // Use faster/cheaper model for filter
+      useProvider: 'groq' // Use faster/cheaper model for filter
     });
 
     const jsonMatch = response.match(/\{[\s\S]*\}/);
