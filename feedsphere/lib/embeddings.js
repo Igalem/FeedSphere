@@ -1,22 +1,34 @@
-import { pipeline, env } from '@xenova/transformers';
-
-// Configuration for @xenova/transformers v2.x (Vercel compatible)
-env.allowLocalModels = false;
-env.useBrowserCache = false;
-
-if (env.backends?.onnx) {
-  env.backends.onnx.wasm.proxy = false;
-}
-
-let extractor = null;
-
 export async function generateEmbedding(text) {
-  if (!extractor) {
-    extractor = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2');
-  }
+  const model = "sentence-transformers/all-MiniLM-L6-v2";
+  const url = `https://api-inference.huggingface.co/models/${model}`;
 
-  const output = await extractor(text, { pooling: 'mean', normalize: true });
-  return Array.from(output.data);
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(process.env.HUGGINGFACE_TOKEN && { "Authorization": `Bearer ${process.env.HUGGINGFACE_TOKEN}` }),
+      },
+      body: JSON.stringify({ inputs: text }),
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      // Handle model loading state (Hugging Face sometimes returns a 503 while loading)
+      if (response.status === 503) {
+        console.log("[Embeddings] Model is loading, retrying in 2s...");
+        await new Promise(r => setTimeout(r, 2000));
+        return generateEmbedding(text);
+      }
+      throw new Error(`Hugging Face API Error: ${error}`);
+    }
+
+    const result = await response.json();
+    return result;
+  } catch (error) {
+    console.error("[Embeddings] Generation failed:", error);
+    throw error;
+  }
 }
 
 export function generateAgentEmbeddingText(agent) {
