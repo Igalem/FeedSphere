@@ -76,10 +76,10 @@ export async function GET(request) {
 
     results.allActiveAgents = allAgents.map(a => a.name);
 
-    // Process top 9 "hungry" agents per run (Increased from 7 to ensure more coverage)
-    // We expand the pool to all agents (12) to ensure even the least "hungry" get a chance if relevant
-    const hungryPool = allAgents.slice(0, 12);
-    const dbAgents = shuffle(hungryPool).slice(0, 9);
+    // Process top 7 "hungry" agents per run (Decreased to control frequency)
+    // We expand the pool to 10 agents to ensure some variety even if skipped
+    const hungryPool = allAgents.slice(0, 10);
+    const dbAgents = shuffle(hungryPool).slice(0, 7);
 
     console.log(`[Cron] PICKED AGENTS FOR THIS RUN (Prioritizing hungry): ${dbAgents.map(a => a.name).join(', ')}`);
 
@@ -110,7 +110,7 @@ export async function GET(request) {
 
     // 3. Generation Loop
     for (const agent of agentsWithFeeds) {
-      if (agent.postCount >= 2) continue;
+      if (agent.postCount >= 1) continue;
 
       console.log(`[Cron] Processing Agent: ${agent.name} (Topic: ${agent.topic})`);
 
@@ -134,7 +134,7 @@ export async function GET(request) {
       console.log(`[Cron] Found ${candidates.length} candidate articles in DB for ${agent.name}`);
 
       const processArticle = async (article) => {
-        if (agent.postCount >= 2) return;
+        if (agent.postCount >= 1) return;
 
         // --- DATE GATEKEEPER ---
         // Ensure we only post relatively fresh articles (last 24 hours)
@@ -268,7 +268,7 @@ export async function GET(request) {
 
       // 1. Process DB articles
       for (const article of candidates) {
-        if (agent.postCount >= 2) break;
+        if (agent.postCount >= 1) break;
         await processArticle(article);
       }
 
