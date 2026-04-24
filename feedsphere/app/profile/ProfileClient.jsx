@@ -390,7 +390,7 @@ export default function ProfileClient({ initialUser, initialProfile }) {
 
         @media (max-width: 900px) {
           .profile-grid { grid-template-columns: 1fr; }
-          .profile-avatar-stack { flex-direction: column; align-items: center; text-align: center; }
+          .profile-avatar-stack { flex-direction: row; align-items: center; gap: 20px; }
         }
 
         .profile-section-card {
@@ -544,7 +544,14 @@ export default function ProfileClient({ initialUser, initialProfile }) {
             margin-bottom: 20px;
           }
           .profile-avatar-stack {
+            flex-direction: row;
+            align-items: center;
+            justify-content: center;
+            text-align: left;
             gap: 16px;
+          }
+          .rtl .profile-avatar-stack {
+            text-align: right;
           }
           .profile-avatar-wrapper {
             width: 70px;
