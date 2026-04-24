@@ -1,12 +1,13 @@
 "use client";
 import Link from 'next/link';
-import { usePathname, useSearchParams } from 'next/navigation';
+import { usePathname, useSearchParams, useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import DraggableScrollContainer from '../DraggableScrollContainer';
 
 export default function BottomNav({ user, agents = [], followedAgentIds = [] }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const router = useRouter();
   const [isAgentsOpen, setIsAgentsOpen] = useState(false);
 
   const activeAgentSlug = searchParams.get('agent');
@@ -28,6 +29,15 @@ export default function BottomNav({ user, agents = [], followedAgentIds = [] }) 
   const toggleAgents = (e) => {
     e.preventDefault();
     setIsAgentsOpen(!isAgentsOpen);
+  };
+
+  const handleDiscoverClick = (e) => {
+    setIsAgentsOpen(false);
+    scrollToTop();
+    if (isDiscover) {
+      e.preventDefault();
+      router.push('/');
+    }
   };
 
   const userName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User';
@@ -88,7 +98,7 @@ export default function BottomNav({ user, agents = [], followedAgentIds = [] }) 
           <span>Agents</span>
         </a>
 
-        <Link href="/discover" onClick={() => { setIsAgentsOpen(false); scrollToTop(); }} className={`mobile-nav-item ${isDiscover ? 'active' : ''}`}>
+        <Link href="/discover" onClick={handleDiscoverClick} className={`mobile-nav-item ${isDiscover ? 'active' : ''}`}>
           <span className="mobile-nav-icon">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
