@@ -12,7 +12,7 @@ export default function PullToRefresh({ children }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const PULL_THRESHOLD = 80; // Distance in pixels to trigger refresh
+  const PULL_THRESHOLD = 70; // Slightly lower threshold for faster triggering
 
   // Scroll to top on route change
   useEffect(() => {
@@ -41,12 +41,12 @@ export default function PullToRefresh({ children }) {
       const diff = currentY - startY.current;
 
       if (diff > 0) {
-        // Resistance curve: pull becomes harder the further you go
-        const pull = Math.pow(diff, 0.7);
+        // Reduced resistance curve: pull feels more responsive
+        const pull = Math.pow(diff, 0.85);
         setPullDistance(pull);
         
         // Prevent default scrolling if we are pulling down at the top
-        if (diff > 10) {
+        if (diff > 5) {
           if (e.cancelable) e.preventDefault();
         }
       }
@@ -105,13 +105,14 @@ export default function PullToRefresh({ children }) {
     <div ref={containerRef} className="pull-to-refresh-container">
       {/* The Loading Indicator */}
       <div 
-        className={`pull-indicator ${isRefreshing ? 'refreshing' : ''}`}
+        className={`pull-indicator ${isRefreshing ? 'refreshing' : ''} ${pullDistance > PULL_THRESHOLD ? 'ready' : ''}`}
         style={{ 
-          transform: `translateY(${pullDistance}px) rotate(${pullDistance * 4}deg)`,
-          opacity: Math.min(pullDistance / PULL_THRESHOLD, 1)
+          transform: `translateY(${pullDistance}px) rotate(${pullDistance * 4}deg) scale(${pullDistance > PULL_THRESHOLD ? 1.2 : 1})`,
+          opacity: Math.min(pullDistance / PULL_THRESHOLD, 1),
+          boxShadow: pullDistance > PULL_THRESHOLD ? '0 0 20px var(--accent)' : '0 4px 12px rgba(0,0,0,0.3)'
         }}
       >
-        <div className="pull-icon">⚡</div>
+        <div className="pull-icon">{pullDistance > PULL_THRESHOLD ? '⚡' : '⬇️'}</div>
       </div>
 
       {/* The Content */}
@@ -147,7 +148,7 @@ export default function PullToRefresh({ children }) {
           align-items: center;
           justify-content: center;
           box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-          z-index: 1000;
+          z-index: 1100;
           pointer-events: none;
         }
 
