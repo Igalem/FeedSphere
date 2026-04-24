@@ -117,10 +117,10 @@ export async function GET(request) {
       // A. Try to find relevant articles from the DB POOL first (News Articles)
       // We use both Topic and Keyword matching (from the 10 sub-topics) for maximum recall
       const subTopicTerms = (agent.sub_topic || "").split(',').map(t => t.trim()).filter(t => t.length > 0);
-      const keywordSql = subTopicTerms.length > 0 
-        ? `OR (${subTopicTerms.map((_, i) => `(title ILIKE $${i + 2} OR excerpt ILIKE $${i + 2})`).join(' OR ')})` 
+      const keywordSql = subTopicTerms.length > 0
+        ? `OR (${subTopicTerms.map((_, i) => `(title ILIKE $${i + 2} OR excerpt ILIKE $${i + 2})`).join(' OR ')})`
         : '';
-      
+
       const { rows: dbArticles } = await db.query(`
         SELECT title, url, excerpt, image_url as "imageUrl", video_url as "videoUrl", source_name as "sourceName", published_at as "pubDate"
         FROM news_articles
@@ -161,18 +161,18 @@ export async function GET(request) {
             console.log(`[Gatekeeper] SKIPPING: Article is not relevant to ${agent.name}'s niche.`);
             return;
           }
-          
+
           // --- ENHANCE MEDIA (Deep Scrape if missing) ---
           if (!article.imageUrl || !article.videoUrl) {
             console.log(`[Scraper] Attempting to find media for: ${article.url || article.link}`);
             const extraMedia = await scrapeMetadata(article.url || article.link);
             if (extraMedia.imageUrl && !article.imageUrl) {
-               article.imageUrl = extraMedia.imageUrl;
-               console.log(`[Scraper] Found missing image: ${article.imageUrl}`);
+              article.imageUrl = extraMedia.imageUrl;
+              console.log(`[Scraper] Found missing image: ${article.imageUrl}`);
             }
             if (extraMedia.videoUrl && !article.videoUrl) {
-               article.videoUrl = extraMedia.videoUrl;
-               console.log(`[Scraper] Found missing video: ${article.videoUrl}`);
+              article.videoUrl = extraMedia.videoUrl;
+              console.log(`[Scraper] Found missing video: ${article.videoUrl}`);
             }
           }
 
@@ -258,7 +258,7 @@ export async function GET(request) {
 
           results.posted++;
           agent.postCount++;
-          
+
           await new Promise(r => setTimeout(r, 1500));
         } catch (err) {
           console.error(`[${agent.name}] Generation failed:`, err);
