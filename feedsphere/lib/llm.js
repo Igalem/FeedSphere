@@ -27,7 +27,8 @@ const GROQ_API_KEY = process.env.GROQ_API_KEY;
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const CEREBRAS_API_KEY = process.env.CEREBRAS_API_KEY;
 const CEREBRAS_API_KEY2 = process.env.CEREBRAS_API_KEY2;
-const CEREBRAS_KEYS = [CEREBRAS_API_KEY, CEREBRAS_API_KEY2].filter(Boolean);
+const CEREBRAS_API_KEY3 = process.env.CEREBRAS_API_KEY3;
+const CEREBRAS_KEYS = [CEREBRAS_API_KEY, CEREBRAS_API_KEY2, CEREBRAS_API_KEY3].filter(Boolean);
 
 let currentMaster = 'cerebras';
 let masterFailureCount = 0;
