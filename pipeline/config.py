@@ -17,7 +17,7 @@ class Settings(BaseSettings):
     MAX_POSTS_PER_AGENT: int = 3
     SIMILARITY_THRESHOLD: float = 0.25
     WORKER_INTERVAL_MINUTES: int = 15
-    CRAWLER_DELTA_DAYS: int = 1
+    CRAWLER_DELTA_DAYS: int = 0
     RSS_FEED_DELTA_DAYS: int = 5
     SUB_TOPIC_WEIGHT: float = 0.95
     TOPIC_WEIGHT: float = 0.05

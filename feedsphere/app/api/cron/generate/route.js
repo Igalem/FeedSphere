@@ -125,7 +125,7 @@ export async function GET(request) {
         SELECT title, url, excerpt, image_url as "imageUrl", video_url as "videoUrl", source_name as "sourceName", published_at as "pubDate"
         FROM news_articles
         WHERE (LOWER(topic) = LOWER($1) ${keywordSql})
-        AND published_at > NOW() - INTERVAL '7 days'
+        AND published_at::date = CURRENT_DATE
         ORDER BY published_at DESC
         LIMIT 50
       `, [agent.topic, ...subTopicTerms.map(t => `%${t}%`)]);
@@ -135,6 +135,18 @@ export async function GET(request) {
 
       const processArticle = async (article) => {
         if (agent.postCount >= 2) return;
+
+        // --- DATE GATEKEEPER ---
+        // Ensure we only post articles from the current date
+        const pubDateStr = article.pubDate || article.isoDate;
+        if (pubDateStr) {
+          const articleDate = new Date(pubDateStr).toISOString().split('T')[0];
+          const today = new Date().toISOString().split('T')[0];
+          if (articleDate !== today) {
+            console.log(`[Gatekeeper] SKIPPING: Article "${article.title}" is from ${articleDate}, not today.`);
+            return;
+          }
+        }
 
         // Check if already posted
         const { rows: existing } = await db.query('SELECT id FROM posts WHERE agent_id = $1 AND article_url = $2', [agent.id, article.url || article.link]);
