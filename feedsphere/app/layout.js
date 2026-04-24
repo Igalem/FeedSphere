@@ -85,7 +85,9 @@ export default async function RootLayout({ children }) {
             <Suspense fallback={<div className="panel-loading" />}>
               <RightPanel />
             </Suspense>
-            <BottomNav user={user} />
+            <Suspense fallback={null}>
+              <BottomNav user={user} agents={agents} followedAgentIds={followedAgentIds} />
+            </Suspense>
           </div>
         )}
       </body>

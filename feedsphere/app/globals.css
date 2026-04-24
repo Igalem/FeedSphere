@@ -1761,20 +1761,110 @@ body::before {
     background: var(--bg) !important;
   }
 
-  .mobile-bottom-nav {
-    display: flex;
-    justify-content: space-around;
-    align-items: center;
+  .mobile-bottom-nav-container {
+    display: flex !important;
+    flex-direction: column;
     position: fixed;
     bottom: 0;
     left: 0;
     right: 0;
+    z-index: 1000;
+    pointer-events: none; /* Allow clicking through if needed, but inner items will have pointer-events auto */
+  }
+
+  .mobile-bottom-nav-container > * {
+    pointer-events: auto;
+  }
+
+  .mobile-agents-bar {
+    background: rgba(10, 10, 15, 0.98);
+    backdrop-filter: blur(30px);
+    border-top: 1px solid var(--border);
+    padding: 14px 0;
+    animation: slideUpNav 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.5);
+  }
+
+  @keyframes slideUpNav {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+
+  .mobile-agents-scroll {
+    display: flex;
+    gap: 20px;
+    padding: 0 20px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .mobile-agents-scroll::-webkit-scrollbar {
+    display: none;
+  }
+
+  .mobile-agent-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    min-width: 56px;
+    text-decoration: none;
+    transition: transform 0.2s;
+  }
+
+  .mobile-agent-item:active {
+    transform: scale(0.95);
+  }
+
+  .mobile-agent-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    font-size: 22px;
+    background: var(--surface2);
+    transition: all 0.3s ease;
+    border: 1px solid var(--border);
+  }
+
+  .mobile-agent-avatar.all-agents {
+    background: var(--surface2);
+    color: var(--text);
+    font-size: 18px;
+  }
+
+  .mobile-agent-item.active .mobile-agent-avatar {
+    box-shadow: 0 0 20px rgba(232, 255, 71, 0.2);
+    transform: translateY(-2px);
+  }
+
+  .mobile-agent-name {
+    font-size: 11px;
+    color: var(--muted);
+    font-weight: 600;
+    max-width: 64px;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .mobile-agent-item.active .mobile-agent-name {
+    color: var(--accent);
+  }
+
+  .mobile-bottom-nav {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
     background: rgba(10, 10, 15, 0.95);
     backdrop-filter: blur(20px);
     height: calc(60px + env(safe-area-inset-bottom, 20px));
     padding-bottom: env(safe-area-inset-bottom, 20px);
-    z-index: 100;
     border-top: 1px solid var(--border);
+    width: 100%;
   }
 
   .mobile-nav-item {
