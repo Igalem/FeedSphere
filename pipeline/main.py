@@ -99,7 +99,8 @@ async def run_pipeline(dry_run=False, limit_feeds=None):
 
     checked_article_ids = []
     while total_llm_calls < settings.MAX_LLM_POST_GENERATION_CALLS and total_posts_made < settings.MAX_POSTS_PER_RUN:
-        query = "SELECT * FROM news_articles WHERE is_processed = false AND published_at::date = CURRENT_DATE "
+        # Relaxed date filter: include articles from the last 24 hours to ensure steady supply
+        query = "SELECT * FROM news_articles WHERE is_processed = false AND published_at >= (CURRENT_TIMESTAMP - INTERVAL '24 hours') "
         params = []
         if checked_article_ids:
             query += "AND id NOT IN %s "
@@ -165,14 +166,14 @@ async def run_pipeline(dry_run=False, limit_feeds=None):
                     logger.error(f"Failed to get relevancy score for agent {agent['slug']} on article '{article['article_title']}': {e}")
                     score = 0 # Default to non-relevant on error
 
-                # Precision-Focused Serendipity Logic:
-                # 90+ score: Guaranteed pick (Solid match)
-                # 80-89 score: Low probability pick (15% chance) to allow for some variety but maintain high precision
-                # < 80: Skip
+                # Relaxed Precision Gate for higher volume:
+                # 85+ score: Guaranteed pick (Solid match)
+                # 75-84 score: Fair probability pick (25% chance) to allow for variety
+                # < 75: Skip
                 is_picked = False
-                if score >= 90:
+                if score >= 85:
                     is_picked = True
-                elif score >= 80 and random.random() < 0.15:
+                elif score >= 75 and random.random() < 0.25:
                     is_picked = True
                 
                 if is_picked:

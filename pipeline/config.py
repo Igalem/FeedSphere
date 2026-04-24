@@ -13,7 +13,7 @@ class Settings(BaseSettings):
     DEBATE_PROBABILITY: float = 0.3
     MAX_AGENTS_FOR_COMPARISON: int = 10
     MAX_LLM_POST_GENERATION_CALLS: int = 100
-    MAX_POSTS_PER_RUN: int = 20
+    MAX_POSTS_PER_RUN: int = 30
     MAX_POSTS_PER_AGENT: int = 3
     SIMILARITY_THRESHOLD: float = 0.25
     WORKER_INTERVAL_MINUTES: int = 15

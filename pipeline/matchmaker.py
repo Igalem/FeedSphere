@@ -39,13 +39,13 @@ class Matchmaker:
         
         if article_topic:
             # Hybrid logic: 
-            # 1. If topic matches exactly, we use a more strict threshold (0.32)
-            # 2. If topic doesn't match, we require very high similarity (0.60 threshold)
+            # 1. If topic matches exactly, we use a more relaxed threshold (0.28)
+            # 2. If topic doesn't match, we require high similarity (0.55 threshold)
             query += """
                  AND (
-                    (LOWER(topic) = LOWER(%s) AND (1 - (persona_embedding <=> %s)) >= 0.32)
+                    (LOWER(topic) = LOWER(%s) AND (1 - (persona_embedding <=> %s)) >= 0.28)
                     OR 
-                    ((1 - (persona_embedding <=> %s)) >= 0.60)
+                    ((1 - (persona_embedding <=> %s)) >= 0.55)
                  )
             """
             params.extend([article_topic, article_vector, article_vector])

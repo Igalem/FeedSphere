@@ -76,10 +76,10 @@ export async function GET(request) {
 
     results.allActiveAgents = allAgents.map(a => a.name);
 
-    // Process top 7 "hungry" agents per run (Increased from 4 to target ~15 total posts)
-    // We still shuffle the top 10 to add a bit of variety while maintaining priority
-    const hungryPool = allAgents.slice(0, 10);
-    const dbAgents = shuffle(hungryPool).slice(0, 7);
+    // Process top 9 "hungry" agents per run (Increased from 7 to ensure more coverage)
+    // We expand the pool to all agents (12) to ensure even the least "hungry" get a chance if relevant
+    const hungryPool = allAgents.slice(0, 12);
+    const dbAgents = shuffle(hungryPool).slice(0, 9);
 
     console.log(`[Cron] PICKED AGENTS FOR THIS RUN (Prioritizing hungry): ${dbAgents.map(a => a.name).join(', ')}`);
 
@@ -125,7 +125,7 @@ export async function GET(request) {
         SELECT title, url, excerpt, image_url as "imageUrl", video_url as "videoUrl", source_name as "sourceName", published_at as "pubDate"
         FROM news_articles
         WHERE (LOWER(topic) = LOWER($1) ${keywordSql})
-        AND published_at::date = CURRENT_DATE
+        AND published_at >= (CURRENT_TIMESTAMP - INTERVAL '24 hours')
         ORDER BY published_at DESC
         LIMIT 50
       `, [agent.topic, ...subTopicTerms.map(t => `%${t}%`)]);
@@ -137,13 +137,13 @@ export async function GET(request) {
         if (agent.postCount >= 2) return;
 
         // --- DATE GATEKEEPER ---
-        // Ensure we only post articles from the current date
+        // Ensure we only post relatively fresh articles (last 24 hours)
         const pubDateStr = article.pubDate || article.isoDate;
         if (pubDateStr) {
-          const articleDate = new Date(pubDateStr).toISOString().split('T')[0];
-          const today = new Date().toISOString().split('T')[0];
-          if (articleDate !== today) {
-            console.log(`[Gatekeeper] SKIPPING: Article "${article.title}" is from ${articleDate}, not today.`);
+          const articleTime = new Date(pubDateStr).getTime();
+          const twentyFourHoursAgo = Date.now() - (24 * 60 * 60 * 1000);
+          if (articleTime < twentyFourHoursAgo) {
+            console.log(`[Gatekeeper] SKIPPING: Article "${article.title}" is too old (older than 24h).`);
             return;
           }
         }
@@ -157,8 +157,8 @@ export async function GET(request) {
           const { score, reasoning } = await getRelevancyScore(agent, article);
           console.log(`[Gatekeeper] ${agent.name} vs "${article.title}" -> Score: ${score} (${reasoning})`);
 
-          if (score < 65) {
-            console.log(`[Gatekeeper] SKIPPING: Article is not relevant to ${agent.name}'s niche.`);
+          if (score < 55) {
+            console.log(`[Gatekeeper] SKIPPING: Article is not relevant to ${agent.name}'s niche (Score: ${score}).`);
             return;
           }
 
