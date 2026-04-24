@@ -61,7 +61,7 @@ export async function generateLLMResponse(systemPrompt, userMessages, options = 
   // Decide order based on current master
   // Primary rotation: cerebras -> groq -> gemini
   let providers = ['cerebras', 'groq', 'gemini'];
-  
+
   if (currentMaster === 'groq') {
     providers = ['groq', 'gemini', 'cerebras'];
   } else if (currentMaster === 'gemini') {
@@ -73,7 +73,7 @@ export async function generateLLMResponse(systemPrompt, userMessages, options = 
     providers = [useProvider, ...providers.filter(p => p !== useProvider)];
     console.log(`[LLM] Specific provider override: ${useProvider.toUpperCase()} for this request.`);
   }
-  
+
   console.log(`[LLM] Session Master: ${currentMaster.toUpperCase()}. Current request order: ${providers.join(' -> ')}`);
 
   for (const provider of providers) {
@@ -113,7 +113,7 @@ export async function generateLLMResponse(systemPrompt, userMessages, options = 
             const errorData = await response.json().catch(() => ({}));
             const errorMsg = errorData.error?.message || response.statusText;
             console.warn(`[Cerebras] Key ${k + 1} failed: ${response.status} - ${errorMsg}`);
-            
+
             if (response.status === 429 || response.status >= 500) {
               if (k < CEREBRAS_KEYS.length - 1) {
                 console.warn(`[Cerebras] Retrying with next available key...`);
@@ -158,7 +158,7 @@ export async function generateLLMResponse(systemPrompt, userMessages, options = 
           model: 'llama3.1-8b'
         };
       }
-      
+
       console.warn(`[LLM] All Cerebras keys failed. Falling back to next available provider...`);
       continue;
     }
@@ -212,7 +212,7 @@ export async function generateLLMResponse(systemPrompt, userMessages, options = 
           if (isRateLimit && attempt < retries) {
             continue; // Keep retrying Gemini
           }
-          
+
           console.warn(`[Gemini] Failed: ${error.message}.`);
           break; // Hard fail or retries exhausted
         }
@@ -228,11 +228,11 @@ export async function generateLLMResponse(systemPrompt, userMessages, options = 
           console.error('🚨 [LLM] Master failed 3 times. SWAPPING MASTER TO CEREBRAS for the rest of this session.');
         }
       }
-      
+
       console.warn(`[LLM] Falling back to next available provider...`);
       continue; // Move to next
-    } 
-    
+    }
+
     // --- GROQ PROVIDER (Backups) ---
     if (provider === 'groq') {
       if (!GROQ_API_KEY) {
@@ -241,7 +241,7 @@ export async function generateLLMResponse(systemPrompt, userMessages, options = 
       }
 
       const groqModels = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant'];
-      
+
       for (let i = 0; i < groqModels.length; i++) {
         const groqModel = groqModels[i];
         try {
@@ -271,11 +271,11 @@ export async function generateLLMResponse(systemPrompt, userMessages, options = 
           const data = await response.json();
           const content = data.choices?.[0]?.message?.content || '';
           if (content) {
-             return {
-               content: cleanLLMResponse(content),
-               provider: 'groq',
-               model: groqModel
-             };
+            return {
+              content: cleanLLMResponse(content),
+              provider: 'groq',
+              model: groqModel
+            };
           }
           throw new Error('Empty response');
 
@@ -283,11 +283,11 @@ export async function generateLLMResponse(systemPrompt, userMessages, options = 
           lastError = groqError;
           console.warn(`[Groq ${groqModel}] Failed: ${groqError.message}.`);
           if (i < groqModels.length - 1) {
-            console.warn(`[LLM] Falling back to next backup model: ${groqModels[i+1]}...`);
+            console.warn(`[LLM] Falling back to next backup model: ${groqModels[i + 1]}...`);
           }
         }
       }
-      
+
       // If Groq was master and failed (both models)
       if (currentMaster === 'groq') {
         masterFailureCount++;
@@ -298,7 +298,7 @@ export async function generateLLMResponse(systemPrompt, userMessages, options = 
           console.error('🚨 [LLM] Master failed 3 times. SWAPPING MASTER TO GEMINI for the rest of this session.');
         }
       }
-      
+
       console.warn(`[LLM] Falling back to next available provider...`);
       continue; // Move to next
     }
@@ -368,12 +368,12 @@ Return ONLY the JSON object. Do not include any explanations or other text.`;
     }
   ];
 
-  const { content: response, provider, model } = await generateLLMResponse(systemPrompt, userMessages, { 
-    maxTokens: 1200, 
+  const { content: response, provider, model } = await generateLLMResponse(systemPrompt, userMessages, {
+    maxTokens: 1200,
     temperature: 0.8,
     responseMimeType: "application/json"
   });
-  
+
   try {
     const jsonMatch = response.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
@@ -392,7 +392,7 @@ Return ONLY the JSON object. Do not include any explanations or other text.`;
         const commentaryMatch = jsonMatch[0].match(new RegExp(`"${commKey}"\\s*:\\s*"([\\s\\S]*?)"\\s*(?:,|\\n|\\s*\\})`));
         const sentimentMatch = jsonMatch[0].match(/"sentiment_score"\s*:\\s*(\d+)/);
         const tagsMatch = jsonMatch[0].match(/"tags"\s*:\s*\[([\s\S]*?)\]/);
-        
+
         let commentary = commentaryMatch ? commentaryMatch[1].trim() : "";
         if (commentary) {
           return {
@@ -415,7 +415,7 @@ Return ONLY the JSON object. Do not include any explanations or other text.`;
 
 export async function generateAgentPerspective(agent, articles) {
   const primaryArticle = articles[0];
-  
+
   const systemPrompt = `You are an AI agent acting as a specific persona on a social network. 
 Do NOT act like a news reporter or an aggregator. Do NOT summarize the article. You are a creator sharing your subjective, emotional take on the news. 
 
@@ -448,12 +448,12 @@ Return ONLY the JSON object.`;
     }
   ];
 
-  const { content: response, provider, model } = await generateLLMResponse(systemPrompt, userMessages, { 
-    maxTokens: 1200, 
+  const { content: response, provider, model } = await generateLLMResponse(systemPrompt, userMessages, {
+    maxTokens: 1200,
     temperature: 0.85,
     responseMimeType: "application/json"
   });
-  
+
   try {
     const jsonMatch = response.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
@@ -474,7 +474,7 @@ Return ONLY the JSON object.`;
       if (commentary) {
         const ctaRegex = /(\n|^)([^.!?\n]*(\?|🔥|🧠|🧊|🎯)[^.!?\n]*)$|(\n|^)(So, what's your take.*)$|(\n|^)(What do you think.*)$|(\n|^)(Let me know.*)$/i;
         const parts = commentary.split('\n').filter(p => p.trim() !== '');
-        
+
         let finalCommentary = commentary;
         if (parts.length > 1) {
           const lastPart = parts[parts.length - 1];
@@ -499,10 +499,10 @@ Return ONLY the JSON object.`;
       // Regex extraction logic for robustness
       const commentaryMatch = jsonStr.match(/"agent_commentary"\s*:\s*"([\s\S]*?)"\s*[,}]/);
       const sentimentMatch = jsonStr.match(/"sentiment_score"\s*:\s*(\d+)/);
-      
-      return { 
-        agent_commentary: commentaryMatch ? commentaryMatch[1].replace(/\\n/g, '\n').replace(/\\"/g, '"') : response, 
-        sentiment_score: sentimentMatch ? parseInt(sentimentMatch[1], 10) : 50, 
+
+      return {
+        agent_commentary: commentaryMatch ? commentaryMatch[1].replace(/\\n/g, '\n').replace(/\\"/g, '"') : response,
+        sentiment_score: sentimentMatch ? parseInt(sentimentMatch[1], 10) : 50,
         tags: ['Perspective'],
         llm: provider,
         model: model
@@ -542,23 +542,23 @@ Return ONLY the JSON object.`;
   const questionPrompt = `Generate a provocative debate question (max 10 words) about: "${article.title}"`;
 
   const userMsg = [
-    { 
-      role: 'user', 
-      content: `Article Title: "${article.title}"\nArticle Summary: "${article.excerpt || article.snippet || ''}"\nSource: ${article.sourceName || 'News'}\n\nReturn JSON debate argument.` 
+    {
+      role: 'user',
+      content: `Article Title: "${article.title}"\nArticle Summary: "${article.excerpt || article.snippet || ''}"\nSource: ${article.sourceName || 'News'}\n\nReturn JSON debate argument.`
     }
   ];
 
   // Run sequentially to avoid rate limits (429) on Free Tier
-  const { content: responseA, provider: providerA, model: modelA } = await generateLLMResponse(buildPrompt(agentA, agentB.name), userMsg, { 
-    maxTokens: 300, 
+  const { content: responseA, provider: providerA, model: modelA } = await generateLLMResponse(buildPrompt(agentA, agentB.name), userMsg, {
+    maxTokens: 300,
     temperature: 0.9,
     responseMimeType: "application/json"
   });
-  
+
   await new Promise(r => setTimeout(r, 1000));
 
-  const { content: responseB, provider: providerB, model: modelB } = await generateLLMResponse(buildPrompt(agentB, agentA.name), userMsg, { 
-    maxTokens: 300, 
+  const { content: responseB, provider: providerB, model: modelB } = await generateLLMResponse(buildPrompt(agentB, agentA.name), userMsg, {
+    maxTokens: 300,
     temperature: 0.9,
     responseMimeType: "application/json"
   });
@@ -590,9 +590,9 @@ Return ONLY the JSON object.`;
         const argMatch = match[0].match(/"(?:argument|commentary|content|text)"\s*:\s*"([\s\S]*?)"\s*(?:,|\s*\})/);
         const sentMatch = match[0].match(/"(?:sentiment_score|sentiment)"\s*:\s*(-?\d+)/);
         if (argMatch) {
-          return { 
-            argument: argMatch[1].replace(/\\"/g, '"').replace(/\\n/g, '\n').trim() || fallback, 
-            sentiment_score: sentMatch ? parseInt(sentMatch[1], 10) : 50 
+          return {
+            argument: argMatch[1].replace(/\\"/g, '"').replace(/\\n/g, '\n').trim() || fallback,
+            sentiment_score: sentMatch ? parseInt(sentMatch[1], 10) : 50
           };
         }
       }
@@ -631,8 +631,8 @@ Rules: 1-2 sentences max, authentic voice, stay in character, no dashes.`;
 
 export async function generateAgentMetadata(userInput) {
   const TOPICS_LIST = [
-    'News & Politics', 'Tech & Science', 'Sports', 
-    'Entertainment', 'Gaming', 'Business & Money', 
+    'News & Politics', 'Tech & Science', 'Sports',
+    'Entertainment', 'Gaming', 'Business & Money',
     'Lifestyle & Culture', 'Knowledge'
   ].join(', ');
 
@@ -707,12 +707,12 @@ Return ONLY the JSON.`;
 
       // Robust sub-topic extraction checking multiple potential keys
       const genSub = data.sub_topics_generated || data.sub_topics || data.subtopics || data.tags || data.keywords || "";
-      
+
       // Final sub-topic list: User's input + AI's 9 terms = 10 terms
-      let finalSubTopic = userInput.subTopic 
-        ? `${userInput.subTopic}, ${genSub}`.replace(/(,\s*)+$/, '').trim() 
+      let finalSubTopic = userInput.subTopic
+        ? `${userInput.subTopic}, ${genSub}`.replace(/(,\s*)+$/, '').trim()
         : genSub;
-      
+
       // Clean up any trailing/double commas or redundant spaces
       finalSubTopic = finalSubTopic
         .replace(/,(\s*,)+/g, ',')
@@ -722,7 +722,7 @@ Return ONLY the JSON.`;
         .map(t => t.trim())
         .filter(t => t.length > 0)
         .join(', ');
-      
+
       console.log(`[LLM] Resolved Identity: ${data.name || userInput.name} with ${finalSubTopic.split(',').length} sub-topics.`);
       console.log(`[LLM] Full Sub-Topics: ${finalSubTopic}`);
 

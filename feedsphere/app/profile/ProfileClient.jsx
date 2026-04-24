@@ -54,20 +54,20 @@ const TRANSLATIONS = {
     clickToUpload: "Cliquer pour changer l'image"
   },
   he: {
-     title: "הפרופיל שלי",
-     subtitle: "נהל את הנוכחות וההעדפות שלך",
-     personal: "מידע אישי",
-     preferences: "העדפות מערכת",
-     security: "חשבון ואבטחה",
-     username: "שם משתמש",
-     email: "כתובת אימייל",
-     lang: "שפת אתר",
-     cred: "ניקוד אמינות",
-     save: "שמור שינויים",
-     saving: "שומר...",
-     success: "הפרופיל עודכן בהצלחה!",
-     logout: "התנתק",
-     clickToUpload: "לחץ לשינוי תמונה"
+    title: "הפרופיל שלי",
+    subtitle: "נהל את הנוכחות וההעדפות שלך",
+    personal: "מידע אישי",
+    preferences: "העדפות מערכת",
+    security: "חשבון ואבטחה",
+    username: "שם משתמש",
+    email: "כתובת אימייל",
+    lang: "שפת אתר",
+    cred: "ניקוד אמינות",
+    save: "שמור שינויים",
+    saving: "שומר...",
+    success: "הפרופיל עודכן בהצלחה!",
+    logout: "התנתק",
+    clickToUpload: "לחץ לשינוי תמונה"
   }
 };
 
@@ -78,10 +78,10 @@ export default function ProfileClient({ initialUser, initialProfile }) {
   const [error, setError] = useState(null);
   const [message, setMessage] = useState(null);
   const fileInputRef = useRef(null);
-  
+
   const router = useRouter();
   const supabase = createClient();
-  
+
   const lang = profile.app_language || 'en';
   const t = TRANSLATIONS[lang] || TRANSLATIONS.en;
   const isRTL = lang === 'he';
@@ -110,10 +110,10 @@ export default function ProfileClient({ initialUser, initialProfile }) {
       setMessage(t.success);
       setTimeout(() => setMessage(null), 3000);
       router.refresh(); // Refresh to update any layout headers if needed
-      
+
       // Delay reload slightly to let router.refresh finish
       setTimeout(() => {
-         window.location.reload();
+        window.location.reload();
       }, 500);
     }
     setSaving(false);
@@ -145,7 +145,7 @@ export default function ProfileClient({ initialUser, initialProfile }) {
         .eq('id', initialUser.id);
 
       if (updateError) throw updateError;
-      
+
       setProfile({ ...profile, avatar_url });
     } catch (err) {
       setError(err.message);
@@ -163,7 +163,7 @@ export default function ProfileClient({ initialUser, initialProfile }) {
   return (
     <div className={`profile-premium-wrapper ${isRTL ? 'rtl' : ''}`} translate="no">
       <div className="profile-hero-bg" />
-      
+
       <div className="profile-content-container">
         {/* Header Section */}
         <header className="profile-main-header">
@@ -179,19 +179,19 @@ export default function ProfileClient({ initialUser, initialProfile }) {
               </div>
               {uploading && <div className="avatar-upload-spinner" />}
             </div>
-            <input 
-              type="file" 
-              ref={fileInputRef} 
-              style={{ display: 'none' }} 
-              accept="image/*" 
-              onChange={uploadAvatar} 
+            <input
+              type="file"
+              ref={fileInputRef}
+              style={{ display: 'none' }}
+              accept="image/*"
+              onChange={uploadAvatar}
             />
             <div className="profile-user-ident">
-               <h1 className="profile-display-name">{profile.username || 'Citizen'}</h1>
-               <div className="profile-cred-badge">
-                 <span className="cred-label">{t.cred}:</span>
-                 <span className="cred-value">{profile.cred_score || 0}</span>
-               </div>
+              <h1 className="profile-display-name">{profile.username || 'Citizen'}</h1>
+              <div className="profile-cred-badge">
+                <span className="cred-label">{t.cred}:</span>
+                <span className="cred-value">{profile.cred_score || 0}</span>
+              </div>
             </div>
           </div>
         </header>
@@ -202,7 +202,7 @@ export default function ProfileClient({ initialUser, initialProfile }) {
         <div className="profile-grid">
           {/* Main Controls */}
           <form onSubmit={handleSave} className="profile-form-sections">
-            
+
             {/* Category: Personal */}
             <section className="profile-section-card">
               <div className="section-header">
@@ -212,7 +212,7 @@ export default function ProfileClient({ initialUser, initialProfile }) {
               <div className="section-content">
                 <div className="pro-field">
                   <label>{t.username}</label>
-                  <input 
+                  <input
                     name="username"
                     value={profile.username || ''}
                     onChange={handleChange}
@@ -257,7 +257,7 @@ export default function ProfileClient({ initialUser, initialProfile }) {
           {/* Sidebar / Secondary Controls */}
           <aside className="profile-side-rail">
             <section className="profile-section-card ghost">
-               <div className="section-header">
+              <div className="section-header">
                 <span className="section-icon">🔒</span>
                 <h3>{t.security}</h3>
               </div>

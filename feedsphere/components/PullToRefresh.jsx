@@ -44,7 +44,7 @@ export default function PullToRefresh({ children }) {
         // Reduced resistance curve: pull feels more responsive
         const pull = Math.pow(diff, 0.85);
         setPullDistance(pull);
-        
+
         // Prevent default scrolling if we are pulling down at the top
         if (diff > 5) {
           if (e.cancelable) e.preventDefault();
@@ -64,7 +64,7 @@ export default function PullToRefresh({ children }) {
     const triggerRefresh = () => {
       setIsRefreshing(true);
       setPullDistance(60); // Keep indicator visible while refreshing
-      
+
       // Haptic feedback if available
       if (window.navigator && window.navigator.vibrate) {
         window.navigator.vibrate(10);
@@ -72,7 +72,7 @@ export default function PullToRefresh({ children }) {
 
       // Reload the page data
       router.refresh();
-      
+
       // Simulate a small delay for the animation to look good
       setTimeout(() => {
         setIsRefreshing(false);
@@ -104,9 +104,9 @@ export default function PullToRefresh({ children }) {
   return (
     <div ref={containerRef} className="pull-to-refresh-container">
       {/* The Loading Indicator */}
-      <div 
+      <div
         className={`pull-indicator ${isRefreshing ? 'refreshing' : ''} ${pullDistance > PULL_THRESHOLD ? 'ready' : ''}`}
-        style={{ 
+        style={{
           transform: `translateY(${pullDistance}px) rotate(${pullDistance * 4}deg) scale(${pullDistance > PULL_THRESHOLD ? 1.2 : 1})`,
           opacity: Math.min(pullDistance / PULL_THRESHOLD, 1),
           boxShadow: pullDistance > PULL_THRESHOLD ? '0 0 20px var(--accent)' : '0 4px 12px rgba(0,0,0,0.3)'
@@ -116,9 +116,9 @@ export default function PullToRefresh({ children }) {
       </div>
 
       {/* The Content */}
-      <div 
+      <div
         className="pull-content"
-        style={{ 
+        style={{
           transform: `translateY(${pullDistance}px)`,
           transition: pullDistance === 0 ? 'transform 0.3s cubic-bezier(0.2, 0, 0.2, 1)' : 'none'
         }}

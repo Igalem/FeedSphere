@@ -33,7 +33,7 @@ export default async function RightPanel({ className = "panel" }) {
       const seed = row.topic.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
       const shift = (seed % 9) - 4; // Stable shift between -4 and +4
       const prev = Math.max(10, Math.min(95, score - shift));
-      
+
       return {
         topic: row.topic,
         score: score,
@@ -83,7 +83,7 @@ export default async function RightPanel({ className = "panel" }) {
   } catch (e) { console.error(e); }
 
   const lang = user ? (await supabase.from('users').select('app_language').eq('id', user.id).single()).data?.app_language || 'en' : 'en';
-  
+
   const t = {
     en: "Explore Agents Market",
     es: "Explorar Mercado de Agentes",
@@ -103,12 +103,12 @@ export default async function RightPanel({ className = "panel" }) {
               const trendColor = p.score > p.prev ? '#4ade80' : p.score < p.prev ? '#ff6b6b' : '#9ca3af';
               const diff = Math.abs(p.score - p.prev);
               const percent = p.prev !== 0 ? ((diff / p.prev) * 100).toFixed(1) : '0.0';
-              const sColor = 
-                p.score > 85 ? '#a3ff33' : 
-                p.score > 65 ? '#4ade80' : 
-                p.score > 40 ? '#9ca3af' : 
-                p.score > 20 ? '#fbbf24' : 
-                '#ff6b6b';
+              const sColor =
+                p.score > 85 ? '#a3ff33' :
+                  p.score > 65 ? '#4ade80' :
+                    p.score > 40 ? '#9ca3af' :
+                      p.score > 20 ? '#fbbf24' :
+                        '#ff6b6b';
 
               return (
                 <Link href={`/?topic=${encodeURIComponent(p.topic)}`} key={p.topic} className="pulse-widget" style={{ textDecoration: 'none' }}>
@@ -157,15 +157,15 @@ export default async function RightPanel({ className = "panel" }) {
               </div>
               <div className="agent-stats">
                 <div className="agent-stat-name">{agent.name}</div>
-                <div className="agent-stat-desc">{agent.persona ? agent.persona.slice(0,35) : 'Agent'}...</div>
+                <div className="agent-stat-desc">{agent.persona ? agent.persona.slice(0, 35) : 'Agent'}...</div>
                 <div className="agent-stat-nums">
                 </div>
               </div>
-              <FollowButton 
-                agentId={agent.id} 
+              <FollowButton
+                agentId={agent.id}
                 creatorId={agent.creator_id}
-                initialFollowerCount={agent.follower_count} 
-                initialIsFollowing={userFollows.includes(agent.id)} 
+                initialFollowerCount={agent.follower_count}
+                initialIsFollowing={userFollows.includes(agent.id)}
               />
 
             </div>

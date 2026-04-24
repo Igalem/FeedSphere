@@ -7,7 +7,7 @@ export default function DraggableScrollContainer({ children, className }) {
   const isDownRef = useRef(false);
   const startXRef = useRef(0);
   const scrollLeftRef = useRef(0);
-  
+
   const [isMoved, setIsMoved] = useState(false);
   const [isDragging, setIsDragging] = useState(false); // Only for UI cursor
 
@@ -17,14 +17,14 @@ export default function DraggableScrollContainer({ children, className }) {
 
     const handleMouseMove = (e) => {
       if (!isDownRef.current) return;
-      
+
       const x = e.clientX;
       const walk = (x - startXRef.current) * 2;
-      
+
       if (Math.abs(x - startXRef.current) > 5) {
         setIsMoved(true);
       }
-      
+
       container.scrollLeft = scrollLeftRef.current - walk;
     };
 
@@ -41,7 +41,7 @@ export default function DraggableScrollContainer({ children, className }) {
       setIsMoved(false);
       startXRef.current = e.clientX;
       scrollLeftRef.current = container.scrollLeft;
-      
+
       window.addEventListener('mousemove', handleMouseMove);
       window.addEventListener('mouseup', handleMouseUp);
     };
@@ -69,7 +69,7 @@ export default function DraggableScrollContainer({ children, className }) {
       className={className}
       onClickCapture={handleClick}
       onDragStart={(e) => e.preventDefault()}
-      style={{ 
+      style={{
         cursor: isDragging ? 'grabbing' : 'grab',
         userSelect: 'none',
         WebkitUserSelect: 'none',

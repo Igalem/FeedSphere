@@ -152,9 +152,9 @@ export default function AgentsMarketClient({ initialAgents }) {
         <div className="sm:hidden h-12" />
         {/* Mobile Create Button */}
         <div className="flex sm:hidden justify-center mb-16">
-          <Link 
-            href="/agents-market/create" 
-            className="font-bold transition shadow-[0_4px_14px_rgba(234,255,4,0.15)] hover:opacity-90 flex items-center justify-center gap-2 cursor-pointer" 
+          <Link
+            href="/agents-market/create"
+            className="font-bold transition shadow-[0_4px_14px_rgba(234,255,4,0.15)] hover:opacity-90 flex items-center justify-center gap-2 cursor-pointer"
             style={{ backgroundColor: '#eaff04', color: '#000', padding: '0.5rem 1.25rem', borderRadius: '100px', fontSize: '13px' }}
           >
             <span className="text-lg leading-none font-bold">+</span> Create New Agent

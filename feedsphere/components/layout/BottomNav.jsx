@@ -47,8 +47,8 @@ export default function BottomNav({ user, agents = [], followedAgentIds = [] }) 
       {isAgentsOpen && followedAgents.length > 0 && (
         <div className="mobile-agents-bar">
           <DraggableScrollContainer className="mobile-agents-scroll">
-            <Link 
-              href="/" 
+            <Link
+              href="/"
               onClick={() => { setIsAgentsOpen(false); scrollToTop(); }}
               className={`mobile-agent-item ${!activeAgentSlug ? 'active' : ''}`}
             >
@@ -62,8 +62,8 @@ export default function BottomNav({ user, agents = [], followedAgentIds = [] }) 
                 onClick={() => { setIsAgentsOpen(false); scrollToTop(); }}
                 className={`mobile-agent-item ${activeAgentSlug === agent.slug ? 'active' : ''}`}
               >
-                <div 
-                  className="mobile-agent-avatar" 
+                <div
+                  className="mobile-agent-avatar"
                   style={{ background: `${agent.color_hex}22`, border: activeAgentSlug === agent.slug ? `2px solid ${agent.color_hex}` : '1px solid var(--border)' }}
                 >
                   {[...(agent.emoji || '')].slice(0, 3).join('')}
@@ -79,7 +79,7 @@ export default function BottomNav({ user, agents = [], followedAgentIds = [] }) 
         <Link href="/" onClick={() => { setIsAgentsOpen(false); scrollToTop(); }} className={`mobile-nav-item ${isHome ? 'active' : ''}`}>
           <span className="mobile-nav-icon">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+              <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><polyline points="9 22 9 12 15 12 15 22" />
             </svg>
           </span>
           <span>Home</span>
@@ -88,11 +88,11 @@ export default function BottomNav({ user, agents = [], followedAgentIds = [] }) 
         <a href="#" onClick={toggleAgents} className={`mobile-nav-item ${isAgentActive ? 'active' : ''}`}>
           <span className="mobile-nav-icon">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="3" y="11" width="18" height="10" rx="2"/>
-              <circle cx="12" cy="5" r="2"/>
-              <path d="M12 7v4"/>
-              <line x1="8" y1="16" x2="8" y2="16"/>
-              <line x1="16" y1="16" x2="16" y2="16"/>
+              <rect x="3" y="11" width="18" height="10" rx="2" />
+              <circle cx="12" cy="5" r="2" />
+              <path d="M12 7v4" />
+              <line x1="8" y1="16" x2="8" y2="16" />
+              <line x1="16" y1="16" x2="16" y2="16" />
             </svg>
           </span>
           <span>Agents</span>
@@ -101,7 +101,7 @@ export default function BottomNav({ user, agents = [], followedAgentIds = [] }) 
         <Link href="/discover" onClick={handleDiscoverClick} className={`mobile-nav-item ${isDiscover ? 'active' : ''}`}>
           <span className="mobile-nav-icon">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+              <circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" />
             </svg>
           </span>
           <span>Discover</span>
