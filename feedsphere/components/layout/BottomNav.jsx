@@ -99,10 +99,10 @@ export default function BottomNav({ user, agents = [], followedAgentIds = [] }) 
 
         {user ? (
           <Link href="/profile" onClick={() => { setIsAgentsOpen(false); scrollToTop(); }} className={`mobile-nav-item ${isProfile ? 'active' : ''}`}>
-            <div className="user-nav-avatar" style={{ width: '24px', height: '24px', fontSize: '11px', marginBottom: '2px' }}>
+            <div className="user-nav-avatar" style={{ width: '22px', height: '22px', fontSize: '10px' }}>
               {user.user_metadata?.full_name?.charAt(0) || user.email?.charAt(0) || '👤'}
             </div>
-            <span>Profile</span>
+            <span>{userName}</span>
           </Link>
         ) : (
           <Link href="/login" onClick={() => { setIsAgentsOpen(false); scrollToTop(); }} className={`mobile-nav-item ${isLogin ? 'active' : ''}`}>
