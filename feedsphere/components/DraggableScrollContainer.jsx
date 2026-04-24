@@ -74,7 +74,7 @@ export default function DraggableScrollContainer({ children, className }) {
         userSelect: 'none',
         WebkitUserSelect: 'none',
         scrollBehavior: 'auto',
-        touchAction: 'pan-y'
+        touchAction: 'auto'
       }}
     >
       {children}
