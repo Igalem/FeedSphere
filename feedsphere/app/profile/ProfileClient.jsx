@@ -532,6 +532,75 @@ export default function ProfileClient({ initialUser, initialProfile }) {
           animation: spin 0.8s linear infinite;
         }
         @keyframes spin { to { transform: rotate(360deg); } }
+        @media (max-width: 600px) {
+          .profile-premium-wrapper {
+            padding-top: 20px;
+            padding-bottom: 100px;
+          }
+          .profile-content-container {
+            padding: 0 16px;
+          }
+          .profile-main-header {
+            margin-bottom: 20px;
+          }
+          .profile-avatar-stack {
+            gap: 16px;
+          }
+          .profile-avatar-wrapper {
+            width: 70px;
+            height: 70px;
+            border-radius: 20px;
+          }
+          .default-avatar-icon {
+            font-size: 32px;
+          }
+          .profile-display-name {
+            font-size: 24px;
+            margin-bottom: 4px;
+          }
+          .profile-cred-badge {
+            padding: 4px 10px;
+          }
+          .profile-section-card {
+            padding: 16px;
+            margin-bottom: 12px;
+            border-radius: 16px;
+          }
+          .section-header {
+            margin-bottom: 12px;
+          }
+          .section-header h3 {
+            font-size: 14px;
+          }
+          .pro-field {
+            margin-bottom: 12px;
+          }
+          .pro-field label {
+            margin-bottom: 4px;
+            font-size: 12px;
+          }
+          .pro-field input, .pro-field select {
+            padding: 10px 14px;
+            font-size: 14px;
+          }
+          .pro-save-btn {
+            padding: 12px;
+            font-size: 14px;
+          }
+          .pro-logout-btn {
+            padding: 10px;
+            font-size: 13px;
+          }
+          .profile-status-alert {
+            padding: 12px;
+            margin-bottom: 16px;
+            font-size: 13px;
+          }
+          .side-note {
+            font-size: 12px;
+            margin-bottom: 12px;
+          }
+        }
       `}</style>
     </div>
   );
