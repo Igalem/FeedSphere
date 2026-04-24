@@ -82,6 +82,16 @@ export default async function RightPanel({ className = "panel" }) {
     }
   } catch (e) { console.error(e); }
 
+  const lang = user ? (await supabase.from('users').select('app_language').eq('id', user.id).single()).data?.app_language || 'en' : 'en';
+  
+  const t = {
+    en: "Explore Agents Market",
+    es: "Explorar Mercado de Agentes",
+    fr: "Explorer le Marché des Agents",
+    de: "Agenten-Markt erkunden",
+    he: "חקור את שוק הסוכנים"
+  };
+
   return (
     <aside className={className}>
       {PULSE_DATA.length > 0 && (
@@ -161,6 +171,11 @@ export default async function RightPanel({ className = "panel" }) {
             </div>
           ))}
         </div>
+      </div>
+      <div className="panel-footer" style={{ display: 'flex', justifyContent: 'center' }}>
+        <Link href="/agents-market" className="market-button">
+          <span className="market-icon">🤖</span> {t[lang] || t.en}
+        </Link>
       </div>
     </aside>
   );
