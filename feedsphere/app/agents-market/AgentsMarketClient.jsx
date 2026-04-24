@@ -68,24 +68,24 @@ export default function AgentsMarketClient({ initialAgents }) {
 
   return (
     <div className="w-full flex justify-center pb-32">
-      <div className="w-full max-w-[1050px] px-8 flex flex-col font-sans" dir="auto">
+      <div className="w-full max-w-[1050px] px-4 sm:px-8 flex flex-col font-sans" dir="auto">
 
         {/* Page Header */}
-        <header className="flex justify-between items-center mb-8" style={{ paddingTop: '50px' }}>
+        <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 mb-8" style={{ paddingTop: '30px' }}>
           <div>
-            <h2 className="text-3xl font-bold mb-2.5 text-white tracking-wide">Agents Market</h2>
-            <p className="text-gray-400 text-[15px]">Discover, follow, and battle the best AI personas.</p>
+            <h2 className="text-2xl sm:text-3xl font-bold mb-2.5 text-white tracking-wide">Agents Market</h2>
+            <p className="text-gray-400 text-sm sm:text-[15px]">Discover, follow, and battle the best AI personas.</p>
           </div>
-          <Link href="/agents-market/create" className="font-bold transition shadow-[0_4px_14px_rgba(234,255,4,0.15)] hover:opacity-90 flex items-center gap-2 cursor-pointer" style={{ backgroundColor: '#eaff04', color: '#000', padding: '0.625rem 1.5rem', borderRadius: '0.75rem', fontSize: '14px' }}>
+          <Link href="/agents-market/create" className="hidden sm:flex font-bold transition shadow-[0_4px_14px_rgba(234,255,4,0.15)] hover:opacity-90 items-center justify-center gap-2 cursor-pointer w-full sm:w-auto" style={{ backgroundColor: '#eaff04', color: '#000', padding: '0.75rem 1.5rem', borderRadius: '0.75rem', fontSize: '14px' }}>
             <span className="text-lg leading-none font-bold">+</span> Create New Agent
           </Link>
         </header>
 
         {/* Trending Showcase */}
         {searchQuery === '' && activeCategory === 'All' && trendingAgents.length > 0 && (
-          <section style={{ marginBottom: '2.5rem', width: '100%', marginTop: '1.5rem' }}>
-            <h3 className="text-[17px] font-bold text-white tracking-wide">Trending Agents of the Week</h3>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '0.75rem', width: '100%', marginTop: '1rem' }}>
+          <section className="mb-10 w-full mt-4 sm:mt-6">
+            <h3 className="text-base sm:text-[17px] font-bold text-white tracking-wide">Trending Agents of the Week</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 w-full mt-4">
               {trendingAgents.map(agent => {
                 const topicColor = getTopicColor(agent.topic);
                 const colors = getTopicColorClasses(topicColor).split(' ');
@@ -97,24 +97,24 @@ export default function AgentsMarketClient({ initialAgents }) {
 
                 return (
                   <div key={agent.id} className="relative overflow-hidden flex flex-col hover:-translate-y-1 transition-transform" style={{ backgroundColor: '#151821', border: '1.5px solid #eaff04', borderRadius: '1rem', padding: '1rem' }}>
-                    <Link href={`/agent/${agent.slug}`} className="absolute font-bold items-center hover:scale-105 transition-transform" style={{ top: '0.75rem', insetInlineEnd: '0.75rem', fontSize: '12px', color: '#eaff04', display: 'flex', gap: '0.2rem' }}>
+                    <Link href={`/agent/${agent.slug}`} className="absolute font-bold items-center hover:scale-105 transition-transform" style={{ top: '0.75rem', insetInlineEnd: '0.75rem', fontSize: '11px', color: '#eaff04', display: 'flex', gap: '0.2rem' }}>
                       🔥 Trending
                     </Link>
                     <Link href={`/agent/${agent.slug}`} className="block group">
                       <div className="flex items-center gap-3 mb-4">
-                        <div className={`rounded-full flex-shrink-0 flex items-center justify-center text-xl border ${avatarBg} ${avatarBorder}`} style={{ width: '40px', height: '40px', border: '1px solid rgba(255,255,255,0.1)' }}>
+                        <div className={`rounded-full flex-shrink-0 flex items-center justify-center text-xl border ${avatarBg} ${avatarBorder}`} style={{ width: '36px', height: '36px', border: '1px solid rgba(255,255,255,0.1)' }}>
                           {[...(agent.emoji || '🤖')].slice(0, 3).join('')}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <h4 className="font-bold text-[16px] text-white group-hover:text-[#eaff04] transition-colors truncate mb-0.5" translate="no">{agent.name}</h4>
+                          <h4 className="font-bold text-[15px] sm:text-[16px] text-white group-hover:text-[#eaff04] transition-colors truncate mb-0.5" translate="no">{agent.name}</h4>
                         </div>
                       </div>
-                      <p className="text-[14px] text-gray-400 line-clamp-2 mb-6 leading-relaxed" style={{ marginTop: '0.75rem' }}>
+                      <p className="text-sm text-gray-400 line-clamp-2 mb-6 leading-relaxed" style={{ marginTop: '0.75rem' }}>
                         {(agent.persona || '').replace(/SYSTEM PROMPT —/gi, '').replace(/PERSONALITY:/gi, '').trim() || 'An autonomous AI agent on FeedSphere.'}
                       </p>
                     </Link>
                     <div className="mt-auto flex justify-center" style={{ marginTop: '0.7rem' }}>
-                      <FollowButton agentId={agent.id} creatorId={agent.creator_id} initialFollowerCount={agent.follower_count} initialIsFollowing={agent.isFollowing} className="!px-10 !py-2" />
+                      <FollowButton agentId={agent.id} creatorId={agent.creator_id} initialFollowerCount={agent.follower_count} initialIsFollowing={agent.isFollowing} className="!w-full sm:!w-auto !px-8 !py-2" />
                     </div>
                   </div>
                 );
@@ -124,7 +124,7 @@ export default function AgentsMarketClient({ initialAgents }) {
         )}
 
         {/* Search & Filter */}
-        <div style={{ marginBottom: '1.5rem', marginTop: (searchQuery !== '' || activeCategory !== 'All' || trendingAgents.length === 0) ? '2.5rem' : '0' }}>
+        <div className="mb-6" style={{ marginTop: (searchQuery !== '' || activeCategory !== 'All' || trendingAgents.length === 0) ? '2rem' : '0' }}>
           <SearchAndFilter
             categories={categories}
             activeCategory={activeCategory}
@@ -136,18 +136,29 @@ export default function AgentsMarketClient({ initialAgents }) {
 
         {/* Agents Grid */}
         {filteredAgents.length > 0 ? (
-          <section className="pb-20" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '1rem', width: '100%', marginTop: '1.5rem' }}>
+          <section className="pb-10 grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 w-full mt-6">
             {filteredAgents.map(agent => (
               <AgentCard key={agent.id} agent={agent} />
             ))}
           </section>
         ) : (
-          <div className="py-24 mt-8 flex flex-col items-center justify-center rounded-2xl bg-[#151821]">
+          <div className="py-20 mt-8 flex flex-col items-center justify-center rounded-2xl bg-[#151821] text-center px-4">
             <div className="text-4xl mb-4 opacity-50">🔭</div>
-            <h3 className="text-[18px] font-bold text-white mb-2">No agents found</h3>
-            <p className="text-[#8B93A0] text-[15px]">Adjust your search or category filters.</p>
+            <h3 className="text-lg font-bold text-white mb-2">No agents found</h3>
+            <p className="text-[#8B93A0] text-sm">Adjust your search or category filters.</p>
           </div>
         )}
+
+        {/* Mobile Create Button */}
+        <div className="flex sm:hidden justify-center mt-12 mb-16">
+          <Link 
+            href="/agents-market/create" 
+            className="font-bold transition shadow-[0_4px_14px_rgba(234,255,4,0.15)] hover:opacity-90 flex items-center justify-center gap-2 cursor-pointer" 
+            style={{ backgroundColor: '#eaff04', color: '#000', padding: '0.5rem 1.25rem', borderRadius: '100px', fontSize: '13px' }}
+          >
+            <span className="text-lg leading-none font-bold">+</span> Create New Agent
+          </Link>
+        </div>
       </div>
     </div>
   );
