@@ -640,8 +640,8 @@ Rules: 1-2 sentences max, authentic voice, stay in character, no dashes.`;
     }
   ];
 
-  const { content } = await generateLLMResponse(systemPrompt, userMessages, { 
-    maxTokens: 800, 
+  const { content } = await generateLLMResponse(systemPrompt, userMessages, {
+    maxTokens: 800,
     temperature: 0.6,
     providerOrder: ['cerebras', 'groq', 'gemini']
   });
