@@ -61,22 +61,27 @@ export async function generateLLMResponse(systemPrompt, userMessages, options = 
   let lastError;
 
   // Decide order based on current master
-  // Primary rotation: cerebras -> groq -> gemini
   let providers = ['cerebras', 'groq', 'gemini'];
 
-  if (currentMaster === 'groq') {
-    providers = ['groq', 'gemini', 'cerebras'];
-  } else if (currentMaster === 'gemini') {
-    providers = ['gemini', 'cerebras', 'groq'];
+  if (options.providerOrder && Array.isArray(options.providerOrder)) {
+    providers = options.providerOrder;
+    console.log(`[LLM] Using CUSTOM provider order: ${providers.join(' -> ')}`);
+  } else {
+    // Session Master logic
+    if (currentMaster === 'groq') {
+      providers = ['groq', 'gemini', 'cerebras'];
+    } else if (currentMaster === 'gemini') {
+      providers = ['gemini', 'cerebras', 'groq'];
+    }
+
+    // If a specific provider is requested, prioritize it
+    if (useProvider && providers.includes(useProvider)) {
+      providers = [useProvider, ...providers.filter(p => p !== useProvider)];
+      console.log(`[LLM] Specific provider override: ${useProvider.toUpperCase()} for this request.`);
+    }
+    console.log(`[LLM] Session Master: ${currentMaster.toUpperCase()}. Current request order: ${providers.join(' -> ')}`);
   }
 
-  // If a specific provider is requested, prioritize it
-  if (useProvider && providers.includes(useProvider)) {
-    providers = [useProvider, ...providers.filter(p => p !== useProvider)];
-    console.log(`[LLM] Specific provider override: ${useProvider.toUpperCase()} for this request.`);
-  }
-
-  console.log(`[LLM] Session Master: ${currentMaster.toUpperCase()}. Current request order: ${providers.join(' -> ')}`);
 
   for (const provider of providers) {
     // --- CEREBRAS PROVIDER ---
@@ -373,8 +378,10 @@ Return ONLY the JSON object. Do not include any explanations or other text.`;
   const { content: response, provider, model } = await generateLLMResponse(systemPrompt, userMessages, {
     maxTokens: 1200,
     temperature: 0.8,
-    responseMimeType: "application/json"
+    responseMimeType: "application/json",
+    providerOrder: ['cerebras', 'groq', 'gemini']
   });
+
 
   try {
     const jsonMatch = response.match(/\{[\s\S]*\}/);
@@ -453,8 +460,10 @@ Return ONLY the JSON object.`;
   const { content: response, provider, model } = await generateLLMResponse(systemPrompt, userMessages, {
     maxTokens: 1200,
     temperature: 0.85,
-    responseMimeType: "application/json"
+    responseMimeType: "application/json",
+    providerOrder: ['cerebras', 'groq', 'gemini']
   });
+
 
   try {
     const jsonMatch = response.match(/\{[\s\S]*\}/);
@@ -554,16 +563,20 @@ Return ONLY the JSON object.`;
   const { content: responseA, provider: providerA, model: modelA } = await generateLLMResponse(buildPrompt(agentA, agentB.name), userMsg, {
     maxTokens: 300,
     temperature: 0.9,
-    responseMimeType: "application/json"
+    responseMimeType: "application/json",
+    providerOrder: ['cerebras', 'groq', 'gemini']
   });
+
 
   await new Promise(r => setTimeout(r, 1000));
 
   const { content: responseB, provider: providerB, model: modelB } = await generateLLMResponse(buildPrompt(agentB, agentA.name), userMsg, {
     maxTokens: 300,
     temperature: 0.9,
-    responseMimeType: "application/json"
+    responseMimeType: "application/json",
+    providerOrder: ['cerebras', 'groq', 'gemini']
   });
+
 
   await new Promise(r => setTimeout(r, 500));
 
@@ -627,7 +640,12 @@ Rules: 1-2 sentences max, authentic voice, stay in character, no dashes.`;
     }
   ];
 
-  const { content } = await generateLLMResponse(systemPrompt, userMessages, { maxTokens: 800, temperature: 0.6 });
+  const { content } = await generateLLMResponse(systemPrompt, userMessages, { 
+    maxTokens: 800, 
+    temperature: 0.6,
+    providerOrder: ['cerebras', 'groq', 'gemini']
+  });
+
   return content;
 }
 
@@ -764,8 +782,10 @@ export async function getRelevancyScore(agent, article) {
     const { content: response } = await generateLLMResponse(systemPrompt, userMessages, {
       maxTokens: 500,
       temperature: 0.2,
-      responseMimeType: "application/json"
+      responseMimeType: "application/json",
+      providerOrder: ['groq', 'cerebras']
     });
+
 
     const jsonMatch = response.match(/\{[\s\S]*\}/);
     if (jsonMatch) {

@@ -112,8 +112,8 @@ class Generator:
         
         # Decide order based on current master and request type
         if is_relevancy:
-            # Special flow for Relevancy Gatekeeper: Gemini > Cerebras > Groq > Ollama
-            providers = ['gemini', 'cerebras', 'groq', 'ollama']
+            # Special flow for Relevancy Gatekeeper: Groq > Cerebras
+            providers = ['groq', 'cerebras']
         elif force_provider:
             # Case: specific provider forced
             cloud_flow = ['cerebras', 'groq', 'gemini']
@@ -123,8 +123,9 @@ class Generator:
         elif current_master == 'gemini':
             providers = ['gemini', 'cerebras', 'groq', 'ollama']
         else:
-            # Default flow: Cerebras > Groq > Gemini > Ollama
+            # Default flow (Posting): Cerebras > Groq > Gemini > Ollama
             providers = ['cerebras', 'groq', 'gemini', 'ollama']
+
             
         messages = prompt.format_messages(**values)
         
