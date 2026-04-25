@@ -29,6 +29,8 @@ const CEREBRAS_API_KEY = process.env.CEREBRAS_API_KEY;
 const CEREBRAS_API_KEY2 = process.env.CEREBRAS_API_KEY2;
 const CEREBRAS_API_KEY3 = process.env.CEREBRAS_API_KEY3;
 const CEREBRAS_KEYS = [CEREBRAS_API_KEY, CEREBRAS_API_KEY2, CEREBRAS_API_KEY3].filter(Boolean);
+console.log(`[LLM-Debug] Keys detected: Key1:${!!CEREBRAS_API_KEY}, Key2:${!!CEREBRAS_API_KEY2}, Key3:${!!CEREBRAS_API_KEY3}`);
+
 
 let currentMaster = 'cerebras';
 let masterFailureCount = 0;
