@@ -159,13 +159,14 @@ class Crawler:
 
                 # Use a small buffer if delta_days is 0 to catch articles from late yesterday
                 # or just use simple days comparison on aware datetimes
-                days_old = (now_utc.date() - published_at.date()).days
+                # Filter by exact hour delta (30 hours as requested)
+                hours_old = (now_utc - published_at).total_seconds() / 3600
                 
-                if days_old > settings.CRAWLER_DELTA_DAYS:
-                    if days_old > 365:
-                        logger.debug(f"Skipping very old article '{entry.get('title', 'No Title')}' from {published_at.date()}")
+                if hours_old > 30:
+                    if hours_old > 24 * 365:
+                        logger.debug(f"Skipping very old article '{entry.get('title', 'No Title')}' from {published_at}")
                     else:
-                        logger.info(f"Skipping article '{entry.get('title', 'No Title')}' from {published_at.date()} ({days_old} days old, > {settings.CRAWLER_DELTA_DAYS} delta)")
+                        logger.info(f"Skipping article '{entry.get('title', 'No Title')}' from {published_at} ({hours_old:.1f} hours old, > 30h delta)")
                     continue
             else:
                 # If no date found, skip to ensure we handle things correctly

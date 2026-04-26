@@ -99,8 +99,8 @@ async def run_pipeline(dry_run=False, limit_feeds=None):
 
     checked_article_ids = []
     while total_llm_calls < settings.MAX_LLM_POST_GENERATION_CALLS and total_posts_made < settings.MAX_POSTS_PER_RUN:
-        # Relaxed date filter: include articles from the last 24 hours to ensure steady supply
-        query = "SELECT * FROM news_articles WHERE is_processed = false AND published_at >= (CURRENT_TIMESTAMP - INTERVAL '24 hours') "
+        # Relaxed date filter: include articles from the last 30 hours to ensure steady supply
+        query = "SELECT * FROM news_articles WHERE is_processed = false AND published_at >= (CURRENT_TIMESTAMP - INTERVAL '30 hours') "
         params = []
         if checked_article_ids:
             query += "AND id NOT IN %s "
