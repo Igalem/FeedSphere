@@ -21,6 +21,7 @@ Scoring Guide:
 - 0-69: NOT RELEVANT. Different sport, completely unrelated category, or noise.
 
 Response format: JSON object with 'relevance_score' (int 0-100) and 'reasoning' (string).
+CRITICAL: JSON keys MUST be in English: 'relevance_score', 'reasoning'.
 IMPORTANT: Return ONLY valid JSON.`;
 
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
@@ -57,7 +58,7 @@ export function resetLLMMaster() {
  */
 export async function generateLLMResponse(systemPrompt, userMessages, options = {}) {
   const geminiModel = getGeminiModel();
-  const { maxTokens = 1200, temperature = 0.8, retries = 5, initialDelay = 3000, useProvider } = options;
+  const { maxTokens = 1200, temperature = 0.7, retries = 5, initialDelay = 3000, useProvider } = options;
   let lastError;
 
   // Decide order based on current master
@@ -318,10 +319,21 @@ function cleanLLMResponse(content) {
   const cleaned = content
     .replace(/<think>[\s\S]*?<\/think>/g, '')
     .replace(/<think>[\s\S]*/g, '')
+    .replace(/```json\s*/g, '')
+    .replace(/```\s*/g, '')
     .trim();
 
+  // Translated keys fallback
+  const final = cleaned
+    .replace(/"ציון_סנטימנט":/g, '"sentiment_score":')
+    .replace(/"סנטימנט":/g, '"sentiment_score":')
+    .replace(/"תגיות":/g, '"tags":')
+    .replace(/"תגובת_סוכן":/g, '"agent_commentary":')
+    .replace(/"תוכן":/g, '"agent_commentary":')
+    .replace(/"פרשנות":/g, '"agent_commentary":');
+
   // Special case: set-like notation {"sentence1", "sentence2"}
-  if (cleaned.startsWith('{"') && cleaned.endsWith('}') && !cleaned.includes('":')) {
+  if (final.startsWith('{"') && final.endsWith('}') && !final.includes('":')) {
     const parts = cleaned.match(/"(.*?)"/g);
     if (parts) {
       const text = parts.map(p => p.slice(1, -1)).join(' ');
@@ -349,14 +361,16 @@ Topic: ${agent.topic} ${agent.sub_topic ? `(${agent.sub_topic})` : ''}
 ${agent.persona}
 ${agent.responseStyle ? `Response Style: ${agent.responseStyle}` : ''}
 
-Rules:
-- Write like a real, authentic human expressing genuine feelings, emotions, and imperfections. Don't be too robotic.
-- Stay completely in character at all times.
-- Max 3 sentences for post takes.
+ Rules:
+ - GROUNDING: Strictly stick to the subjects in the provided news item. Do NOT mention people, teams, or facts not explicitly present in the Title or Excerpt.
+ - Write like a real, authentic human expressing genuine feelings, emotions, and imperfections. Don't be too robotic.
+ - Stay completely in character at all times.
+ - Max 3 sentences for post takes.
 - Never start with "I think" or "In my opinion".
 - Never repeat what the article says, simply add your raw angle.
 - Never use the string '—', '--', or '-' in your output! Use commas, colons, or periods instead.
 - Tags MUST be 3-5 specific, granular, and trending PascalCase strings (e.g., 'TransferSaga', 'RosterDrama', 'TacticalShift', 'MarketVolatility'). Avoid generic tags like 'Sports' or 'News'. Focus on the hottest, most specific topics mentioned.
+- CRITICAL: JSON keys MUST be in English: 'agent_commentary', 'sentiment_score', 'tags' even if the commentary is in another language.
 - YOUR FINAL OUTPUT MUST BE A VALID JSON OBJECT AND NOTHING ELSE.
 
 JSON Structure:
@@ -377,7 +391,7 @@ Return ONLY the JSON object. Do not include any explanations or other text.`;
 
   const { content: response, provider, model } = await generateLLMResponse(systemPrompt, userMessages, {
     maxTokens: 1200,
-    temperature: 0.8,
+    temperature: 0.7,
     responseMimeType: "application/json",
     providerOrder: ['cerebras', 'groq', 'gemini']
   });
@@ -387,7 +401,11 @@ Return ONLY the JSON object. Do not include any explanations or other text.`;
     const jsonMatch = response.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
       try {
-        const data = JSON.parse(jsonMatch[0].replace(/,\s*([\}\]])/g, '$1'));
+        const cleanedJson = jsonMatch[0]
+          .replace(/"(commentary|תוכן|פרשנות)":/g, '"agent_commentary":')
+          .replace(/"(ציון_סנטימנט|סנטימנט)":/g, '"sentiment_score":')
+          .replace(/"(תגיות)":/g, '"tags":');
+        const data = JSON.parse(cleanedJson.replace(/,\s*([\}\]])/g, '$1'));
         return {
           agent_commentary: data.agent_commentary || data.commentary || "",
           sentiment_score: data.sentiment_score || 50,
@@ -398,9 +416,9 @@ Return ONLY the JSON object. Do not include any explanations or other text.`;
       } catch (parseErr) {
         // Fallback: try to extract fields with regex if JSON is malformed
         const commKey = response.includes("agent_commentary") ? "agent_commentary" : "commentary";
-        const commentaryMatch = jsonMatch[0].match(new RegExp(`"${commKey}"\\s*:\\s*"([\\s\\S]*?)"\\s*(?:,|\\n|\\s*\\})`));
-        const sentimentMatch = jsonMatch[0].match(/"sentiment_score"\s*:\\s*(\d+)/);
-        const tagsMatch = jsonMatch[0].match(/"tags"\s*:\s*\[([\s\S]*?)\]/);
+        const commentaryMatch = jsonMatch[0].match(new RegExp(`"(?:agent_commentary|commentary|תוכן|פרשנות)"\\s*:\\s*"([\\s\\S]*?)"\\s*(?:,|\\n|\\s*\\})`));
+        const sentimentMatch = jsonMatch[0].match(/"(?:sentiment_score|ציון_סנטימנט|סנטימנט)"\s*:\\s*(\d+)/);
+        const tagsMatch = jsonMatch[0].match(/"(?:tags|תגיות)"\s*:\s*\[([\s\S]*?)\]/);
 
         let commentary = commentaryMatch ? commentaryMatch[1].trim() : "";
         if (commentary) {
@@ -433,13 +451,15 @@ Topic: ${agent.topic} ${agent.sub_topic ? `(${agent.sub_topic})` : ''}
 Traits: ${agent.persona}
 Response Style: ${agent.responseStyle}
 
-RULES:
-- Use the primary language naturally associated with your persona (e.g., if you are an Israeli reporter, write in Hebrew).
-- DO NOT mention "According to this article".
-- DO NOT add hashtags in post text. Use plain text.
-- Tags MUST be 3-5 specific, insightful, and niche PascalCase strings (e.g., 'SemiconductorWar', 'DeFiRevolution', 'CarbonCapture', 'QuantumLeap'). Avoid generic tags like 'PoliticsToday' or 'TechPulse' if possible. Capture the 'hottest' specific topics in your niche.
-- Keep it under 150 words.
-- YOUR FINAL OUTPUT MUST BE A VALID JSON OBJECT.
+ RULES:
+ - GROUNDING: Strictly stick to the subjects in the provided news item. Do NOT mention people, teams, or facts not explicitly present in the Title or Excerpt.
+ - Use the primary language naturally associated with your persona (e.g., if you are an Israeli reporter, write in Hebrew).
+ - DO NOT mention "According to this article".
+ - DO NOT add hashtags in post text. Use plain text.
+ - Tags MUST be 3-5 specific, insightful, and niche PascalCase strings (e.g., 'SemiconductorWar', 'DeFiRevolution', 'CarbonCapture', 'QuantumLeap'). Avoid generic tags like 'PoliticsToday' or 'TechPulse' if possible. Capture the 'hottest' specific topics in your niche.
+ - CRITICAL: JSON keys MUST be in English: 'agent_commentary', 'sentiment_score', 'tags' even if the commentary is in another language.
+ - Keep it under 150 words.
+ - YOUR FINAL OUTPUT MUST BE A VALID JSON OBJECT.
 
 JSON Structure:
 {
@@ -459,7 +479,7 @@ Return ONLY the JSON object.`;
 
   const { content: response, provider, model } = await generateLLMResponse(systemPrompt, userMessages, {
     maxTokens: 1200,
-    temperature: 0.85,
+    temperature: 0.7,
     responseMimeType: "application/json",
     providerOrder: ['cerebras', 'groq', 'gemini']
   });
@@ -562,7 +582,7 @@ Return ONLY the JSON object.`;
   // Run sequentially to avoid rate limits (429) on Free Tier
   const { content: responseA, provider: providerA, model: modelA } = await generateLLMResponse(buildPrompt(agentA, agentB.name), userMsg, {
     maxTokens: 300,
-    temperature: 0.9,
+    temperature: 0.7,
     responseMimeType: "application/json",
     providerOrder: ['cerebras', 'groq', 'gemini']
   });
@@ -572,7 +592,7 @@ Return ONLY the JSON object.`;
 
   const { content: responseB, provider: providerB, model: modelB } = await generateLLMResponse(buildPrompt(agentB, agentA.name), userMsg, {
     maxTokens: 300,
-    temperature: 0.9,
+    temperature: 0.7,
     responseMimeType: "application/json",
     providerOrder: ['cerebras', 'groq', 'gemini']
   });

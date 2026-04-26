@@ -38,12 +38,14 @@ class Generator:
                      "Title: {article_title}\n"
                      "Excerpt: {article_excerpt}\n\n"
                      "Rules:\n"
-                     "1. Use your unique voice: {response_style}.\n"
-                     "2. Provide a detailed reaction with a variety of word counts across different posts.\n"
-                     "3. Keep it concise, maximum 3 rows/lines of text.\n"
-                     "4. Output format: JSON object with 'agent_commentary' (string), 'sentiment_score' (number 0-100), and 'tags' (array of 3-5 specific, granular, and trending PascalCase strings).\n"
-                     "5. Tags MUST be one-word PascalCase (e.g., 'TransferSaga', 'RosterDrama', 'TacticalShift', 'MarketVolatility'). Avoid generic tags like 'Sports' or 'News'. Focus on the hottest, most specific topics mentioned.\n"
-                     "6. STICK TO YOUR NICHE: If your niche is '{sub_topic}' and it's not 'N/A', relate your reaction back strictly to this niche.\n\n"
+                     "1. GROUNDING: Strictly stick to the subjects in the provided news item. Do NOT mention people, teams, or facts not explicitly present in the Title or Excerpt.\n"
+                     "2. Use your unique voice: {response_style}.\n"
+                     "3. Provide a detailed reaction with a variety of word counts across different posts.\n"
+                     "4. Keep it concise, maximum 3 rows/lines of text.\n"
+                     "5. Output format: JSON object with 'agent_commentary' (string), 'sentiment_score' (number 0-100), and 'tags' (array of 3-5 specific, granular, and trending PascalCase strings).\n"
+                     "6. CRITICAL: JSON keys MUST be in English as specified ('agent_commentary', 'sentiment_score', 'tags') even if the commentary is in another language.\n"
+                     "7. Tags MUST be one-word PascalCase (e.g., 'TransferSaga', 'RosterDrama', 'TacticalShift', 'MarketVolatility'). Avoid generic tags like 'Sports' or 'News'. Focus on the hottest, most specific topics mentioned.\n"
+                     "8. STICK TO YOUR NICHE: If your niche is '{sub_topic}' and it's not 'N/A', relate your reaction back strictly to this niche.\n\n"
                      "IMPORTANT: Return ONLY a valid JSON object. Do NOT return a list or set of strings. Be expressive with the sentiment_score (0=Extremely Critical, 50=Neutral, 100=Extremely Bullish). Example: {{\"agent_commentary\": \"...\", \"sentiment_score\": 85, \"tags\": [\"...\", \"...\"]}}")
         ])
 
@@ -54,11 +56,13 @@ class Generator:
                      "Excerpt: {article_excerpt}\n"
                      "Image Context: This article includes a striking image.\n\n"
                      "Rules:\n"
-                     "1. Provide a unique point of view that ONLY someone with your specific persona ({persona}) and niche ('{sub_topic}') would have. Do NOT be generic or repeat what is in the excerpt.\n"
-                     "2. Reference the profound significance of the event through the lens of your niche and expertise.\n"
-                     "3. Output format: JSON object with 'agent_commentary' (string), 'sentiment_score' (number 0-100), and 'tags' (array of 3-5 specific, insightful, and niche PascalCase strings).\n"
-                     "4. Tags MUST be one-word PascalCase (e.g., 'SemiconductorWar', 'DeFiRevolution', 'CarbonCapture', 'QuantumLeap'). Avoid generic tags like 'GlobalEconomy' if possible. Capture the 'hottest' specific topics in your niche.\n"
-                     "5. ENFORCE YOUR PERSONA: Never stray outside your niche. Find a way to tie the news directly to '{sub_topic}', interpreting it uniquely.\n\n"
+                     "1. GROUNDING: Strictly stick to the subjects in the provided news item. Do NOT mention people, teams, or facts not explicitly present in the Title or Excerpt.\n"
+                     "2. Provide a unique point of view that ONLY someone with your specific persona ({persona}) and niche ('{sub_topic}') would have. Do NOT be generic or repeat what is in the excerpt.\n"
+                     "3. Reference the profound significance of the event through the lens of your niche and expertise.\n"
+                     "4. Output format: JSON object with 'agent_commentary' (string), 'sentiment_score' (number 0-100), and 'tags' (array of 3-5 specific, insightful, and niche PascalCase strings).\n"
+                     "5. CRITICAL: JSON keys MUST be in English as specified ('agent_commentary', 'sentiment_score', 'tags') even if the commentary is in another language.\n"
+                     "6. Tags MUST be one-word PascalCase (e.g., 'SemiconductorWar', 'DeFiRevolution', 'CarbonCapture', 'QuantumLeap'). Avoid generic tags like 'GlobalEconomy' if possible. Capture the 'hottest' specific topics in your niche.\n"
+                     "7. ENFORCE YOUR PERSONA: Never stray outside your niche. Find a way to tie the news directly to '{sub_topic}', interpreting it uniquely.\n\n"
                      "IMPORTANT: Return ONLY a valid JSON object. Do NOT return a list or set of strings. Be expressive with the sentiment_score (0=Extremely Critical, 50=Neutral, 100=Extremely Bullish). Example: {{\"agent_commentary\": \"...\", \"sentiment_score\": 15, \"tags\": [\"...\", \"...\"]}}")
         ])
 
@@ -181,7 +185,7 @@ class Generator:
                         api_key=settings.CEREBRAS_API_KEY,
                         base_url="https://api.cerebras.ai/v1",
                         model="llama3.1-8b",
-                        temperature=0.8,
+                        temperature=0.7,
                         max_tokens=1000,
                         timeout=30,
                         max_retries=0
@@ -195,7 +199,7 @@ class Generator:
                     llm = ChatGroq(
                         api_key=settings.GROQ_API_KEY,
                         model="llama-3.3-70b-versatile",
-                        temperature=0.8,
+                        temperature=0.7,
                         max_tokens=1000,
                         timeout=30,
                         max_retries=0
@@ -209,7 +213,7 @@ class Generator:
                     llm = ChatGoogleGenerativeAI(
                         google_api_key=settings.GEMINI_API_KEY,
                         model="gemini-2.0-flash-lite", 
-                        temperature=0.8,
+                        temperature=0.7,
                         max_tokens=1000,
                         timeout=30,
                         max_retries=0
@@ -298,11 +302,7 @@ class Generator:
             if end_idx != -1:
                 json_str = content[start_idx:end_idx]
                 
-                # Pre-processing to handle internal unescaped double quotes in commentary
-                # This is a heuristic: if we see "agent_commentary": "..." and there are 
-                # quotes in the middle that aren't followed by , or } they might be unescaped content.
-                # However, a better way is to just let the fallback regex handle the worst cases.
-                
+                # Pre-processing to handle common LLM errors
                 # 1. Handle "Invalid control character" (raw newlines in strings)
                 def escape_control_chars(match):
                     s = match.group(0)
@@ -310,13 +310,24 @@ class Generator:
                 
                 json_str = re.sub(r'"(?:\\.|[^"\\])*"', escape_control_chars, json_str, flags=re.DOTALL)
 
-                # 2. Fix common LLM quirks: "#SentimentScore" -> "sentiment_score"
-                json_str = json_str.replace('"#SentimentScore":', '"sentiment_score":')
-                json_str = json_str.replace('"#sentiment_score":', '"sentiment_score":')
-                json_str = json_str.replace('"#tags":', '"tags":')
+                # 2. Fix common LLM quirks / Translated keys fallback
+                replacements = {
+                    '"#SentimentScore":': '"sentiment_score":',
+                    '"#sentiment_score":': '"sentiment_score":',
+                    '"#tags":': '"tags":',
+                    '"ציון_סנטימנט":': '"sentiment_score":',
+                    '"סנטימנט":': '"sentiment_score":',
+                    '"תגיות":': '"tags":',
+                    '"תגובת_סוכן":': '"agent_commentary":',
+                    '"תוכן":': '"agent_commentary":',
+                    '"פרשנות":': '"agent_commentary":',
+                    '"AGENT_COMMENTARY":': '"agent_commentary":',
+                    '"</AGENT_COMMENTARY>":': '"agent_commentary":'
+                }
+                for old, new in replacements.items():
+                    json_str = json_str.replace(old, new)
                 
                 # 3. Handle "set-like" notation: {"a", "b"}
-
                 temp_str = re.sub(r'"(?:\\.|[^"\\])*"', '', json_str)
                 if ":" not in temp_str:
                     parts = re.findall(r'"((?:\\.|[^"\\])*)"', json_str, re.DOTALL)
@@ -325,12 +336,49 @@ class Generator:
                         return json.dumps({"agent_commentary": joined, "tags": []})
                 
                 return json_str
+            else:
+                # If no matching brace found, try a greedy approach to find the last }
+                last_brace = content.rfind('}')
+                if last_brace > start_idx:
+                    return content[start_idx:last_brace+1]
 
         except Exception as e:
             logger.warning(f"Error in _clean_json_response helper: {e}")
             pass
 
         return content.strip()
+
+    def _robust_extract(self, content: str) -> Dict:
+        """Fallback method to extract data from a totally broken JSON-like response."""
+        data = {"agent_commentary": "", "sentiment_score": 50, "tags": []}
+        
+        # Extract commentary - look for anything between quotes after common key patterns
+        commentary_patterns = [
+            r'"agent_commentary":\s*"(.*?)"',
+            r'"תגובת_סוכן":\s*"(.*?)"',
+            r'"תוכן":\s*"(.*?)"',
+            r'"content":\s*"(.*?)"',
+            r'AGENT_COMMENTARY,\s*(.*?)(?=\s*,|\s*\}|\s*")' # Matches the user's broken example
+        ]
+        for pattern in commentary_patterns:
+            match = re.search(pattern, content, re.DOTALL)
+            if match:
+                data["agent_commentary"] = match.group(1).strip()
+                break
+        
+        # Extract sentiment
+        sentiment_match = re.search(r'"(?:sentiment_score|ציון_סנטימנט|sentiment)":\s*(\d+)', content)
+        if sentiment_match:
+            data["sentiment_score"] = int(sentiment_match.group(1))
+            
+        # Extract tags
+        tags_match = re.search(r'"(?:tags|תגיות)":\s*\[(.*?)\]', content, re.DOTALL)
+        if tags_match:
+            tags_str = tags_match.group(1)
+            tags = re.findall(r'"(.*?)"', tags_str)
+            data["tags"] = tags
+            
+        return data
 
     def _clean_commentary(self, text: str) -> str:
         """Removes unwanted characters and emojis (specifically 🇮🇱)."""
@@ -412,37 +460,9 @@ class Generator:
                 "published_at": article.get("published_at")
             }
         except Exception as e:
-            # Fallback but attempt to clean up JSON if it looks like one
-            if "agent_commentary" in content:
-                # Use a lookahead to find the closing quote of the commentary field
-                # that is followed by the next field (tags) or the end object
-                # Updated regex to be more lenient with middle quotes and missing commas
-                commentary_match = re.search(r'"agent_commentary":\s*"(.*?)"(?=\s*(?:,|\s*\}|\s*#|"))', content, re.DOTALL)
-                commentary = commentary_match.group(1) if commentary_match else content
-                # If it's still JSON-like, try to strip the outer object manually if it failed
-                if commentary.startswith('{'):
-                    commentary = re.sub(r'^{.*"agent_commentary":\s*"', '', commentary)
-                    commentary = re.sub(r'".*\}\s*$', '', commentary)
-
-                return {
-                    "type": "reaction",
-                    "agent_id": agent["id"],
-                    "article_title": article["article_title"],
-                    "article_url": article["article_url"],
-                    "article_excerpt": article["article_excerpt"],
-                    "article_image_url": article.get("article_image_url"),
-                    "video_url": article.get("video_url"),
-                    "source_name": article["source_name"],
-                    "agent_commentary": self._clean_commentary(commentary),
-                    "sentiment_score": 50,
-                    "tags": [],
-                    "llm": provider,
-                    "model": model,
-                    "published_at": article.get("published_at")
-                }
+            logger.error(f"Failed to parse reaction JSON: {e}, falling back to robust extraction.")
+            data = self._robust_extract(content)
             
-            logger.error(f"Failed to parse reaction JSON: {e}")
-            logger.error(f"Raw content that failed to parse: {content}")
             return {
                 "type": "reaction",
                 "agent_id": agent["id"],
@@ -452,9 +472,11 @@ class Generator:
                 "article_image_url": article.get("article_image_url"),
                 "video_url": article.get("video_url"),
                 "source_name": article["source_name"],
-                "agent_commentary": self._clean_commentary(content),
-                "sentiment_score": 50,
-                "tags": [],
+                "agent_commentary": self._clean_commentary(data.get("agent_commentary", "") or content[:300]),
+                "sentiment_score": data.get("sentiment_score", 50),
+                "tags": [self._format_tag(t) for t in data.get("tags", [])],
+                "llm": provider,
+                "model": model,
                 "published_at": article.get("published_at")
             }
 
@@ -496,36 +518,9 @@ class Generator:
                 "published_at": article.get("published_at")
             }
         except Exception as e:
-            if "agent_commentary" in content:
-                # Use a lookahead to find the closing quote of the commentary field
-                # that is followed by the next field (tags) or the end object
-                # Updated regex to be more lenient with middle quotes and missing commas
-                commentary_match = re.search(r'"agent_commentary":\s*"(.*?)"(?=\s*(?:,|\s*\}|\s*#|"))', content, re.DOTALL)
-                commentary = commentary_match.group(1) if commentary_match else content
-                # If it's still JSON-like, try to strip the outer object manually if it failed
-                if commentary.startswith('{'):
-                    commentary = re.sub(r'^{.*"agent_commentary":\s*"', '', commentary)
-                    commentary = re.sub(r'".*\}\s*$', '', commentary)
-
-                return {
-                    "type": "perspective",
-                    "agent_id": agent["id"],
-                    "article_title": article["article_title"],
-                    "article_url": article["article_url"],
-                    "article_excerpt": article["article_excerpt"],
-                    "article_image_url": article.get("article_image_url"),
-                    "video_url": article.get("video_url"),
-                    "source_name": article["source_name"],
-                    "agent_commentary": self._clean_commentary(commentary),
-                    "sentiment_score": 50,
-                    "tags": [],
-                    "llm": provider,
-                    "model": model,
-                    "published_at": article.get("published_at")
-                }
+            logger.error(f"Failed to parse perspective JSON: {e}, falling back to robust extraction.")
+            data = self._robust_extract(content)
             
-            logger.error(f"Failed to parse perspective JSON: {e}")
-            logger.error(f"Raw content that failed to parse: {content}")
             return {
                 "type": "perspective",
                 "agent_id": agent["id"],
@@ -535,9 +530,9 @@ class Generator:
                 "article_image_url": article.get("article_image_url"),
                 "video_url": article.get("video_url"),
                 "source_name": article["source_name"],
-                "agent_commentary": self._clean_commentary(content),
-                "sentiment_score": 50,
-                "tags": [],
+                "agent_commentary": self._clean_commentary(data.get("agent_commentary", "") or content[:500]),
+                "sentiment_score": data.get("sentiment_score", 50),
+                "tags": [self._format_tag(t) for t in data.get("tags", [])],
                 "llm": provider,
                 "model": model,
                 "published_at": article.get("published_at")
