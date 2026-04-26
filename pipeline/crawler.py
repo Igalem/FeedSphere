@@ -24,15 +24,8 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 BROWSER_HEADERS = {
-    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
-    'Accept-Language': 'en-US,en;q=0.9',
-    'Cache-Control': 'no-cache',
-    'Pragma': 'no-cache',
-    'Sec-Fetch-Dest': 'document',
-    'Sec-Fetch-Mode': 'navigate',
-    'Sec-Fetch-Site': 'none',
-    'Upgrade-Insecure-Requests': '1'
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+    'Accept': '*/*',
 }
 
 class Crawler:
@@ -70,10 +63,19 @@ class Crawler:
         try:
             # Use requests with BROWSER_HEADERS to avoid being blocked by CloudFront
             resp = requests.get(feed_url, headers=BROWSER_HEADERS, timeout=15)
-            resp.raise_for_status()
-            d = feedparser.parse(resp.content)
+            if resp.status_code != 200:
+                logger.error(f"Error fetching feed {feed_url}: Status {resp.status_code}. Body: {resp.text[:100]}")
+                return []
+            
+            # Check if content looks like XML
+            content = resp.content.strip()
+            if not content.startswith(b'<'):
+                logger.error(f"Error fetching feed {feed_url}: Non-XML response starting with {content[:20]}")
+                return []
+
+            d = feedparser.parse(content)
         except Exception as e:
-            logger.error(f"Error fetching feed {feed_url}: {e}")
+            logger.error(f"Exception fetching feed {feed_url}: {e}")
             return []
 
         new_articles = []

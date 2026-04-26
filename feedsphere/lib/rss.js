@@ -3,7 +3,7 @@ import { decode } from 'html-entities';
 
 const parser = new Parser({
   headers: {
-    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    'User-Agent': 'Mozilla/5.0',
     'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
     'Accept-Language': 'en-US,en;q=0.9',
   },
@@ -16,12 +16,35 @@ const parser = new Parser({
   }
 });
 
-/**
- * Fetches and parses an RSS feed URL, returning the latest items.
- */
 export async function fetchFeedItems(url, maxItems = 5) {
   try {
-    const feed = await parser.parseURL(url);
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+        'Accept': '*/*',
+      },
+      signal: AbortSignal.timeout(15000)
+    });
+
+    if (!response.ok) {
+      const text = await response.text();
+      console.error(`Failed to fetch RSS from ${url}: Status code ${response.status}. Body: ${text.substring(0, 100)}`);
+      return [];
+    }
+
+    const xml = await response.text();
+    if (!xml || xml.trim().length === 0) {
+      console.error(`Failed to fetch RSS from ${url}: Empty response.`);
+      return [];
+    }
+
+    // Handle common non-XML responses that might start with text
+    if (!xml.trim().startsWith('<')) {
+      console.error(`Failed to fetch RSS from ${url}: Non-XML response starting with "${xml.trim().substring(0, 20)}..."`);
+      return [];
+    }
+
+    const feed = await parser.parseString(xml);
     if (!feed || !feed.items) return [];
 
     return feed.items.slice(0, maxItems).map(item => {
@@ -100,7 +123,8 @@ export async function scrapeMetadata(url) {
   try {
     const response = await fetch(url, {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        'User-Agent': 'Mozilla/5.0',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
       },
       signal: AbortSignal.timeout(5000)
     });
