@@ -2,6 +2,11 @@ import Parser from 'rss-parser';
 import { decode } from 'html-entities';
 
 const parser = new Parser({
+  headers: {
+    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+    'Accept-Language': 'en-US,en;q=0.9',
+  },
   customFields: {
     item: [
       ['media:content', 'mediaContent', { keepArray: true }],
@@ -21,9 +26,9 @@ export async function fetchFeedItems(url, maxItems = 5) {
 
     return feed.items.slice(0, maxItems).map(item => {
       // Find image in various common properties
-      let imageUrl = item.mediaContent?.[0]?.$?.url || 
-                       item.mediaThumbnail?.[0]?.$?.url || 
-                       item.enclosure?.url || '';
+      let imageUrl = item.mediaContent?.[0]?.$?.url ||
+        item.mediaThumbnail?.[0]?.$?.url ||
+        item.enclosure?.url || '';
 
       // Fallback: extract from content HTML if not present in standard feeds
       if (!imageUrl && item.contentEncoded) {
@@ -34,7 +39,7 @@ export async function fetchFeedItems(url, maxItems = 5) {
         const contentHtmlMatch = item.content.match(/<img[^>]+src=["']([^"'>]+)["']/i);
         if (contentHtmlMatch) imageUrl = contentHtmlMatch[1];
       }
-      
+
       if (!imageUrl && typeof item.mediaContent === 'string') {
         imageUrl = item.mediaContent;
       }
@@ -57,10 +62,10 @@ export async function fetchFeedItems(url, maxItems = 5) {
 
       const isTracker = (u) => {
         if (!u) return false;
-        return u.includes('secure-uk.imrworldwide.com') || 
-               u.includes('pixel.wp.com') || 
-               u.includes('doubleclick.net') ||
-               u.includes('/cgi-bin/m?');
+        return u.includes('secure-uk.imrworldwide.com') ||
+          u.includes('pixel.wp.com') ||
+          u.includes('doubleclick.net') ||
+          u.includes('/cgi-bin/m?');
       };
 
       if (isTracker(imageUrl)) imageUrl = '';
@@ -91,7 +96,7 @@ export async function fetchFeedItems(url, maxItems = 5) {
  */
 export async function scrapeMetadata(url) {
   if (!url) return { imageUrl: null, videoUrl: null };
-  
+
   try {
     const response = await fetch(url, {
       headers: {
@@ -99,19 +104,19 @@ export async function scrapeMetadata(url) {
       },
       signal: AbortSignal.timeout(5000)
     });
-    
+
     if (!response.ok) return { imageUrl: null, videoUrl: null };
-    
+
     const html = await response.text();
-    
+
     // Image Extraction
     let imageUrl = null;
-    const ogImageMatch = html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"'>]+)["']/i) || 
-                         html.match(/<meta[^>]+content=["']([^"'>]+)["'][^>]+property=["']og:image["']/i);
-    
+    const ogImageMatch = html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"'>]+)["']/i) ||
+      html.match(/<meta[^>]+content=["']([^"'>]+)["'][^>]+property=["']og:image["']/i);
+
     const twImageMatch = html.match(/<meta[^>]+name=["']twitter:image["'][^>]+content=["']([^"'>]+)["']/i) ||
-                         html.match(/<meta[^>]+content=["']([^"'>]+)["'][^>]+name=["']twitter:image["']/i);
-                         
+      html.match(/<meta[^>]+content=["']([^"'>]+)["'][^>]+name=["']twitter:image["']/i);
+
     imageUrl = ogImageMatch?.[1] || twImageMatch?.[1];
 
     // Video Extraction (YouTube/Vimeo)
@@ -149,7 +154,7 @@ export async function scrapeMetadata(url) {
       if (imageUrl.includes('b-cdn.net') && imageUrl.includes('/tmb/')) {
         imageUrl = imageUrl.replace('/tmb/', '/800a/');
       }
-      
+
       // Fix Google News / Blogger / Picasa thumbnails
       if (imageUrl.includes('googleusercontent.com')) {
         if (imageUrl.includes('lh3.googleusercontent.com') && imageUrl.includes('=')) {

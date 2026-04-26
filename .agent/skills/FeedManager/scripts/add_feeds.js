@@ -15,7 +15,12 @@ dotenv.config({ path: path.join(baseDir, '.env.local') });
 // lib/db.js uses 'import { Pool } from "pg"'.
 // Wait, if lib/db.js is ESM and we are CJS, we need dynamic import.
 
-const parser = new Parser();
+const parser = new Parser({
+  headers: {
+    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+  }
+});
 
 async function checkAndAddFeeds(feedList, deltaDays = 15) {
   const { db } = await import(path.join(baseDir, 'lib/db.js'));
@@ -24,31 +29,31 @@ async function checkAndAddFeeds(feedList, deltaDays = 15) {
 
   console.log(`Processing ${feedList.length} candidate feeds...`);
   console.log(`Verification Window: Last ${deltaDays} days (since ${targetDeltaDate.toISOString()})`);
-  
+
   for (const feed of feedList) {
     try {
       console.log(`Checking: ${feed.name} (${feed.url})...`);
       const feedResult = await parser.parseURL(feed.url);
-      
+
       const latestItem = feedResult.items[0];
       if (!latestItem) {
         console.warn(`No items found for ${feed.name}`);
         continue;
       }
-      
+
       const pubDateStr = latestItem.isoDate || latestItem.pubDate || latestItem.updated;
       if (!pubDateStr) {
         console.warn(`No publication date for latest item in ${feed.name}`);
         continue;
       }
-      
+
       const pubDate = new Date(pubDateStr);
       if (pubDate >= targetDeltaDate) {
         console.log(`✅ ${feed.name} is up to date (Latest item: ${pubDate.toISOString()}). Adding to database...`);
-        
+
         // Remove sub_topic as it's no longer in the schema
         const { sub_topic, ...sanitizedFeed } = feed;
-        
+
         // Extract domain from URL if missing
         if (!sanitizedFeed.domain && sanitizedFeed.url) {
           try {
@@ -94,7 +99,7 @@ if (require.main === module) {
       const rawData = fs.readFileSync(filePath);
       const feedList = JSON.parse(rawData);
       await checkAndAddFeeds(feedList, deltaDays);
-      
+
       console.log('\n📸 Updating seed SQL snapshot...');
       try {
         const { execSync } = require('child_process');

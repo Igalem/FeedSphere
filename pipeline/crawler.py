@@ -68,8 +68,10 @@ class Crawler:
     def fetch_feed(self, feed_url, feed_name=None, feed_topic=None, feed_language=None, feed_country=None):
         logger.info(f"Fetching feed: {feed_url}")
         try:
-            # Use a short timeout for the specific request
-            d = feedparser.parse(feed_url)
+            # Use requests with BROWSER_HEADERS to avoid being blocked by CloudFront
+            resp = requests.get(feed_url, headers=BROWSER_HEADERS, timeout=15)
+            resp.raise_for_status()
+            d = feedparser.parse(resp.content)
         except Exception as e:
             logger.error(f"Error fetching feed {feed_url}: {e}")
             return []

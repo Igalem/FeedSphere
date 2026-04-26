@@ -25,10 +25,10 @@ export default function PostCard({ post }) {
 
     const observer = new IntersectionObserver(
       ([entry]) => {
-        // Mount/Unmount video 3000px before/after viewport to ensure it's playing when seen
+        // Mount/Unmount video 1000px before/after viewport
         setLoadVideo(entry.isIntersecting);
       },
-      { rootMargin: '3000px 0px', threshold: 0 }
+      { rootMargin: '1000px 0px', threshold: 0 }
     );
 
     if (videoContainerRef.current) {
@@ -56,8 +56,6 @@ export default function PostCard({ post }) {
     if (cleanUrl.includes('twitter.com') || cleanUrl.includes('x.com')) {
       const match = cleanUrl.match(/\/status\/(\d+)/);
       if (match) {
-        // We can't easily iframe twitter without their JS, but we can use a placeholder 
-        // or attempt to use their experimental embed iframe
         return `https://platform.twitter.com/embed/Tweet.html?id=${match[1]}&theme=dark`;
       }
     }
@@ -69,7 +67,8 @@ export default function PostCard({ post }) {
 
     if (cleanUrl.includes('youtube.com/embed')) {
       const separator = cleanUrl.includes('?') ? '&' : '?';
-      return `${cleanUrl}${separator}enablejsapi=1&mute=1&autoplay=1`;
+      // Added more flags to reduce YouTube overlays: controls=0, modestbranding=1, rel=0, iv_load_policy=3
+      return `${cleanUrl}${separator}enablejsapi=1&mute=1&autoplay=1&controls=0&modestbranding=1&rel=0&iv_load_policy=3`;
     }
 
     if (cleanUrl.includes('yahoo.com/video')) {
@@ -265,7 +264,12 @@ export default function PostCard({ post }) {
               </span>
             </Link>
             {(post.type === 'perspective' || !!post.video_url) && (
-              <span className="perspective-pill-inline" style={{ background: `${agent.color_hex}22`, color: agent.color_hex }}>
+              <span className="perspective-pill-inline" style={{
+                background: `${agent.color_hex}22`,
+                color: agent.color_hex,
+                opacity: (!!post.video_url && loadVideo) ? 0 : 1,
+                transition: 'opacity 0.4s ease'
+              }}>
                 {!!post.video_url && post.type !== 'perspective' ? 'Video Perspective' : 'Perspective'}
               </span>
             )}
@@ -364,9 +368,10 @@ export default function PostCard({ post }) {
                   post.video_url.toLowerCase().match(/\.(mp4|m3u8)(\?|$)/) ? (
                     <video
                       src={post.video_url}
-                      controls
                       autoPlay
                       muted
+                      playsInline
+                      loop
                       width="100%"
                       height="100%"
                       style={{ borderRadius: '12px', background: '#000' }}
@@ -445,7 +450,10 @@ export default function PostCard({ post }) {
                 display: 'block',
                 padding: '12px 16px',
                 background: '#0a0a0f', // Solid dark background to match --bg
-                textDecoration: 'none'
+                textDecoration: 'none',
+                opacity: (!!post.video_url && loadVideo) ? 0 : 1,
+                visibility: (!!post.video_url && loadVideo) ? 'hidden' : 'visible',
+                transition: 'opacity 0.4s ease, visibility 0.4s'
               }}
             >
               <div className="perspective-source-name" translate="no" style={{ color: 'rgba(255,255,255,0.5)', fontSize: '10px', textTransform: 'lowercase', marginBottom: '2px', letterSpacing: '0.4px' }}>
@@ -492,9 +500,10 @@ export default function PostCard({ post }) {
                 post.video_url.toLowerCase().match(/\.(mp4|m3u8)(\?|$)/) ? (
                   <video
                     src={post.video_url}
-                    controls
                     autoPlay
                     muted
+                    playsInline
+                    loop
                     width="100%"
                     height="100%"
                     style={{ borderRadius: '8px', background: '#000' }}
