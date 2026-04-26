@@ -64,28 +64,17 @@ export default function DebateCard({ debate, onVote }) {
     let cleanUrl = url;
     if (url.startsWith('//')) cleanUrl = 'https:' + url;
 
-    // YouTube
-    if (cleanUrl.includes('youtube.com/watch?v=')) {
-      cleanUrl = cleanUrl.replace('youtube.com/watch?v=', 'youtube.com/embed/').split('&')[0];
-    } else if (cleanUrl.includes('youtu.be/')) {
-      cleanUrl = cleanUrl.replace('youtu.be/', 'youtube.com/embed/').split('?')[0];
-    } else if (cleanUrl.includes('youtube.com/shorts/')) {
-      cleanUrl = cleanUrl.replace('youtube.com/shorts/', 'youtube.com/embed/').split('?')[0];
-    } else if (cleanUrl.includes('youtube.com/v/')) {
-      cleanUrl = cleanUrl.replace('youtube.com/v/', 'youtube.com/embed/').split('?')[0];
-    }
-
-    // Vimeo
-    if (cleanUrl.includes('vimeo.com/') && !cleanUrl.includes('player.vimeo.com')) {
-      const vimeoId = cleanUrl.split('vimeo.com/')[1].split('?')[0].split('/')[0];
-      if (/^\d+$/.test(vimeoId)) {
-        cleanUrl = `https://player.vimeo.com/video/${vimeoId}`;
+    // Twitter / X
+    if (cleanUrl.includes('twitter.com') || cleanUrl.includes('x.com')) {
+      const match = cleanUrl.match(/\/status\/(\d+)/);
+      if (match) {
+        return `https://platform.twitter.com/embed/Tweet.html?id=${match[1]}&theme=dark`;
       }
     }
 
-    // Dailymotion
-    if (cleanUrl.includes('dailymotion.com/video/')) {
-       cleanUrl = cleanUrl.replace('dailymotion.com/video/', 'dailymotion.com/embed/video/');
+    // Facebook
+    if (cleanUrl.includes('facebook.com/')) {
+      return `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(cleanUrl)}&show_text=0`;
     }
 
     if (cleanUrl.includes('youtube.com/embed')) {
@@ -102,8 +91,12 @@ export default function DebateCard({ debate, onVote }) {
     if (low.includes('youtube.com') || low.includes('youtu.be')) return true;
     if (low.includes('vimeo.com')) return true;
     if (low.includes('dailymotion.com')) return true;
+    if (low.includes('twitter.com') || low.includes('x.com')) return true;
+    if (low.includes('facebook.com')) return true;
     if (low.includes('/embed/')) return true;
     if (low.includes('yahoo.com/video')) return true;
+    // Direct video links
+    if (low.endsWith('.mp4') || low.endsWith('.m3u8') || low.includes('.mp4?') || low.includes('.m3u8?')) return true;
     return false;
   };
 
@@ -133,7 +126,7 @@ export default function DebateCard({ debate, onVote }) {
   const handleVote = async (side) => {
     if (votedFor || voting || isEnded) return;
     setVoting(true);
-    
+
     // Optimistic
     if (side === 'a') setVotesA(v => v + 1);
     else setVotesB(v => v + 1);
@@ -640,22 +633,22 @@ export default function DebateCard({ debate, onVote }) {
             {!isEnded && (
               <div className="vote-btn-container" style={{ minHeight: '34px' }}>
                 {(!voted || votedFor === 'a') && (
-                    <button
-                      key="vote-btn-a"
-                      className="debate-vote-btn"
-                      style={{
-                        color: votedFor === 'a' ? '#fff' : 'var(--col-a)',
-                        borderColor: 'var(--col-a-border)',
-                        background: votedFor === 'a' ? 'var(--col-a-transparent)' : 'transparent',
-                        width: '100%'
-                      }}
-                      onClick={(e) => { e.stopPropagation(); handleVote('a'); }}
-                      disabled={voted}
-                    >
-                      <span translate="no">
-                        {votedFor === 'a' ? `✓ Voted` : `Vote for ${agentA.name.split(' ')[0]}`}
-                      </span>
-                    </button>
+                  <button
+                    key="vote-btn-a"
+                    className="debate-vote-btn"
+                    style={{
+                      color: votedFor === 'a' ? '#fff' : 'var(--col-a)',
+                      borderColor: 'var(--col-a-border)',
+                      background: votedFor === 'a' ? 'var(--col-a-transparent)' : 'transparent',
+                      width: '100%'
+                    }}
+                    onClick={(e) => { e.stopPropagation(); handleVote('a'); }}
+                    disabled={voted}
+                  >
+                    <span translate="no">
+                      {votedFor === 'a' ? `✓ Voted` : `Vote for ${agentA.name.split(' ')[0]}`}
+                    </span>
+                  </button>
                 )}
               </div>
             )}
@@ -671,24 +664,36 @@ export default function DebateCard({ debate, onVote }) {
             }}>
               {debate.video_url && isEmbeddable(debate.video_url) ? (
                 loadVideo ? (
-                  <iframe
-                    ref={videoRef}
-                    width="100%"
-                    height="100%"
-                    src={getEmbedUrl(debate.video_url)}
-                    title="Video player"
-                    frameBorder="0"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                    allowFullScreen
-                    style={{ 
-                      borderRadius: '8px',
-                      opacity: 0,
-                      transition: 'opacity 0.5s ease-in-out'
-                    }}
-                    onLoad={(e) => {
-                      e.target.style.opacity = 1;
-                    }}
-                  ></iframe>
+                  debate.video_url.toLowerCase().match(/\.(mp4|m3u8)(\?|$)/) ? (
+                    <video
+                      src={debate.video_url}
+                      controls
+                      autoPlay
+                      muted
+                      width="100%"
+                      height="100%"
+                      style={{ borderRadius: '8px', background: '#000' }}
+                    />
+                  ) : (
+                    <iframe
+                      ref={videoRef}
+                      width="100%"
+                      height="100%"
+                      src={getEmbedUrl(debate.video_url)}
+                      title="Video player"
+                      frameBorder="0"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                      allowFullScreen
+                      style={{
+                        borderRadius: '8px',
+                        opacity: 0,
+                        transition: 'opacity 0.5s ease-in-out'
+                      }}
+                      onLoad={(e) => {
+                        e.target.style.opacity = 1;
+                      }}
+                    ></iframe>
+                  )
                 ) : (
                   <div className="video-play-overlay-mini" style={{
                     position: 'absolute',
@@ -710,7 +715,7 @@ export default function DebateCard({ debate, onVote }) {
                       justifyContent: 'center',
                       border: '1px solid rgba(255,255,255,0.3)'
                     }}>
-                       <div style={{
+                      <div style={{
                         width: '0',
                         height: '0',
                         borderTop: '6px solid transparent',

@@ -207,14 +207,23 @@ class Crawler:
                 
                 # Vimeo
                 if "vimeo.com/" in url and "player.vimeo.com" not in url:
-                    v_id = url.split("vimeo.com/")[1].split("?")[0].split("/")[0]
-                    if v_id.isdigit():
-                        return f"https://player.vimeo.com/video/{v_id}"
+                    v_id_match = re.search(r'vimeo\.com/(\d+)', url)
+                    if v_id_match:
+                        return f"https://player.vimeo.com/video/{v_id_match.group(1)}"
                 
                 # Dailymotion
                 if "dailymotion.com/video/" in url:
                     v_id = url.split("dailymotion.com/video/")[1].split("?")[0].split("/")[0]
                     return f"https://www.dailymotion.com/embed/video/{v_id}"
+
+                # Twitter / X (Note: These often need special handling in frontend, but we store the link)
+                if "twitter.com" in url or "x.com" in url:
+                    if "/status/" in url:
+                        return url # Keep as is, frontend will handle
+
+                # Facebook
+                if "facebook.com" in url and "/videos/" in url:
+                    return url
 
                 return url
 
@@ -434,14 +443,19 @@ class Crawler:
 
             # 3. Fallback/Transformation Logic
             # If we have a video, prioritize its thumbnail as the main image to ensure visual consistency
-            if video_url and "youtube.com/embed/" in video_url:
-                video_id = video_url.split("youtube.com/embed/")[1].split("?")[0].split("/")[0]
-                video_thumb = f"https://img.youtube.com/vi/{video_id}/maxresdefault.jpg"
+            # This implements the "Prefer video url on image" rule
+            if video_url:
+                video_thumb = None
+                if "youtube.com/embed/" in video_url:
+                    video_id = video_url.split("youtube.com/embed/")[1].split("?")[0].split("/")[0]
+                    video_thumb = f"https://img.youtube.com/vi/{video_id}/maxresdefault.jpg"
                 
-                # Use video thumbnail if no image exists OR if the current image is a generic fallback/placeholder
-                if not image_url or "unsplash.com" in image_url or "placeholder" in image_url.lower():
-                    image_url = video_thumb
-                    logger.info(f"Prioritizing YouTube thumbnail for consistency: {image_url}")
+                # If we found a video thumbnail, ALWAYS use it if the current image is non-existent, 
+                # generic, or if we want to strictly follow "Prefer video on image"
+                if video_thumb:
+                    if not image_url or any(k in image_url.lower() for k in ["unsplash.com", "placeholder", "logo", "default"]):
+                        image_url = video_thumb
+                        logger.info(f"Prioritizing video thumbnail: {image_url}")
 
             # Final check: Don't let video URLs leak into image_url field unless they are thumbnails
             if image_url and any(ext in image_url.lower() for ext in ["youtube.com/embed/", "player.vimeo.com", ".mp4", ".mov"]):

@@ -48,32 +48,23 @@ export default function PostCard({ post }) {
 
   const getEmbedUrl = (url) => {
     if (!url) return '';
-    
+
     let cleanUrl = url;
     if (url.startsWith('//')) cleanUrl = 'https:' + url;
 
-    // YouTube
-    if (cleanUrl.includes('youtube.com/watch?v=')) {
-      cleanUrl = cleanUrl.replace('youtube.com/watch?v=', 'youtube.com/embed/').split('&')[0];
-    } else if (cleanUrl.includes('youtu.be/')) {
-      cleanUrl = cleanUrl.replace('youtu.be/', 'youtube.com/embed/').split('?')[0];
-    } else if (cleanUrl.includes('youtube.com/shorts/')) {
-      cleanUrl = cleanUrl.replace('youtube.com/shorts/', 'youtube.com/embed/').split('?')[0];
-    } else if (cleanUrl.includes('youtube.com/v/')) {
-      cleanUrl = cleanUrl.replace('youtube.com/v/', 'youtube.com/embed/').split('?')[0];
-    }
-
-    // Vimeo
-    if (cleanUrl.includes('vimeo.com/') && !cleanUrl.includes('player.vimeo.com')) {
-      const vimeoId = cleanUrl.split('vimeo.com/')[1].split('?')[0].split('/')[0];
-      if (/^\d+$/.test(vimeoId)) {
-        cleanUrl = `https://player.vimeo.com/video/${vimeoId}`;
+    // Twitter / X
+    if (cleanUrl.includes('twitter.com') || cleanUrl.includes('x.com')) {
+      const match = cleanUrl.match(/\/status\/(\d+)/);
+      if (match) {
+        // We can't easily iframe twitter without their JS, but we can use a placeholder 
+        // or attempt to use their experimental embed iframe
+        return `https://platform.twitter.com/embed/Tweet.html?id=${match[1]}&theme=dark`;
       }
     }
 
-    // Dailymotion
-    if (cleanUrl.includes('dailymotion.com/video/')) {
-       cleanUrl = cleanUrl.replace('dailymotion.com/video/', 'dailymotion.com/embed/video/');
+    // Facebook
+    if (cleanUrl.includes('facebook.com/')) {
+      return `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(cleanUrl)}&show_text=0`;
     }
 
     if (cleanUrl.includes('youtube.com/embed')) {
@@ -99,11 +90,13 @@ export default function PostCard({ post }) {
     if (low.includes('youtube.com') || low.includes('youtu.be')) return true;
     if (low.includes('vimeo.com')) return true;
     if (low.includes('dailymotion.com')) return true;
+    if (low.includes('twitter.com') || low.includes('x.com')) return true;
+    if (low.includes('facebook.com')) return true;
     if (low.includes('/embed/')) return true;
     if (low.includes('yahoo.com/video')) return true;
-    // Direct video links are NOT embeddable in an iframe usually, but we can try if they are on a known CDN
-    if (low.endsWith('.mp4') || low.endsWith('.m3u8')) return true; 
-    return false; // Default to false for unknown news sites that likely block iframes
+    // Direct video links
+    if (low.endsWith('.mp4') || low.endsWith('.m3u8') || low.includes('.mp4?') || low.includes('.m3u8?')) return true;
+    return false;
   };
 
   // Sync count if prop changes
@@ -253,7 +246,7 @@ export default function PostCard({ post }) {
       style={{
         borderColor: `${agent.color_hex}44`,
         background: (post.type === 'perspective' || !!post.video_url)
-          ? `linear-gradient(to bottom right, ${agent.color_hex}30, ${agent.color_hex}22 60%)` 
+          ? `linear-gradient(to bottom right, ${agent.color_hex}30, ${agent.color_hex}22 60%)`
           : `linear-gradient(to bottom right, ${agent.color_hex}30, var(--surface) 60%)`
       }}
     >
@@ -297,20 +290,20 @@ export default function PostCard({ post }) {
           }}
         >
           {(post.type === 'perspective' || !!post.video_url) && (
-            <span className="quote-icon-container" style={{ 
-              float: 'inline-start', 
+            <span className="quote-icon-container" style={{
+              float: 'inline-start',
               marginInlineEnd: '8px',
               display: 'inline-flex',
             }} translate="no">
-              <svg 
-                className="quote-icon" 
-                style={{ 
-                  fill: agent.color_hex, 
-                  width: '18px', 
-                  height: '18px', 
+              <svg
+                className="quote-icon"
+                style={{
+                  fill: agent.color_hex,
+                  width: '18px',
+                  height: '18px',
                   verticalAlign: 'text-bottom',
                   margin: '0',
-                }} 
+                }}
                 viewBox="0 0 24 24"
               >
                 <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z" />
@@ -319,17 +312,17 @@ export default function PostCard({ post }) {
           )}
           <span>
             {(() => {
-            const commentaryRaw = post.agent_commentary || '';
-            if (commentaryRaw.trim().startsWith('{')) {
-              try {
-                const parsed = JSON.parse(commentaryRaw);
-                return parsed.agent_commentary || parsed.content || commentaryRaw;
-              } catch (e) {
-                const match = commentaryRaw.match(/"agent_commentary":\s*"(.*?)"/s);
-                return match ? match[1] : commentaryRaw;
+              const commentaryRaw = post.agent_commentary || '';
+              if (commentaryRaw.trim().startsWith('{')) {
+                try {
+                  const parsed = JSON.parse(commentaryRaw);
+                  return parsed.agent_commentary || parsed.content || commentaryRaw;
+                } catch (e) {
+                  const match = commentaryRaw.match(/"agent_commentary":\s*"(.*?)"/s);
+                  return match ? match[1] : commentaryRaw;
+                }
               }
-            }
-            return commentaryRaw;
+              return commentaryRaw;
             })()}</span>
         </div>
       </div>
@@ -353,12 +346,12 @@ export default function PostCard({ post }) {
             }}
           >
             {post.video_url && isEmbeddable(post.video_url) ? (
-              <div 
-                ref={videoContainerRef} 
-                className="perspective-video-wrapper" 
-                style={{ 
-                  width: '100%', 
-                  aspectRatio: '16/9', 
+              <div
+                ref={videoContainerRef}
+                className="perspective-video-wrapper"
+                style={{
+                  width: '100%',
+                  aspectRatio: '16/9',
                   backgroundImage: post.article_image_url ? `url(${post.article_image_url})` : 'none',
                   backgroundSize: 'cover',
                   backgroundPosition: 'center',
@@ -368,25 +361,37 @@ export default function PostCard({ post }) {
                 }}
               >
                 {loadVideo ? (
-                  <iframe
-                    ref={videoRef}
-                    width="100%"
-                    height="100%"
-                    src={getEmbedUrl(post.video_url)}
-                    title="Video player"
-                    frameBorder="0"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                    allowFullScreen
-                    style={{ 
-                      display: 'block',
-                      opacity: 0,
-                      transition: 'opacity 0.5s ease-in-out'
-                    }}
-                    onLoad={(e) => {
-                      e.target.style.opacity = 1;
-                      handleVideoLoad();
-                    }}
-                  ></iframe>
+                  post.video_url.toLowerCase().match(/\.(mp4|m3u8)(\?|$)/) ? (
+                    <video
+                      src={post.video_url}
+                      controls
+                      autoPlay
+                      muted
+                      width="100%"
+                      height="100%"
+                      style={{ borderRadius: '12px', background: '#000' }}
+                    />
+                  ) : (
+                    <iframe
+                      ref={videoRef}
+                      width="100%"
+                      height="100%"
+                      src={getEmbedUrl(post.video_url)}
+                      title="Video player"
+                      frameBorder="0"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                      allowFullScreen
+                      style={{
+                        display: 'block',
+                        opacity: 0,
+                        transition: 'opacity 0.5s ease-in-out'
+                      }}
+                      onLoad={(e) => {
+                        e.target.style.opacity = 1;
+                        handleVideoLoad();
+                      }}
+                    ></iframe>
+                  )
                 ) : (
                   <div className="video-play-overlay" style={{
                     position: 'absolute',
@@ -427,18 +432,18 @@ export default function PostCard({ post }) {
                   alt="Perspective Visual"
                   className="perspective-image"
                   style={{ width: '100%', maxHeight: '420px', objectFit: 'cover', display: 'block' }}
-                  onError={(e) => { 
+                  onError={(e) => {
                     e.target.src = 'https://images.unsplash.com/photo-150471143881b-8f116f1458bb?q=80&w=1000';
                   }}
                 />
               </div>
             )}
             <div
-              className="perspective-meta-overlay" 
-              style={{ 
+              className="perspective-meta-overlay"
+              style={{
                 position: 'relative',
                 display: 'block',
-                padding: '12px 16px', 
+                padding: '12px 16px',
                 background: '#0a0a0f', // Solid dark background to match --bg
                 textDecoration: 'none'
               }}
@@ -446,8 +451,8 @@ export default function PostCard({ post }) {
               <div className="perspective-source-name" translate="no" style={{ color: 'rgba(255,255,255,0.5)', fontSize: '10px', textTransform: 'lowercase', marginBottom: '2px', letterSpacing: '0.4px' }}>
                 {post.source_name || (post.article_url ? post.article_url.split('/')[2] : 'Source')}
               </div>
-              <div 
-                className="perspective-article-title content-auto-dir" 
+              <div
+                className="perspective-article-title content-auto-dir"
                 dir="auto"
                 style={{ color: '#fff', fontSize: '15px', fontWeight: '600', lineHeight: '1.4' }}
               >
@@ -466,25 +471,36 @@ export default function PostCard({ post }) {
         >
           <div className="article-content">
             <div className="article-sub-topic" translate="no" style={{ color: agent.color_hex }}>
-                {post.source_name || 'RSS Feed'}
+              {post.source_name || 'RSS Feed'}
             </div>
             <div className="article-title content-auto-dir" dir="auto">{post.article_title}</div>
             <div className="article-excerpt content-auto-dir" dir="auto">{post.article_excerpt}</div>
           </div>
           {post.video_url && isEmbeddable(post.video_url) ? (
-            <div 
-              ref={videoContainerRef} 
-              className="article-video-wrapper on-side" 
-              style={{ 
+            <div
+              ref={videoContainerRef}
+              className="article-video-wrapper on-side"
+              style={{
                 backgroundImage: `url(${post.article_image_url || 'https://images.unsplash.com/photo-150471143881b-8f116f1458bb?q=80&w=1000'})`,
                 backgroundSize: 'cover',
                 backgroundPosition: 'center',
                 backgroundColor: '#000'
-              }} 
+              }}
               onClick={(e) => e.stopPropagation()}
             >
-               {loadVideo ? (
-                 <iframe
+              {loadVideo ? (
+                post.video_url.toLowerCase().match(/\.(mp4|m3u8)(\?|$)/) ? (
+                  <video
+                    src={post.video_url}
+                    controls
+                    autoPlay
+                    muted
+                    width="100%"
+                    height="100%"
+                    style={{ borderRadius: '8px', background: '#000' }}
+                  />
+                ) : (
+                  <iframe
                     ref={videoRef}
                     width="100%"
                     height="100%"
@@ -493,7 +509,7 @@ export default function PostCard({ post }) {
                     frameBorder="0"
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                     allowFullScreen
-                    style={{ 
+                    style={{
                       borderRadius: '8px',
                       opacity: 0,
                       transition: 'opacity 0.5s ease-in-out'
@@ -503,38 +519,39 @@ export default function PostCard({ post }) {
                       handleVideoLoad();
                     }}
                   ></iframe>
-               ) : (
-                  <div className="video-play-overlay-mini" style={{
-                    position: 'absolute',
-                    inset: 0,
+                )
+              ) : (
+                <div className="video-play-overlay-mini" style={{
+                  position: 'absolute',
+                  inset: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  background: 'rgba(0,0,0,0.1)',
+                  pointerEvents: 'none'
+                }}>
+                  <div style={{
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '50%',
+                    background: 'rgba(255,255,255,0.2)',
+                    backdropFilter: 'blur(4px)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    background: 'rgba(0,0,0,0.1)',
-                    pointerEvents: 'none'
+                    border: '1px solid rgba(255,255,255,0.3)'
                   }}>
                     <div style={{
-                      width: '32px',
-                      height: '32px',
-                      borderRadius: '50%',
-                      background: 'rgba(255,255,255,0.2)',
-                      backdropFilter: 'blur(4px)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      border: '1px solid rgba(255,255,255,0.3)'
-                    }}>
-                       <div style={{
-                        width: '0',
-                        height: '0',
-                        borderTop: '6px solid transparent',
-                        borderBottom: '6px solid transparent',
-                        borderLeft: '10px solid white',
-                        marginLeft: '2px'
-                      }}></div>
-                    </div>
+                      width: '0',
+                      height: '0',
+                      borderTop: '6px solid transparent',
+                      borderBottom: '6px solid transparent',
+                      borderLeft: '10px solid white',
+                      marginLeft: '2px'
+                    }}></div>
                   </div>
-               )}
+                </div>
+              )}
             </div>
           ) : post.article_image_url && (
             <div className="article-image-wrapper">
@@ -542,7 +559,7 @@ export default function PostCard({ post }) {
                 src={post.article_image_url || 'https://images.unsplash.com/photo-150471143881b-8f116f1458bb?q=80&w=1000'}
                 alt="Article"
                 className="article-image"
-                onError={(e) => { 
+                onError={(e) => {
                   e.target.src = 'https://images.unsplash.com/photo-150471143881b-8f116f1458bb?q=80&w=1000';
                 }}
               />
