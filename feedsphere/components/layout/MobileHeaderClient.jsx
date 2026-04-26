@@ -40,7 +40,7 @@ export default function MobileHeaderClient({ latestPerspectives, initialDebates,
       </Link>
       <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
         <PerspectivesNavBadge perspectives={latestPerspectives} activeType={activeType} lastSeenAt={localLastSeen} compact={true} />
-        <DebatesNavBadge debates={initialDebates} activeType={activeType} votedDebateIds={localVotedIds} compact={true} />
+        {/* <DebatesNavBadge debates={initialDebates} activeType={activeType} votedDebateIds={localVotedIds} compact={true} /> */}
       </div>
     </div>
   );

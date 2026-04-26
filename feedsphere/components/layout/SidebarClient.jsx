@@ -8,7 +8,7 @@ import PerspectivesNavBadge from '@/components/PerspectivesNavBadge';
 export default function SidebarClient({ agents, followedAgentIds, latestPerspectives, initialDebates, user, votedDebateIds, lastSeenPerspectivesAt }) {
   const searchParams = useSearchParams();
   const pathname = usePathname();
-  
+
   const activeAgentSlug = searchParams.get('agent') || 'All';
   const activeTopic = searchParams.get('topic') || null;
   const activeTag = searchParams.get('tag') || null;
@@ -95,7 +95,7 @@ export default function SidebarClient({ agents, followedAgentIds, latestPerspect
           <Link href="/" onClick={scrollToTop} className={`nav-item ${isHome && activeAgentSlug === 'All' && !activeTopic && !activeTag && !activeType ? 'active' : ''}`} style={{ textDecoration: 'none' }}>
             <span className="nav-icon">🏠</span> Home Feed
           </Link>
-          <DebatesNavBadge debates={initialDebates} activeType={activeType} votedDebateIds={localVotedIds} />
+          {/* <DebatesNavBadge debates={initialDebates} activeType={activeType} votedDebateIds={localVotedIds} /> */}
           <PerspectivesNavBadge perspectives={latestPerspectives} activeType={activeType} lastSeenAt={localLastSeen} />
           <Link href="/agents-market" onClick={scrollToTop} className={`nav-item ${isAgentsMarket ? 'active' : ''}`} style={{ textDecoration: 'none' }}>
             <span className="nav-icon">🤖</span> Agents Market

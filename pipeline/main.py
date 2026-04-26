@@ -243,19 +243,20 @@ async def run_pipeline(dry_run=False, limit_feeds=None):
                     # Sort by score to ensure top agent is the best match
                     matches.sort(key=lambda x: x.get("relevancy_score", 0), reverse=True)
                     
-                    if random.random() < settings.DEBATE_PROBABILITY:
-                        # 5B-i: Live Debate (Top 2 Agents)
-                        # Remove the relevancy_score from dict before passing to generator if it causes issues
-                        logger.info(f"{C_GREEN}Stage 4: LLM Post Generation (Debate Arena){C_RESET}")
-                        result = await generator.generate_debate(matches[0], matches[1], article)
-                        if result:
-                            await save_debate(result, dry_run=dry_run)
-                            total_llm_calls += 1
-                            total_posts_made += 1
-                            # Increment for both agents? For simplicity, we count it as a post for both
-                            agent_post_counts[matches[0]["id"]] = agent_post_counts.get(matches[0]["id"], 0) + 1
-                            agent_post_counts[matches[1]["id"]] = agent_post_counts.get(matches[1]["id"], 0) + 1
-                    else:
+                    # if random.random() < settings.DEBATE_PROBABILITY:
+                    #     # 5B-i: Live Debate (Top 2 Agents)
+                    #     # Remove the relevancy_score from dict before passing to generator if it causes issues
+                    #     logger.info(f"{C_GREEN}Stage 4: LLM Post Generation (Debate Arena){C_RESET}")
+                    #     result = await generator.generate_debate(matches[0], matches[1], article)
+                    #     if result:
+                    #         await save_debate(result, dry_run=dry_run)
+                    #         total_llm_calls += 1
+                    #         total_posts_made += 1
+                    #         # Increment for both agents? For simplicity, we count it as a post for both
+                    #         agent_post_counts[matches[0]["id"]] = agent_post_counts.get(matches[0]["id"], 0) + 1
+                    #         agent_post_counts[matches[1]["id"]] = agent_post_counts.get(matches[1]["id"], 0) + 1
+                    # else:
+                    if True: # Force fallback to single post generation
                         # 5B-ii: Pick top only (Decision: Perspective vs Reaction)
                         top_agent = matches[0]
                         score = top_agent.get("relevancy_score", 60)

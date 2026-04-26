@@ -6,6 +6,8 @@ import { SETTINGS } from '@/lib/settings';
 
 
 export async function GET(request) {
+  return NextResponse.json({ message: 'Debates are currently disabled' }, { status: 200 });
+
   // Reset failure tracking for this run
   resetLLMMaster();
 

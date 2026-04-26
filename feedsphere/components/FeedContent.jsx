@@ -28,11 +28,11 @@ export default function FeedContent({ initialPosts, activeAgent, activeTopic, ac
     return [...list].sort((a, b) => {
       const votedA = !!a.user_voted_for;
       const votedB = !!b.user_voted_for;
-      
+
       const now = new Date();
       const endsA = a.ends_at ? new Date(a.ends_at) : new Date(Date.now() + 3600000);
       const endsB = b.ends_at ? new Date(b.ends_at) : new Date(Date.now() + 3600000);
-      
+
       const isEndedA = endsA < now;
       const isEndedB = endsB < now;
 
@@ -67,7 +67,7 @@ export default function FeedContent({ initialPosts, activeAgent, activeTopic, ac
       setPosts(unique);
       setOffset(unique.length);
       setHasMore(unique.length >= 10);
-      
+
       // Also sync debates for interleaving
       if (initialDebates) {
         const uniqueDebates = Array.from(new Map(initialDebates.map(d => [d.id, d])).values());
@@ -89,7 +89,7 @@ export default function FeedContent({ initialPosts, activeAgent, activeTopic, ac
         if (activeAgent) url += `&agent=${activeAgent}`;
         if (activeTopic) url += `&topic=${encodeURIComponent(activeTopic)}`;
         if (activeTag) url += `&tag=${encodeURIComponent(activeTag)}`;
-        
+
         const res = await fetch(url);
         const newDebates = await res.json();
         if (newDebates.length < 10) setHasMore(false);
@@ -165,8 +165,8 @@ export default function FeedContent({ initialPosts, activeAgent, activeTopic, ac
           <DebateCard key={`debate-${debate.id}`} debate={debate} onVote={(side) => {
             setDebates(prev => prev.map(d => {
               if (d.id !== debate.id) return d;
-              return { 
-                ...d, 
+              return {
+                ...d,
                 user_voted_for: side,
                 votes_a: side === 'a' ? (d.votes_a || 0) + 1 : d.votes_a,
                 votes_b: side === 'b' ? (d.votes_b || 0) + 1 : d.votes_b
@@ -220,8 +220,8 @@ export default function FeedContent({ initialPosts, activeAgent, activeTopic, ac
   const feedItems = [];
   posts.forEach((post, i) => {
     feedItems.push({ type: 'post', data: post });
-    // ONLY interleave debates on the home feed or agent feeds (where activeType is null)
-    if (!activeType && (i + 1) % 5 === 0 && filteredDebates[Math.floor((i + 1) / 5) - 1]) {
+    // Debates disabled for now
+    if (false && !activeType && (i + 1) % 5 === 0 && filteredDebates[Math.floor((i + 1) / 5) - 1]) {
       feedItems.push({ type: 'debate', data: filteredDebates[Math.floor((i + 1) / 5) - 1] });
     }
   });
@@ -231,16 +231,16 @@ export default function FeedContent({ initialPosts, activeAgent, activeTopic, ac
       {feedItems.map((item) =>
         item.type === 'debate'
           ? <DebateCard key={`debate-${item.data.id}`} debate={item.data} onVote={(side) => {
-              setDebates(prev => prev.map(d => {
-                if (d.id !== item.data.id) return d;
-                return { 
-                  ...d, 
-                  user_voted_for: side,
-                  votes_a: side === 'a' ? (d.votes_a || 0) + 1 : d.votes_a,
-                  votes_b: side === 'b' ? (d.votes_b || 0) + 1 : d.votes_b
-                };
-              }));
-            }} />
+            setDebates(prev => prev.map(d => {
+              if (d.id !== item.data.id) return d;
+              return {
+                ...d,
+                user_voted_for: side,
+                votes_a: side === 'a' ? (d.votes_a || 0) + 1 : d.votes_a,
+                votes_b: side === 'b' ? (d.votes_b || 0) + 1 : d.votes_b
+              };
+            }));
+          }} />
           : <PostCard key={`post-${item.data.id}`} post={item.data} />
       )}
       <div className="loading-status-area" style={{ minHeight: '60px' }}>

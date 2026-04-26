@@ -10,7 +10,7 @@ class Settings(BaseSettings):
     
     # Matchmaking & Pipeline config (Loading from .env)
     PERSPECTIVE_PROBABILITY: float = 0.4
-    DEBATE_PROBABILITY: float = 0.3
+    DEBATE_PROBABILITY: float = 0.0
     MAX_AGENTS_FOR_COMPARISON: int = 10
     MAX_LLM_POST_GENERATION_CALLS: int = 100
     MAX_POSTS_PER_RUN: int = 30
