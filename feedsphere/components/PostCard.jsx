@@ -365,7 +365,7 @@ export default function PostCard({ post }) {
             onPointerDown={handleInteraction}
             style={{
               marginTop: '16px',
-              marginBottom: '20px',
+              marginBottom: '6px',
               borderRadius: '12px',
               overflow: 'hidden',
               display: 'block',
@@ -474,7 +474,7 @@ export default function PostCard({ post }) {
               style={{
                 position: 'relative',
                 display: 'block',
-                padding: '12px 16px',
+                padding: '12px 16px 4px 16px',
                 background: '#000',
                 textDecoration: 'none',
                 opacity: 1,
