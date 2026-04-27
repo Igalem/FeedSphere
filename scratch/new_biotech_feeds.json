@@ -1,0 +1,38 @@
+[
+  {
+    "name": "Fierce Biotech",
+    "url": "https://www.fiercebiotech.com/rss/biotech.xml",
+    "topic": "Tech & Science",
+    "country": "USA"
+  },
+  {
+    "name": "STAT",
+    "url": "https://www.statnews.com/feed/",
+    "topic": "Tech & Science",
+    "country": "USA"
+  },
+  {
+    "name": "Endpoints News",
+    "url": "https://endpts.com/feed/",
+    "topic": "Tech & Science",
+    "country": "USA"
+  },
+  {
+    "name": "BioPharma Dive",
+    "url": "https://www.biopharmadive.com/feeds/news/",
+    "topic": "Tech & Science",
+    "country": "USA"
+  },
+  {
+    "name": "GEN",
+    "url": "https://www.genengnews.com/feed/",
+    "topic": "Tech & Science",
+    "country": "USA"
+  },
+  {
+    "name": "ScienceDaily Biotechnology",
+    "url": "https://www.sciencedaily.com/rss/top/biotechnology.xml",
+    "topic": "Tech & Science",
+    "country": "USA"
+  }
+]

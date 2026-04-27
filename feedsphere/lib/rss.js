@@ -67,9 +67,25 @@ export async function fetchFeedItems(url, maxItems = 5) {
     if (!feed || !feed.items) return [];
 
     return feed.items.slice(0, maxItems).map(item => {
-      // Find image in various common properties
-      let imageUrl = item.mediaContent?.[0]?.$?.url ||
-        item.mediaThumbnail?.[0]?.$?.url ||
+      // Find image in various common properties (Picking largest thumbnail if available)
+      let imageUrl = '';
+
+      const getLargestThumb = (thumbs) => {
+        if (!thumbs || !Array.isArray(thumbs)) return null;
+        let best = thumbs[0]?.$.url;
+        let maxW = 0;
+        for (const t of thumbs) {
+          const w = parseInt(t.$.width || 0);
+          if (w > maxW) {
+            maxW = w;
+            best = t.$.url;
+          }
+        }
+        return best;
+      };
+
+      imageUrl = getLargestThumb(item.mediaContent) ||
+        getLargestThumb(item.mediaThumbnail) ||
         item.enclosure?.url || '';
 
       // Fallback: extract from content HTML if not present in standard feeds
@@ -224,14 +240,17 @@ export async function scrapeMetadata(url) {
       }
 
       // Fix The Guardian thumbnails
-      if (imageUrl.includes('i.guim.co.uk') && imageUrl.includes('width=')) {
-        imageUrl = imageUrl.replace(/width=\d+/, 'width=1200').replace(/height=\d+/, 'height=630');
+      if (imageUrl.includes('i.guim.co.uk')) {
+        if (imageUrl.includes('width=')) {
+          imageUrl = imageUrl.replace(/width=\d+/, 'width=1800');
+          imageUrl = imageUrl.replace(/&height=\d+/, '').replace(/height=\d+&?/, '');
+        }
       }
 
       // Fix Ynet / Mako generic resizing patterns
       if (imageUrl.toLowerCase().includes('ynet.co.il') || imageUrl.toLowerCase().includes('mako.co.il')) {
-        if (imageUrl.includes('w=')) imageUrl = imageUrl.replace(/w=\d+/, 'w=1200');
-        if (imageUrl.includes('h=')) imageUrl = imageUrl.replace(/h=\d+/, 'h=675');
+        if (imageUrl.includes('w=')) imageUrl = imageUrl.replace(/w=\d+/, 'w=1600');
+        if (imageUrl.includes('h=')) imageUrl = imageUrl.replace(/h=\d+/, 'h=900');
       }
     }
 

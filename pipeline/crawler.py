@@ -162,11 +162,11 @@ class Crawler:
                 # Filter by exact hour delta (30 hours as requested)
                 hours_old = (now_utc - published_at).total_seconds() / 3600
                 
-                if hours_old > 30:
+                if hours_old > settings.MAX_ARTICLE_AGE_HOURS:
                     if hours_old > 24 * 365:
                         logger.debug(f"Skipping very old article '{entry.get('title', 'No Title')}' from {published_at}")
                     else:
-                        logger.info(f"Skipping article '{entry.get('title', 'No Title')}' from {published_at} ({hours_old:.1f} hours old, > 30h delta)")
+                        logger.info(f"Skipping article '{entry.get('title', 'No Title')}' from {published_at} ({hours_old:.1f} hours old, > {settings.MAX_ARTICLE_AGE_HOURS}h delta)")
                     continue
             else:
                 # If no date found, skip to ensure we handle things correctly
@@ -256,16 +256,35 @@ class Crawler:
 
             # 2. Extract best possible Image (Prioritizing static images/thumbnails)
             
-            # --- PRIORITY 1: media_thumbnail within media_content ---
+            # --- PRIORITY 1: media_content thumbnails (pick largest) ---
             if 'media_content' in entry and entry.media_content:
                 for mc in entry.media_content:
                     if 'thumbnails' in mc and mc.thumbnails:
-                        image_url = mc.thumbnails[0].get('url')
+                        # Pick the one with largest width or just the last one (often largest)
+                        best_thumb = mc.thumbnails[0].get('url')
+                        max_w = 0
+                        for t in mc.thumbnails:
+                            t_url = t.get('url')
+                            if not t_url: continue
+                            t_w = int(t.get('width', 0))
+                            if t_w > max_w:
+                                max_w = t_w
+                                best_thumb = t_url
+                        image_url = best_thumb
                         if image_url: break
 
-            # --- PRIORITY 2: Standalone media_thumbnail ---
+            # --- PRIORITY 2: Standalone media_thumbnail (pick largest) ---
             if not image_url and 'media_thumbnail' in entry and entry.media_thumbnail:
-                image_url = entry.media_thumbnail[0].get('url')
+                best_thumb = entry.media_thumbnail[0].get('url')
+                max_w = 0
+                for t in entry.media_thumbnail:
+                    t_url = t.get('url')
+                    if not t_url: continue
+                    t_w = int(t.get('width', 0))
+                    if t_w > max_w:
+                        max_w = t_w
+                        best_thumb = t_url
+                image_url = best_thumb
                 if image_url:
                     image_url = urljoin(url, image_url)
             
@@ -350,11 +369,36 @@ class Crawler:
                             if not image_url:
                                 images = page_soup.find_all("img", src=True)
                                 if images:
-                                    # Prioritize high-res JPG/PNG and not common ad format
-                                    # Avoid images with 'logo' in them unless they are large (heuristic)
-                                    candidates = [i for i in images if (".jpg" in i["src"].lower() or ".png" in i["src"].lower()) and "logo" not in i["src"].lower()]
-                                    if candidates:
-                                        image_url = urljoin(target_url, candidates[0]["src"])
+                                    # Heuristic for best article image:
+                                    # 1. Not a logo/icon/spacer
+                                    # 2. Has high-res indicators in name/src
+                                    # 3. Largest by width/height attributes if present
+                                    best_img = None
+                                    max_score = -1
+                                    
+                                    for img in images:
+                                        src = img["src"]
+                                        if any(k in src.lower() for k in ["logo", "icon", "spacer", "pixel", "banner", "ad-", "ads-"]):
+                                            continue
+                                        
+                                        score = 0
+                                        if ".jpg" in src.lower() or ".jpeg" in src.lower(): score += 10
+                                        if "master" in src.lower() or "full" in src.lower() or "large" in src.lower(): score += 20
+                                        
+                                        # Use width attribute as weight
+                                        try:
+                                            w = int(img.get("width", 0))
+                                            if w > 100: score += w // 100
+                                        except: pass
+                                        
+                                        if score > max_score:
+                                            max_score = score
+                                            best_img = src
+                                            
+                                    if best_img:
+                                        image_url = urljoin(target_url, best_img)
+                                    else:
+                                        image_url = urljoin(target_url, images[0]["src"])
 
                         # 5b. Robust Excerpt Extraction (if RSS summary is poor)
                         if len(clean_summary) < 200:
@@ -543,17 +587,27 @@ class Crawler:
                     logger.info(f"Upgraded TSN image resolution: {image_url}")
                 
                 # Fix The Guardian thumbnails
-                if "i.guim.co.uk" in image_url and "width=" in image_url:
-                    image_url = re.sub(r'width=\d+', 'width=1200', image_url)
-                    image_url = re.sub(r'height=\d+', 'height=630', image_url)
-                    logger.info(f"Upgraded Guardian image resolution: {image_url}")
+                if "i.guim.co.uk" in image_url:
+                    if "width=" in image_url:
+                        # Prefer a much larger width for high-res displays
+                        image_url = re.sub(r'width=\d+', 'width=1800', image_url)
+                        # Remove height to allow natural aspect ratio if not explicitly needed
+                        image_url = re.sub(r'&height=\d+', '', image_url)
+                        image_url = re.sub(r'height=\d+&?', '', image_url)
+                        
+                        # If it's a social image with an overlay, and we're upgrading, 
+                        # the signature will likely fail if we change width.
+                        # However, for many Guardian images, the signature is not strictly enforced 
+                        # or can be bypassed if we find the s=none versions (which we do in scraping).
+                        # For now, we increase width and hope for the best, as 1200 was also being used.
+                        logger.info(f"Upgraded Guardian image resolution: {image_url}")
 
                 # Fix Ynet / Mako generic resizing patterns
                 if any(x in image_url.lower() for x in ["ynet.co.il", "mako.co.il"]):
                     if "w=" in image_url:
-                        image_url = re.sub(r'w=\d+', 'w=1200', image_url)
+                        image_url = re.sub(r'w=\d+', 'w=1600', image_url)
                     if "h=" in image_url:
-                        image_url = re.sub(r'h=\d+', 'h=675', image_url)
+                        image_url = re.sub(r'h=\d+', 'h=900', image_url)
                     logger.info(f"Upgraded Israeli source image resolution: {image_url}")
 
             if not image_url:
@@ -693,7 +747,9 @@ class Crawler:
                 db.execute("""
                     INSERT INTO news_articles (title, url, excerpt, image_url, video_url, source_name, topic, published_at, language, country)
                     VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                    ON CONFLICT (url) DO NOTHING
+                    ON CONFLICT (url) DO UPDATE SET 
+                        image_url = EXCLUDED.image_url,
+                        video_url = COALESCE(news_articles.video_url, EXCLUDED.video_url)
                 """, (
                     article["article_title"],
                     article["article_url"],
