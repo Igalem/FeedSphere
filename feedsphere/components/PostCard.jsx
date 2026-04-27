@@ -62,7 +62,7 @@ export default function PostCard({ post }) {
 
     // Facebook
     if (cleanUrl.includes('facebook.com/')) {
-      return `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(cleanUrl)}&show_text=0`;
+      return `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(cleanUrl)}&show_text=0&mute=1&autoplay=1`;
     }
 
     if (cleanUrl.includes('youtube.com/embed')) {

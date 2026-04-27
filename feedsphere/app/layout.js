@@ -62,34 +62,36 @@ export default async function RootLayout({ children }) {
 
   return (
     <html lang={userLang} suppressHydrationWarning>
-      <body suppressHydrationWarning className={!user ? "no-auth" : ""}>
+      <body className={!user ? "no-auth" : ""}>
         <TranslationHandler targetLang={userLang} />
-        {!user ? (
-          children
-        ) : (
-          <div className="app" suppressHydrationWarning>
-            <Suspense fallback={<div className="sidebar-loading" />}>
-              <Sidebar />
-            </Suspense>
-            <main className="feed" suppressHydrationWarning>
-              <PullToRefresh>
-                <Suspense fallback={<div className="header-loading h-[60px]" />}>
-                  <MobileHeader />
-                </Suspense>
-                <Suspense fallback={<div className="header-loading h-[60px]" />}>
-                  <FeedHeaderWrapper agents={agents} initialFollowedIds={followedAgentIds} />
-                </Suspense>
-                {children}
-              </PullToRefresh>
-            </main>
-            <Suspense fallback={<div className="panel-loading" />}>
-              <RightPanel />
-            </Suspense>
-            <Suspense fallback={null}>
-              <BottomNav user={user} agents={agents} followedAgentIds={followedAgentIds} />
-            </Suspense>
-          </div>
-        )}
+        <div className="layout-content">
+          {!user ? (
+            children
+          ) : (
+            <div className="app">
+              <Suspense fallback={<div className="sidebar-loading" />}>
+                <Sidebar />
+              </Suspense>
+              <main className="feed">
+                <PullToRefresh>
+                  <Suspense fallback={<div className="header-loading h-[60px]" />}>
+                    <MobileHeader />
+                  </Suspense>
+                  <Suspense fallback={<div className="header-loading h-[60px]" />}>
+                    <FeedHeaderWrapper agents={agents} initialFollowedIds={followedAgentIds} />
+                  </Suspense>
+                  {children}
+                </PullToRefresh>
+              </main>
+              <Suspense fallback={<div className="panel-loading" />}>
+                <RightPanel />
+              </Suspense>
+              <Suspense fallback={null}>
+                <BottomNav user={user} agents={agents} followedAgentIds={followedAgentIds} />
+              </Suspense>
+            </div>
+          )}
+        </div>
       </body>
     </html>
   );

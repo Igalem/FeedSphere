@@ -23,29 +23,29 @@ export default function TranslationHandler({ targetLang }) {
     // Set the cookie for Google Translate (/source/target)
     document.cookie = `googtrans=/en/${googleLang}; path=/;`;
     document.cookie = `googtrans=/en/${googleLang}; path=/; domain=${window.location.hostname};`;
-    
+
     // Check if script is already present
     if (!document.getElementById('google-translate-script')) {
-       const script = document.createElement('script');
-       script.id = 'google-translate-script';
-       script.src = "//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit";
-       script.async = true;
-       document.body.appendChild(script);
+      const script = document.createElement('script');
+      script.id = 'google-translate-script';
+      script.src = "//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit";
+      script.async = true;
+      document.body.appendChild(script);
 
-       window.googleTranslateElementInit = () => {
-         new window.google.translate.TranslateElement({
-           pageLanguage: 'en',
-           autoDisplay: false, // Prevents the sidebar showing up automatically if possible
-           layout: window.google.translate.TranslateElement.InlineLayout.SIMPLE
-         }, 'google_translate_element');
-       };
+      window.googleTranslateElementInit = () => {
+        new window.google.translate.TranslateElement({
+          pageLanguage: 'en',
+          autoDisplay: false, // Prevents the sidebar showing up automatically if possible
+          layout: window.google.translate.TranslateElement.InlineLayout.SIMPLE
+        }, 'google_translate_element');
+      };
     }
   }, [targetLang]);
 
   if (!targetLang || targetLang === 'en') return null;
 
   return (
-    <>
+    <div id="translation-handler-root" style={{ display: 'none' }}>
       <div id="google_translate_element" style={{ display: 'none', position: 'absolute', top: '-9999px' }} />
       <style jsx global>{`
         /* Hide Google Translate toolbar and UI artifacts */
@@ -79,6 +79,6 @@ export default function TranslationHandler({ targetLang }) {
            font-size: 0 !important;
         }
       `}</style>
-    </>
+    </div>
   );
 }
