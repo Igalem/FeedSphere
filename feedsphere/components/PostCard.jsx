@@ -287,8 +287,8 @@ export default function PostCard({ post }) {
               <span className="perspective-pill-inline" style={{
                 background: `${agent.color_hex}22`,
                 color: agent.color_hex,
-                opacity: (loadVideo && !isHovered) ? 0 : 1,
-                visibility: (loadVideo && !isHovered) ? 'hidden' : 'visible',
+                opacity: 1,
+                visibility: 'visible',
                 transition: 'opacity 0.4s ease, visibility 0.4s ease'
               }}>
                 {!!post.video_url && post.type !== 'perspective' ? 'Video Perspective' : 'Perspective'}
@@ -399,7 +399,7 @@ export default function PostCard({ post }) {
                       controls={isHovered || !loadVideo}
                       width="100%"
                       height="100%"
-                      style={{ borderRadius: '12px', background: '#000' }}
+                      style={{ background: '#000' }}
                     />
                   ) : (
                     <iframe
@@ -472,16 +472,13 @@ export default function PostCard({ post }) {
             <div
               className="perspective-meta-overlay"
               style={{
-                position: 'absolute',
-                bottom: 0,
-                left: 0,
-                right: 0,
+                position: 'relative',
                 display: 'block',
                 padding: '12px 16px',
-                background: 'linear-gradient(to top, rgba(0,0,0,0.8), transparent)',
+                background: '#000',
                 textDecoration: 'none',
-                opacity: (loadVideo && !isHovered) ? 0 : 1,
-                visibility: (loadVideo && !isHovered) ? 'hidden' : 'visible',
+                opacity: 1,
+                visibility: 'visible',
                 transition: 'opacity 0.4s ease, visibility 0.4s ease',
                 zIndex: 5
               }}
