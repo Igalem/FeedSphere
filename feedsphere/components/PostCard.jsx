@@ -11,6 +11,7 @@ export default function PostCard({ post }) {
   const [userReaction, setUserReaction] = useState(post.user_reaction || null); // Track individual user reaction
   const [bookmarked, setBookmarked] = useState(false);
   const [commentsOpen, setCommentsOpen] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
   const [comments, setComments] = useState([]);
   const [newCommentStr, setNewCommentStr] = useState('');
   const [totalComments, setTotalComments] = useState(post.comments_count || 0);
@@ -18,6 +19,24 @@ export default function PostCard({ post }) {
   const [loadVideo, setLoadVideo] = useState(false);
   const videoContainerRef = useRef(null);
   const videoRef = useRef(null);
+  const hoverTimerRef = useRef(null);
+
+  const handleInteraction = () => {
+    setIsHovered(true);
+    if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
+    hoverTimerRef.current = setTimeout(() => {
+      setIsHovered(false);
+    }, 3000);
+  };
+
+  const handleMouseEnter = () => {
+    if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
+    setIsHovered(true);
+  };
+
+  const handleMouseLeave = () => {
+    setIsHovered(false);
+  };
 
   // Pre-load and auto-play video before it reaches the viewport
   useEffect(() => {
@@ -242,6 +261,7 @@ export default function PostCard({ post }) {
   return (
     <div
       className="post-card"
+      onPointerDown={handleInteraction}
       style={{
         borderColor: `${agent.color_hex}44`,
         background: (post.type === 'perspective' || !!post.video_url)
@@ -267,8 +287,9 @@ export default function PostCard({ post }) {
               <span className="perspective-pill-inline" style={{
                 background: `${agent.color_hex}22`,
                 color: agent.color_hex,
-                opacity: 1,
-                transition: 'opacity 0.4s ease'
+                opacity: (loadVideo && !isHovered) ? 0 : 1,
+                visibility: (loadVideo && !isHovered) ? 'hidden' : 'visible',
+                transition: 'opacity 0.4s ease, visibility 0.4s ease'
               }}>
                 {!!post.video_url && post.type !== 'perspective' ? 'Video Perspective' : 'Perspective'}
               </span>
@@ -339,6 +360,9 @@ export default function PostCard({ post }) {
             target="_blank"
             rel="noopener noreferrer"
             className="perspective-media-block"
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
+            onPointerDown={handleInteraction}
             style={{
               marginTop: '16px',
               marginBottom: '20px',
@@ -372,7 +396,7 @@ export default function PostCard({ post }) {
                       muted
                       playsInline
                       loop
-                      controls
+                      controls={isHovered || !loadVideo}
                       width="100%"
                       height="100%"
                       style={{ borderRadius: '12px', background: '#000' }}
@@ -390,7 +414,8 @@ export default function PostCard({ post }) {
                       style={{
                         display: 'block',
                         opacity: 0,
-                        transition: 'opacity 0.5s ease-in-out'
+                        transition: 'opacity 0.5s ease-in-out',
+                        pointerEvents: (loadVideo && !isHovered) ? 'none' : 'auto'
                       }}
                       onLoad={(e) => {
                         e.target.style.opacity = 1;
@@ -447,14 +472,18 @@ export default function PostCard({ post }) {
             <div
               className="perspective-meta-overlay"
               style={{
-                position: 'relative',
+                position: 'absolute',
+                bottom: 0,
+                left: 0,
+                right: 0,
                 display: 'block',
                 padding: '12px 16px',
-                background: '#0a0a0f', // Solid dark background to match --bg
+                background: 'linear-gradient(to top, rgba(0,0,0,0.8), transparent)',
                 textDecoration: 'none',
-                opacity: 1,
-                visibility: 'visible',
-                transition: 'opacity 0.4s ease'
+                opacity: (loadVideo && !isHovered) ? 0 : 1,
+                visibility: (loadVideo && !isHovered) ? 'hidden' : 'visible',
+                transition: 'opacity 0.4s ease, visibility 0.4s ease',
+                zIndex: 5
               }}
             >
               <div className="perspective-source-name" translate="no" style={{ color: 'rgba(255,255,255,0.5)', fontSize: '10px', textTransform: 'lowercase', marginBottom: '2px', letterSpacing: '0.4px' }}>
@@ -505,7 +534,7 @@ export default function PostCard({ post }) {
                     muted
                     playsInline
                     loop
-                    controls
+                    controls={isHovered || !loadVideo}
                     width="100%"
                     height="100%"
                     style={{ borderRadius: '8px', background: '#000' }}
