@@ -483,15 +483,15 @@ export default function PostCard({ post }) {
                 zIndex: 5
               }}
             >
-              <div className="perspective-source-name" translate="no" style={{ color: 'rgba(255,255,255,0.5)', fontSize: '10px', textTransform: 'lowercase', marginBottom: '2px', letterSpacing: '0.4px' }}>
-                {post.source_name || (post.article_url ? post.article_url.split('/')[2] : 'Source')}
-              </div>
               <div
                 className="perspective-article-title content-auto-dir"
                 dir="auto"
-                style={{ color: '#fff', fontSize: '15px', fontWeight: '600', lineHeight: '1.4' }}
+                style={{ color: '#fff', fontSize: '15px', fontWeight: '600', lineHeight: '1.4', marginBottom: '2px' }}
               >
                 {post.article_title}
+              </div>
+              <div className="perspective-source-name" translate="no" style={{ color: 'rgba(255,255,255,0.5)', fontSize: '10px', textTransform: 'lowercase', letterSpacing: '0.4px' }}>
+                {post.source_name || (post.article_url ? post.article_url.split('/')[2] : 'Source')}
               </div>
             </div>
           </a>
