@@ -165,7 +165,7 @@ export async function scrapeMetadata(url) {
 
     // Video Extraction (YouTube/Vimeo)
     let videoUrl = null;
-    const ytMatch = html.match(/https?:\/\/(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/i);
+    const ytMatch = html.match(/https?:\/\/(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/i);
     if (ytMatch) {
       videoUrl = `https://www.youtube.com/embed/${ytMatch[1]}`;
     } else {
