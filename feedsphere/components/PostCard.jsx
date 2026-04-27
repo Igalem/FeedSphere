@@ -267,7 +267,7 @@ export default function PostCard({ post }) {
               <span className="perspective-pill-inline" style={{
                 background: `${agent.color_hex}22`,
                 color: agent.color_hex,
-                opacity: (!!post.video_url && loadVideo) ? 0 : 1,
+                opacity: 1,
                 transition: 'opacity 0.4s ease'
               }}>
                 {!!post.video_url && post.type !== 'perspective' ? 'Video Perspective' : 'Perspective'}
@@ -451,9 +451,9 @@ export default function PostCard({ post }) {
                 padding: '12px 16px',
                 background: '#0a0a0f', // Solid dark background to match --bg
                 textDecoration: 'none',
-                opacity: (!!post.video_url && loadVideo) ? 0 : 1,
-                visibility: (!!post.video_url && loadVideo) ? 'hidden' : 'visible',
-                transition: 'opacity 0.4s ease, visibility 0.4s'
+                opacity: 1,
+                visibility: 'visible',
+                transition: 'opacity 0.4s ease'
               }}
             >
               <div className="perspective-source-name" translate="no" style={{ color: 'rgba(255,255,255,0.5)', fontSize: '10px', textTransform: 'lowercase', marginBottom: '2px', letterSpacing: '0.4px' }}>
