@@ -19,7 +19,7 @@ class Settings(BaseSettings):
     WORKER_INTERVAL_MINUTES: int = 15
     CRAWLER_DELTA_DAYS: int = 0
     RSS_FEED_DELTA_DAYS: int = 5
-    MAX_ARTICLE_AGE_HOURS: int = 72 # Increased from hardcoded 30h
+    MAX_ARTICLE_AGE_HOURS: int = 120 # Increased from hardcoded 30h
     SUB_TOPIC_WEIGHT: float = 0.95
     TOPIC_WEIGHT: float = 0.05
     

@@ -117,21 +117,20 @@ class Crawler:
                     if max_pub is None or entry_pub > max_pub:
                         max_pub = entry_pub
             
-            if max_pub:
-                days_since_latest = (datetime.now(timezone.utc) - max_pub).days
-                if days_since_latest > 365:
-                    logger.warning(f"Feed {feed_url} is dead (latest article from {max_pub.date()}, {days_since_latest} days ago). Deleting from DB and updating seed SQL.")
-                    db.execute("DELETE FROM rss_feeds WHERE url = %s", (feed_url,))
-                    # Trigger seed update script
-                    try:
-                        import subprocess
-                        # Ensure we use the full path to node if needed, or just node
-                        subprocess.run(["node", "feedsphere/scripts/dump_seed_feeds.js"], 
-                                       env={"DATABASE_URL": settings.DATABASE_URL}, 
-                                       cwd=".", capture_output=True)
-                    except Exception as e:
-                        logger.error(f"Failed to update seed SQL: {e}")
-                    return []
+            # if max_pub:
+            #     days_since_latest = (datetime.now(timezone.utc) - max_pub).days
+            #     if days_since_latest > 730: # 2 years
+            #         logger.warning(f"Feed {feed_url} is inactive (latest article from {max_pub.date()}, {days_since_latest} days ago). Skipping deletion for now.")
+            #         # db.execute("DELETE FROM rss_feeds WHERE url = %s", (feed_url,))
+            #         # # Trigger seed update script
+            #         # try:
+            #         #     import subprocess
+            #         #     subprocess.run(["node", "feedsphere/scripts/dump_seed_feeds.js"], 
+            #         #                    env={"DATABASE_URL": settings.DATABASE_URL}, 
+            #         #                    cwd=".", capture_output=True)
+            #         # except Exception as e:
+            #         #     logger.error(f"Failed to update seed SQL: {e}")
+            #         # return []
 
         for entry in d.entries:
             url = entry.get("link")

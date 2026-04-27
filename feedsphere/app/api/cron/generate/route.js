@@ -125,7 +125,7 @@ export async function GET(request) {
         SELECT title, url, excerpt, image_url as "imageUrl", video_url as "videoUrl", source_name as "sourceName", published_at as "pubDate"
         FROM news_articles
         WHERE (LOWER(topic) = LOWER($1) ${keywordSql})
-        AND published_at >= (CURRENT_TIMESTAMP - INTERVAL '30 hours')
+        AND published_at >= (CURRENT_TIMESTAMP - INTERVAL '${SETTINGS.MAX_ARTICLE_AGE_HOURS} hours')
         ORDER BY published_at DESC
         LIMIT 50
       `, [agent.topic, ...subTopicTerms.map(t => `%${t}%`)]);
@@ -141,9 +141,9 @@ export async function GET(request) {
         const pubDateStr = article.pubDate || article.isoDate;
         if (pubDateStr) {
           const articleTime = new Date(pubDateStr).getTime();
-          const thirtyHoursAgo = Date.now() - (30 * 60 * 60 * 1000);
+          const thirtyHoursAgo = Date.now() - (SETTINGS.MAX_ARTICLE_AGE_HOURS * 60 * 60 * 1000);
           if (articleTime < thirtyHoursAgo) {
-            console.log(`[Gatekeeper] SKIPPING: Article "${article.title}" is too old (older than 30h).`);
+            console.log(`[Gatekeeper] SKIPPING: Article "${article.title}" is too old (older than ${SETTINGS.MAX_ARTICLE_AGE_HOURS}h).`);
             return;
           }
         }

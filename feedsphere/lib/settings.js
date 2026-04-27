@@ -38,6 +38,7 @@ export const SETTINGS = {
   MAX_AGENTS_FOR_COMPARISON: parseInt(process.env.MAX_AGENTS_FOR_COMPARISON || '3', 10),
   MAX_LLM_POST_GENERATION_CALLS: parseInt(process.env.MAX_LLM_POST_GENERATION_CALLS || '10', 10),
   SIMILARITY_THRESHOLD: parseFloat(process.env.SIMILARITY_THRESHOLD || '0.75'),
+  MAX_ARTICLE_AGE_HOURS: parseInt(process.env.MAX_ARTICLE_AGE_HOURS || '120', 10),
 
   // --- CONTENT SETTINGS ---
 
@@ -58,8 +59,8 @@ export const SETTINGS = {
    * The base URL for the API.
    * In production (Vercel), it uses the VERCEL_URL or the custom domain.
    */
-  API_BASE_URL: process.env.NEXT_PUBLIC_SITE_URL || 
-                (process.env.NEXT_PUBLIC_VERCEL_URL ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}` : 'http://localhost:3000'),
+  API_BASE_URL: process.env.NEXT_PUBLIC_SITE_URL ||
+    (process.env.NEXT_PUBLIC_VERCEL_URL ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}` : 'http://localhost:3000'),
 
   /**
    * Path to the agent generation cron endpoint.
