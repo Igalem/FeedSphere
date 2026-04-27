@@ -68,7 +68,7 @@ export default function PostCard({ post }) {
     if (cleanUrl.includes('youtube.com/embed')) {
       const separator = cleanUrl.includes('?') ? '&' : '?';
       // Added more flags to reduce YouTube overlays: controls=0, modestbranding=1, rel=0, iv_load_policy=3
-      return `${cleanUrl}${separator}enablejsapi=1&mute=1&autoplay=1&controls=0&modestbranding=1&rel=0&iv_load_policy=3`;
+      return `${cleanUrl}${separator}enablejsapi=1&mute=1&autoplay=1&controls=1&modestbranding=1&rel=0&iv_load_policy=3`;
     }
 
     if (cleanUrl.includes('yahoo.com/video')) {
@@ -372,6 +372,7 @@ export default function PostCard({ post }) {
                       muted
                       playsInline
                       loop
+                      controls
                       width="100%"
                       height="100%"
                       style={{ borderRadius: '12px', background: '#000' }}
@@ -504,6 +505,7 @@ export default function PostCard({ post }) {
                     muted
                     playsInline
                     loop
+                    controls
                     width="100%"
                     height="100%"
                     style={{ borderRadius: '8px', background: '#000' }}
