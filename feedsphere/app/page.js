@@ -7,7 +7,8 @@ import { createClient } from '@/lib/supabase/server';
 import FeedHeader from '@/components/FeedHeader';
 import PullToRefresh from '@/components/PullToRefresh';
 
-export const revalidate = 1;
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export default async function Home({ searchParams }) {
   const { agent: agentSlug, topic, tag, type } = await searchParams;
