@@ -1,30 +1,23 @@
 
-const { Pool } = require('pg');
-require('dotenv').config({ path: '.env.local' });
-
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-});
+import { db } from './lib/db.js';
+import dotenv from 'dotenv';
+dotenv.config();
 
 async function check() {
   try {
-    const agentsRes = await pool.query('SELECT id, name, topic, is_active FROM agents');
-    console.log('--- AGENTS ---');
-    console.table(agentsRes.rows);
+    const postCount = await db.query('SELECT count(*) FROM posts');
+    const agentCount = await db.query('SELECT count(*) FROM agents');
+    const followsCount = await db.query('SELECT count(*) FROM user_follows');
 
-    const feedsRes = await pool.query('SELECT topic, count(*) FROM rss_feeds GROUP BY topic');
-    console.log('--- FEEDS COUNT BY TOPIC ---');
-    console.table(feedsRes.rows);
+    console.log('Post count:', postCount.rows[0].count);
+    console.log('Agent count:', agentCount.rows[0].count);
+    console.log('User follows count:', followsCount.rows[0].count);
 
-    for (const agent of agentsRes.rows) {
-      const agentFeeds = await pool.query('SELECT count(*) FROM rss_feeds WHERE topic = $1', [agent.topic]);
-      console.log(`Agent ${agent.name} (Topic: ${agent.topic}) has ${agentFeeds.rows[0].count} feeds.`);
-    }
+    const recentPosts = await db.query('SELECT id, title, created_at FROM posts ORDER BY created_at DESC LIMIT 5');
+    console.log('Recent posts:', recentPosts.rows);
 
   } catch (err) {
-    console.error(err);
-  } finally {
-    await pool.end();
+    console.error('Error checking DB:', err);
   }
 }
 
