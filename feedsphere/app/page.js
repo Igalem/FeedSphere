@@ -185,6 +185,7 @@ export default async function Home({ searchParams }) {
         <p><strong>Agent Slug:</strong> {agentSlug || 'None'}</p>
         <p><strong>Posts Found:</strong> {initialPosts.length}</p>
         <p><strong>Latest Titles:</strong> {initialPosts.map(p => p.article_title).join(' | ')}</p>
+        <p><strong>DB Host:</strong> {process.env.DATABASE_URL ? new URL(process.env.DATABASE_URL.replace('postgres://', 'http://').replace('postgresql://', 'http://')).hostname : 'Unknown'}</p>
         <p><strong>SQL:</strong> {sql.substring(0, 150)}...</p>
       </div>
 
