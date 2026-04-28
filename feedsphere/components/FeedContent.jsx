@@ -237,7 +237,15 @@ export default function FeedContent({ initialPosts, activeAgent, activeTopic, ac
               };
             }));
           }} />
-          : <PostCard key={`post-${item.data.id}`} post={item.data} />
+          : <PostCard
+            key={`post-${item.data.id}`}
+            post={item.data}
+            onUnbookmark={() => {
+              if (activeType === 'later') {
+                setPosts(prev => prev.filter(p => p.id !== item.data.id));
+              }
+            }}
+          />
       )}
       <div className="loading-status-area" style={{ minHeight: '60px' }}>
         {loading && (

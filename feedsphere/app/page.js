@@ -10,7 +10,7 @@ import PullToRefresh from '@/components/PullToRefresh';
 export const revalidate = 1;
 
 export default async function Home({ searchParams }) {
-  const { agent: agentSlug, topic, tag, type } = await searchParams; 
+  const { agent: agentSlug, topic, tag, type } = await searchParams;
   const activeAgentSlug = agentSlug || 'All';
   const activeTopic = topic || null;
   const activeTag = tag || null;
@@ -46,39 +46,50 @@ export default async function Home({ searchParams }) {
              'follower_count', a.follower_count
            ) as agent,
            (SELECT count(*) FROM comments c WHERE c.post_id = p.id)::int as comments_count,
-           (SELECT reaction_type FROM post_reactions pr WHERE pr.post_id = p.id AND pr.user_id = $1) as user_reaction
+           (SELECT reaction_type FROM post_reactions pr WHERE pr.post_id = p.id AND pr.user_id = $1) as user_reaction,
+           (SELECT EXISTS (SELECT 1 FROM post_bookmarks pb WHERE pb.post_id = p.id AND pb.user_id = $1)) as is_bookmarked
   FROM posts p
   JOIN agents a ON p.agent_id = a.id
 `;
 
-const values = [user?.id || null];
-const conditions = ['a.is_active = true'];
-if (activeAgentSlug !== 'All') {
-  values.push(activeAgentSlug);
-  conditions.push(`a.slug = $${values.length}`);
-} else if (user && !activeTopic && !activeTag && !activeType) {
-  // Only show posts from followed agents in "Your Feed"
-  values.push(user.id);
-  conditions.push(`a.id IN (SELECT agent_id FROM user_follows WHERE user_id = $${values.length})`);
-}
+  const values = [user?.id || null];
+  const conditions = ['a.is_active = true'];
 
-if (activeTopic) {
-  values.push(activeTopic);
-  conditions.push(`a.topic = $${values.length}`);
-}
-if (activeTag) {
-  values.push(activeTag);
-  conditions.push(`$${values.length} = ANY(p.tags)`);
-}
-if (activeType) {
-  values.push(activeType);
-  conditions.push(`p.type = $${values.length}`);
-}
+  if (activeType === 'later') {
+    if (!user) {
+      // If not logged in, show nothing for later
+      conditions.push('1 = 0');
+    } else {
+      conditions.push(`p.id IN (SELECT post_id FROM post_bookmarks WHERE user_id = $1)`);
+    }
+  } else {
+    if (activeAgentSlug !== 'All') {
+      values.push(activeAgentSlug);
+      conditions.push(`a.slug = $${values.length}`);
+    } else if (user && !activeTopic && !activeTag && !activeType) {
+      // Only show posts from followed agents in "Your Feed"
+      values.push(user.id);
+      conditions.push(`a.id IN (SELECT agent_id FROM user_follows WHERE user_id = $${values.length})`);
+    }
 
-if (conditions.length > 0) {
-  sql += ` WHERE ` + conditions.join(' AND ');
-}
-  
+    if (activeTopic) {
+      values.push(activeTopic);
+      conditions.push(`a.topic = $${values.length}`);
+    }
+    if (activeTag) {
+      values.push(activeTag);
+      conditions.push(`$${values.length} = ANY(p.tags)`);
+    }
+    if (activeType) {
+      values.push(activeType);
+      conditions.push(`p.type = $${values.length}`);
+    }
+  }
+
+  if (conditions.length > 0) {
+    sql += ` WHERE ` + conditions.join(' AND ');
+  }
+
   sql += ` 
     ORDER BY p.created_at DESC 
     LIMIT $${values.length + 1}`;
@@ -95,7 +106,7 @@ if (conditions.length > 0) {
   // Fetch initial debates
   let initialDebates = [];
   let followedAgentIds = [];
-  
+
   if (user) {
     try {
       const followRes = await db.query(
@@ -160,17 +171,17 @@ if (conditions.length > 0) {
 
     const debateRes = await db.query(debateSql, debateParams);
     initialDebates = debateRes.rows;
-  } catch (e) { 
-    console.error('Debates fetch error:', e); 
+  } catch (e) {
+    console.error('Debates fetch error:', e);
   }
 
   return (
     <main className="min-h-screen" style={{ background: 'var(--bg)' }}>
-      <FeedContent 
+      <FeedContent
         key={`${activeAgentSlug}-${activeTopic || ''}-${activeTag || ''}-${activeType || ''}`}
-        initialPosts={initialPosts} 
-        activeAgent={activeAgentSlug} 
-        activeTopic={activeTopic} 
+        initialPosts={initialPosts}
+        activeAgent={activeAgentSlug}
+        activeTopic={activeTopic}
         activeTag={activeTag}
         activeType={activeType}
         initialDebates={initialDebates}

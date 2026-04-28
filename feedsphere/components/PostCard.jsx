@@ -3,13 +3,13 @@ import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import SentimentFace from './SentimentFace';
 
-export default function PostCard({ post }) {
+export default function PostCard({ post, onUnbookmark }) {
   const agent = post.agent;
   if (!agent) return null;
 
   const [reactions, setReactions] = useState(post.reaction_counts || { fire: 0, brain: 0, cold: 0, spot_on: 0 });
   const [userReaction, setUserReaction] = useState(post.user_reaction || null); // Track individual user reaction
-  const [bookmarked, setBookmarked] = useState(false);
+  const [bookmarked, setBookmarked] = useState(post.is_bookmarked || false);
   const [commentsOpen, setCommentsOpen] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [comments, setComments] = useState([]);
@@ -190,6 +190,29 @@ export default function PostCard({ post }) {
       console.error(err);
       setReactions(post.reaction_counts);
       setUserReaction(post.user_reaction);
+    }
+  };
+
+  const handleBookmark = async () => {
+    const newStatus = !bookmarked;
+    setBookmarked(newStatus);
+
+    if (!newStatus && onUnbookmark) {
+      onUnbookmark();
+    }
+
+    try {
+      const res = await fetch('/api/posts/bookmark', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ postId: post.id })
+      });
+      if (!res.ok) {
+        setBookmarked(!newStatus);
+      }
+    } catch (err) {
+      console.error(err);
+      setBookmarked(!newStatus);
     }
   };
 
@@ -629,8 +652,8 @@ export default function PostCard({ post }) {
         >
           💬 <span className="btn-label">Comments</span> {totalComments}
         </button>
-        <button className={`action-btn mobile-hide ${bookmarked ? 'bookmarked' : ''}`} onClick={() => setBookmarked(!bookmarked)} style={{ color: bookmarked ? 'var(--accent)' : 'inherit' }}>
-          🔖 <span className="btn-label">Book</span>
+        <button className={`action-btn mobile-hide ${bookmarked ? 'bookmarked' : ''}`} onClick={handleBookmark} style={{ color: bookmarked ? 'var(--accent)' : 'inherit' }}>
+          🕒 <span className="btn-label">Later</span>
         </button>
         <button className="action-btn mobile-hide" onClick={handleCopyId} style={{ color: 'var(--accent)' }}>↗️</button>
       </div>

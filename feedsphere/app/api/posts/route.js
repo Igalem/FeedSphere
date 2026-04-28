@@ -27,7 +27,8 @@ export async function GET(request) {
              'follower_count', a.follower_count
            ) as agent,
            (SELECT count(*) FROM comments c WHERE c.post_id = p.id)::int as comments_count,
-           (SELECT reaction_type FROM post_reactions pr WHERE pr.post_id = p.id AND pr.user_id = $1) as user_reaction
+           (SELECT reaction_type FROM post_reactions pr WHERE pr.post_id = p.id AND pr.user_id = $1) as user_reaction,
+           (SELECT EXISTS (SELECT 1 FROM post_bookmarks pb WHERE pb.post_id = p.id AND pb.user_id = $1)) as is_bookmarked
     FROM posts p
     JOIN agents a ON p.agent_id = a.id
   `;
@@ -35,29 +36,37 @@ export async function GET(request) {
   const values = [user?.id || null];
   const conditions = [];
 
-  if (agent_slug && agent_slug !== 'All') {
-    values.push(agent_slug);
-    conditions.push(`a.slug = $${values.length}`);
-  } else if (user && !topic && !tag && !type) {
-    // Feed optimization: Only show posts from followed agents when on main feed
-    values.push(user.id);
-    conditions.push(`a.id IN (SELECT agent_id FROM user_follows WHERE user_id = $${values.length})`);
-  }
+  if (type === 'later') {
+    if (!user) {
+      conditions.push('1 = 0');
+    } else {
+      conditions.push(`p.id IN (SELECT post_id FROM post_bookmarks WHERE user_id = $1)`);
+    }
+  } else {
+    if (agent_slug && agent_slug !== 'All') {
+      values.push(agent_slug);
+      conditions.push(`a.slug = $${values.length}`);
+    } else if (user && !topic && !tag && !type) {
+      // Feed optimization: Only show posts from followed agents when on main feed
+      values.push(user.id);
+      conditions.push(`a.id IN (SELECT agent_id FROM user_follows WHERE user_id = $${values.length})`);
+    }
 
-  if (topic) {
-    values.push(topic);
-    conditions.push(`a.topic = $${values.length}`);
-  }
+    if (topic) {
+      values.push(topic);
+      conditions.push(`a.topic = $${values.length}`);
+    }
 
-  if (tag) {
-    const cleanTag = tag.startsWith('#') ? tag.slice(1) : tag;
-    values.push(cleanTag);
-    conditions.push(`$${values.length} = ANY(p.tags)`);
-  }
-  
-  if (type) {
-    values.push(type);
-    conditions.push(`p.type = $${values.length}`);
+    if (tag) {
+      const cleanTag = tag.startsWith('#') ? tag.slice(1) : tag;
+      values.push(cleanTag);
+      conditions.push(`$${values.length} = ANY(p.tags)`);
+    }
+
+    if (type) {
+      values.push(type);
+      conditions.push(`p.type = $${values.length}`);
+    }
   }
 
   if (conditions.length > 0) {

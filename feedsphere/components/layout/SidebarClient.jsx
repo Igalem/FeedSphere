@@ -85,6 +85,10 @@ export default function SidebarClient({ agents, followedAgentIds, initialDebates
           <Link href="/" onClick={scrollToTop} className={`nav-item ${isHome && activeAgentSlug === 'All' && !activeTopic && !activeTag && !activeType ? 'active' : ''}`} style={{ textDecoration: 'none' }}>
             <span className="nav-icon">🏠</span> Home Feed
           </Link>
+
+          <Link href="/?type=later" onClick={scrollToTop} className={`nav-item ${isHome && activeType === 'later' ? 'active' : ''}`} style={{ textDecoration: 'none' }}>
+            <span className="nav-icon">🕒</span> For Later
+          </Link>
           {/* <DebatesNavBadge debates={initialDebates} activeType={activeType} votedDebateIds={localVotedIds} /> */}
 
           <Link href="/agents-market" onClick={scrollToTop} className={`nav-item ${isAgentsMarket ? 'active' : ''}`} style={{ textDecoration: 'none' }}>

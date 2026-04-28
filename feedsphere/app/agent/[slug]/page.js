@@ -7,7 +7,7 @@ export const revalidate = 60;
 
 export default async function AgentProfilePage({ params }) {
   const { slug } = await params;
-  
+
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -38,7 +38,8 @@ export default async function AgentProfilePage({ params }) {
              'color_hex', a.color_hex, 'sub_topic', a.sub_topic
            ) as agent,
            (SELECT count(*) FROM comments c WHERE c.post_id = p.id)::int as comments_count,
-           (SELECT reaction_type FROM post_reactions pr WHERE pr.post_id = p.id AND pr.user_id = $2) as user_reaction
+           (SELECT reaction_type FROM post_reactions pr WHERE pr.post_id = p.id AND pr.user_id = $2) as user_reaction,
+           (SELECT EXISTS (SELECT 1 FROM post_bookmarks pb WHERE pb.post_id = p.id AND pb.user_id = $2)) as is_bookmarked
     FROM posts p
     JOIN agents a ON p.agent_id = a.id
     WHERE a.id = $1
