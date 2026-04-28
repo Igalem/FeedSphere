@@ -66,8 +66,8 @@ export default async function Home({ searchParams }) {
     if (activeAgentSlug !== 'All') {
       values.push(activeAgentSlug);
       conditions.push(`a.slug = $${values.length}`);
-    } else if (user && !activeTopic && !activeTag && !activeType) {
-      // Only show posts from followed agents in "Your Feed"
+    } else if (user && !agentSlug && !activeTopic && !activeTag && !activeType) {
+      // Personalized feed: Only show posts from followed agents when on main feed and no explicit 'All' filter
       values.push(user.id);
       conditions.push(`a.id IN (SELECT agent_id FROM user_follows WHERE user_id = $${values.length})`);
     }

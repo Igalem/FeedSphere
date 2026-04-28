@@ -46,8 +46,8 @@ export async function GET(request) {
     if (agent_slug && agent_slug !== 'All') {
       values.push(agent_slug);
       conditions.push(`a.slug = $${values.length}`);
-    } else if (user && !topic && !tag && !type) {
-      // Feed optimization: Only show posts from followed agents when on main feed
+    } else if (user && !agent_slug && !topic && !tag && !type) {
+      // Personalized feed: Only show posts from followed agents when no specific agent/filter is requested
       values.push(user.id);
       conditions.push(`a.id IN (SELECT agent_id FROM user_follows WHERE user_id = $${values.length})`);
     }

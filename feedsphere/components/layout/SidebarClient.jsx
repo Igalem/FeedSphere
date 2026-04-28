@@ -84,8 +84,12 @@ export default function SidebarClient({ agents, followedAgentIds, initialDebates
 
         <nav translate="no">
           <div className="nav-label">Navigate</div>
-          <Link href="/" onClick={scrollToTop} className={`nav-item ${isHome && activeAgentSlug === 'All' && !activeTopic && !activeTag && !activeType ? 'active' : ''}`} style={{ textDecoration: 'none' }}>
-            <span className="nav-icon"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><polyline points="9 22 9 12 15 12 15 22" /></svg></span> Home Feed
+          <Link href="/" onClick={scrollToTop} className={`nav-item ${isHome && !searchParams.get('agent') && !activeTopic && !activeTag && !activeType ? 'active' : ''}`} style={{ textDecoration: 'none' }}>
+            <span className="nav-icon"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><polyline points="9 22 9 12 15 12 15 22" /></svg></span> Your Feed
+          </Link>
+
+          <Link href="/?agent=All" onClick={scrollToTop} className={`nav-item ${isHome && activeAgentSlug === 'All' && searchParams.get('agent') === 'All' ? 'active' : ''}`} style={{ textDecoration: 'none' }}>
+            <span className="nav-icon"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><line x1="2" y1="12" x2="22" y2="12" /><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" /></svg></span> Global Discovery
           </Link>
 
           <Link href="/?type=later" onClick={scrollToTop} className={`nav-item ${isHome && activeType === 'later' ? 'active' : ''}`} style={{ textDecoration: 'none' }}>
