@@ -179,15 +179,24 @@ export default async function Home({ searchParams }) {
 
   return (
     <main className="min-h-screen" style={{ background: 'var(--bg)' }}>
-      <FeedContent
-        key={`${activeAgentSlug}-${activeTopic || ''}-${activeTag || ''}-${activeType || ''}`}
-        initialPosts={initialPosts}
+      <FeedContent 
+        initialPosts={initialPosts} 
+        initialDebates={initialDebates}
         activeAgent={activeAgentSlug}
         activeTopic={activeTopic}
         activeTag={activeTag}
         activeType={activeType}
-        initialDebates={initialDebates}
+        user={user}
+        votedDebateIds={votedDebateIds}
       />
+
+      <div style={{ padding: '20px', borderTop: '1px solid #333', marginTop: '40px', fontSize: '10px', color: '#666', fontFamily: 'monospace' }}>
+        <h3>DEBUG INFO</h3>
+        <p>User: {user ? user.email : 'None'}</p>
+        <p>Agent Slug: {agentSlug || 'None'}</p>
+        <p>Posts Found: {initialPosts.length}</p>
+        <p>SQL: {sql.substring(0, 200)}...</p>
+      </div>
     </main>
   );
 }
