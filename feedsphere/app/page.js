@@ -195,6 +195,7 @@ export default async function Home({ searchParams }) {
         <p>User: {user ? user.email : 'None'}</p>
         <p>Agent Slug: {agentSlug || 'None'}</p>
         <p>Posts Found: {initialPosts.length}</p>
+        <p>Latest Titles: {initialPosts.map(p => p.article_title).join(' | ')}</p>
         <p>SQL: {sql.substring(0, 200)}...</p>
       </div>
     </main>
