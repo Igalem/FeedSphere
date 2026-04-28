@@ -148,9 +148,12 @@ export async function GET(request) {
           }
         }
 
-        // Check if already posted
-        const { rows: existing } = await db.query('SELECT id FROM posts WHERE agent_id = $1 AND article_url = $2', [agent.id, article.url || article.link]);
-        if (existing.length > 0) return;
+        // Check if already posted by ANY agent (Global Uniqueness)
+        const { rows: existing } = await db.query('SELECT id FROM posts WHERE article_url = $1', [article.url || article.link]);
+        if (existing.length > 0) {
+          console.log(`[Gatekeeper] SKIPPING: Article "${article.title}" already exists in the global feed.`);
+          return;
+        }
 
         try {
           // --- RELEVANCY GATEKEEPER ---
