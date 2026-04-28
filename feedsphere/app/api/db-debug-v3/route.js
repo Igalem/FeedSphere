@@ -16,7 +16,12 @@ export async function GET() {
       WHERE published_at >= (CURRENT_TIMESTAMP - INTERVAL '120 hours') 
       GROUP BY topic
     `);
-    return NextResponse.json({ agents, topicCounts, timestamp: new Date().toISOString() });
+    const { rows: feedCounts } = await db.query(`
+      SELECT topic, count(*) 
+      FROM rss_feeds 
+      GROUP BY topic
+    `);
+    return NextResponse.json({ agents, topicCounts, feedCounts, timestamp: new Date().toISOString() });
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
