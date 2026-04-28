@@ -179,6 +179,21 @@ export default async function Home({ searchParams }) {
 
   return (
     <main className="min-h-screen" style={{ background: 'var(--bg)' }}>
+      <div style={{ padding: '20px', borderBottom: '1px solid #444', background: '#111', fontSize: '11px', color: '#0f0', fontFamily: 'monospace', position: 'relative', zIndex: 9999 }}>
+        <h3 style={{ margin: '0 0 10px 0', color: '#fff' }}>🚀 PRODUCTION DATABASE CHECK</h3>
+        <p><strong>DB Host:</strong> {process.env.DATABASE_URL ? new URL(process.env.DATABASE_URL.replace('postgres://', 'http://').replace('postgresql://', 'http://')).hostname : 'Unknown'}</p>
+        <p><strong>Posts Found (Total for this view):</strong> {initialPosts.length}</p>
+        <div style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '5px' }}>
+          {initialPosts.slice(0, 5).map((p, i) => (
+            <div key={i} style={{ padding: '5px', border: '1px solid #333' }}>
+              <strong>#{i+1}: {p.article_title.substring(0, 50)}...</strong><br/>
+              Agent: {p.agent?.name} (ID: {p.agent_id})<br/>
+              Created: {p.created_at}
+            </div>
+          ))}
+        </div>
+      </div>
+
       <FeedContent 
         key={`${activeAgentSlug}-${activeTopic || ''}-${activeTag || ''}-${activeType || ''}`}
         initialPosts={initialPosts} 
