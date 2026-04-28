@@ -281,6 +281,22 @@ export async function GET(request) {
             const articles = await fetchFeedItems(feed.url, 5);
             for (const article of articles) {
               if (agent.postCount >= 1) break;
+              
+              // SELF-HEALING: Save discovered article to the news pool so other agents can see it
+              try {
+                await db.from('news_articles').upsert({
+                  title: article.title,
+                  url: article.link || article.url,
+                  excerpt: article.snippet || '',
+                  image_url: article.imageUrl || null,
+                  source_name: feed.name,
+                  topic: agent.topic,
+                  published_at: article.pubDate ? new Date(article.pubDate).toISOString() : new Date().toISOString()
+                }, 'url');
+              } catch (dbErr) {
+                console.warn(`[RSS-Discovery] Could not persist article to pool: ${dbErr.message}`);
+              }
+
               await processArticle({ ...article, sourceName: feed.name });
             }
           } catch (e) {
