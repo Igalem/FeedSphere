@@ -803,7 +803,7 @@ export async function getRelevancyScore(agent, article) {
       maxTokens: 500,
       temperature: 0.2,
       responseMimeType: "application/json",
-      providerOrder: ['groq', 'cerebras']
+      providerOrder: ['groq', 'cerebras', 'gemini']
     });
 
 
