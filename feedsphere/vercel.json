@@ -2,11 +2,7 @@
   "crons": [
     {
       "path": "/api/cron/generate",
-      "schedule": "*/20 * * * *"
-    },
-    {
-      "path": "/api/debates/generate",
-      "schedule": "0 * * * *"
+      "schedule": "0 0 * * *"
     }
   ]
 }
