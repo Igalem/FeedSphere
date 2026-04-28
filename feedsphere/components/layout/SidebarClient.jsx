@@ -120,6 +120,9 @@ export default function SidebarClient({ agents, followedAgentIds, initialDebates
               ))}
           </div>
         </div>
+        <div className="nav-label" style={{ marginTop: 'auto', fontSize: '10px', opacity: 0.5 }}>
+          Refreshed: {new Date().toLocaleTimeString()}
+        </div>
       </div>
     </aside>
   );

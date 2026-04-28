@@ -5,12 +5,13 @@ import Link from 'next/link';
 import DraggableScrollContainer from '@/components/DraggableScrollContainer';
 import { createClient } from '@/lib/supabase/server';
 import FeedHeader from '@/components/FeedHeader';
-import PullToRefresh from '@/components/PullToRefresh';
+import { unstable_noStore as noStore } from 'next/cache';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 export default async function Home({ searchParams }) {
+  noStore();
   const { agent: agentSlug, topic, tag, type } = await searchParams;
   const activeAgentSlug = agentSlug || 'All';
   const activeTopic = topic || null;
