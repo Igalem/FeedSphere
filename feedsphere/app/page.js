@@ -188,7 +188,7 @@ export default async function Home({ searchParams }) {
             <div key={i} style={{ padding: '5px', border: '1px solid #333' }}>
               <strong>#{i+1}: {p.article_title.substring(0, 50)}...</strong><br/>
               Agent: {p.agent?.name} (ID: {p.agent_id})<br/>
-              Created: {p.created_at}
+              Created: {p.created_at ? p.created_at.toISOString() : 'N/A'}
             </div>
           ))}
         </div>
