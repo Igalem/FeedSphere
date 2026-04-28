@@ -607,16 +607,16 @@ export default function PostCard({ post }) {
 
 
       <div className="post-actions" translate="no">
-        <button className={`action-btn reaction-btn ${userReaction === 'fire' ? 'liked' : ''}`} onClick={() => handleReact('fire')}>
+        <button className={`action-btn reaction-btn ${userReaction === 'fire' ? 'liked' : ''}`} onClick={() => handleReact('fire')} style={{ color: reactions.fire > 0 ? 'var(--accent)' : 'inherit' }}>
           🔥 <span className="btn-label">Fire</span> {reactions.fire || 0}
         </button>
-        <button className={`action-btn reaction-btn ${userReaction === 'brain' ? 'liked' : ''}`} onClick={() => handleReact('brain')}>
+        <button className={`action-btn reaction-btn ${userReaction === 'brain' ? 'liked' : ''}`} onClick={() => handleReact('brain')} style={{ color: reactions.brain > 0 ? 'var(--accent)' : 'inherit' }}>
           🧠 <span className="btn-label">Brain</span> {reactions.brain || 0}
         </button>
-        <button className={`action-btn reaction-btn ${userReaction === 'cold' ? 'liked' : ''}`} onClick={() => handleReact('cold')}>
+        <button className={`action-btn reaction-btn ${userReaction === 'cold' ? 'liked' : ''}`} onClick={() => handleReact('cold')} style={{ color: reactions.cold > 0 ? 'var(--accent)' : 'inherit' }}>
           🧊 <span className="btn-label">Cold</span> {reactions.cold || 0}
         </button>
-        <button className={`action-btn reaction-btn ${userReaction === 'spot_on' ? 'liked' : ''}`} onClick={() => handleReact('spot_on')}>
+        <button className={`action-btn reaction-btn ${userReaction === 'spot_on' ? 'liked' : ''}`} onClick={() => handleReact('spot_on')} style={{ color: reactions.spot_on > 0 ? 'var(--accent)' : 'inherit' }}>
           🎯 <span className="btn-label">Spot On</span> {reactions.spot_on || 0}
         </button>
 
@@ -625,14 +625,14 @@ export default function PostCard({ post }) {
         <button
           className="action-btn comment-btn"
           onClick={toggleComments}
-          style={{ color: totalComments > 0 ? '#e8ff47' : 'inherit' }}
+          style={{ color: totalComments > 0 ? 'var(--accent)' : 'inherit' }}
         >
-          💬 <span className="btn-label">Comment</span> {totalComments}
+          💬 <span className="btn-label">Comments</span> {totalComments}
         </button>
-        <button className={`action-btn mobile-hide ${bookmarked ? 'bookmarked' : ''}`} onClick={() => setBookmarked(!bookmarked)}>
+        <button className={`action-btn mobile-hide ${bookmarked ? 'bookmarked' : ''}`} onClick={() => setBookmarked(!bookmarked)} style={{ color: bookmarked ? 'var(--accent)' : 'inherit' }}>
           🔖 <span className="btn-label">Book</span>
         </button>
-        <button className="action-btn mobile-hide" onClick={handleCopyId}>↗️</button>
+        <button className="action-btn mobile-hide" onClick={handleCopyId} style={{ color: 'var(--accent)' }}>↗️</button>
       </div>
 
       <div className={`comments-section ${commentsOpen ? 'open' : ''}`} style={{ marginTop: '16px', borderTop: '1px solid #ffffff10', paddingTop: '16px' }}>

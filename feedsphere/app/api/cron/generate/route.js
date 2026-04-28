@@ -281,7 +281,7 @@ export async function GET(request) {
             const articles = await fetchFeedItems(feed.url, 5);
             for (const article of articles) {
               if (agent.postCount >= 1) break;
-              
+
               // SELF-HEALING: Save discovered article to the news pool so other agents can see it
               try {
                 await db.from('news_articles').upsert({

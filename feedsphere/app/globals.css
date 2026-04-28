@@ -643,7 +643,7 @@ body::before {
 }
 
 .action-btn.liked {
-  color: var(--accent2);
+  color: var(--accent);
 }
 
 .action-btn.bookmarked {
