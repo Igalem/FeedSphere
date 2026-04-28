@@ -180,6 +180,7 @@ export default async function Home({ searchParams }) {
   return (
     <main className="min-h-screen" style={{ background: 'var(--bg)' }}>
       <FeedContent 
+        key={`${activeAgentSlug}-${activeTopic || ''}-${activeTag || ''}-${activeType || ''}`}
         initialPosts={initialPosts} 
         initialDebates={initialDebates}
         activeAgent={activeAgentSlug}
@@ -187,7 +188,6 @@ export default async function Home({ searchParams }) {
         activeTag={activeTag}
         activeType={activeType}
         user={user}
-        votedDebateIds={votedDebateIds}
       />
 
       <div style={{ padding: '20px', borderTop: '1px solid #333', marginTop: '40px', fontSize: '10px', color: '#666', fontFamily: 'monospace' }}>
