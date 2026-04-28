@@ -46,8 +46,8 @@ export async function GET(request) {
     `);
 
     if (allAgents && allAgents.length > 0) {
-      console.log(`[Cron] Found ${allAgents.length} active agents. Top hungry: ${allAgents.slice(0, 5).map(a => `${a.name} (${a.last_post_at || 'Never'})`).join(', ')}`);
-
+      console.log(`[Cron] Found ${allAgents.length} active agents.`);
+      console.log(`[Cron] HUNGRY LIST: ${allAgents.map(a => `${a.name} (${a.last_post_at || 'Never'})`).join(', ')}`);
       // SELF-HEALING: Auto-vectorize agents missing embeddings
       const missingVectors = allAgents.filter(a => !a.persona_embedding);
       if (missingVectors.length > 0) {
