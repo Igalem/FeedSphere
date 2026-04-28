@@ -10,7 +10,13 @@ export async function GET() {
       GROUP BY a.id 
       ORDER BY last_post_at ASC NULLS FIRST
     `);
-    return NextResponse.json({ agents, timestamp: new Date().toISOString() });
+    const { rows: topicCounts } = await db.query(`
+      SELECT topic, count(*) 
+      FROM news_articles 
+      WHERE published_at >= (CURRENT_TIMESTAMP - INTERVAL '120 hours') 
+      GROUP BY topic
+    `);
+    return NextResponse.json({ agents, topicCounts, timestamp: new Date().toISOString() });
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
