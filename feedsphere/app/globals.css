@@ -625,22 +625,55 @@ body::before {
 .action-btn {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 7px 12px;
+  gap: 8px;
+  padding: 7px 10px;
   border-radius: 8px;
   border: none;
   background: transparent;
-  color: var(--muted);
+  color: rgb(201, 201, 201);
   font-size: 13px;
   font-family: 'DM Sans', sans-serif;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.action-btn:hover {
-  background: var(--surface2);
-  color: var(--text);
+.btn-label {
+  display: none;
+  margin-right: 4px;
 }
+
+.comment-btn .btn-label {
+  display: inline !important;
+}
+
+.later-btn .btn-label,
+.mobile-hide .btn-label {
+  display: none !important;
+}
+
+.comment-btn {
+  padding: 7px 12px !important;
+}
+
+.later-btn,
+.mobile-hide {
+  padding: 7px 10px !important;
+  gap: 0 !important;
+}
+
+@media (hover: hover) and (min-width: 1025px) {
+  .action-btn:hover {
+    background: var(--surface2);
+    color: var(--text);
+    gap: 8px;
+    padding: 7px 12px;
+  }
+
+  .action-btn:hover .btn-label {
+    display: inline;
+  }
+}
+
 
 .action-btn.liked {
   color: var(--accent);
@@ -2005,12 +2038,16 @@ body::before {
   }
 
   .action-btn {
-    padding: 6px 6px;
+    padding: 8px 10px;
     font-size: 16px;
   }
 
   .btn-label {
-    display: none;
+    display: none !important;
+  }
+
+  .comment-btn .btn-label {
+    display: none !important;
   }
 
   .post-agent-name {
@@ -2058,28 +2095,37 @@ body::before {
 
   .post-actions {
     gap: 2px;
-    justify-content: space-between;
+    padding: 10px 0;
+    justify-content: flex-start;
   }
 
   .post-actions .action-sep {
-    display: none;
-    /* Remove the spacer, we use justify-content instead */
-  }
-
-  .comment-btn {
-    order: 2;
-    /* Far right */
-    margin-left: auto;
-    /* Push fully to the right */
+    flex: 1;
   }
 
   .reaction-btn {
-    order: 1;
-    /* Left side */
+    padding: 8px 4px !important;
+    min-width: unset !important;
+  }
+
+  .comment-btn,
+  .later-btn {
+    padding: 8px 8px !important;
+    order: unset !important;
+    margin-left: 0 !important;
+  }
+
+  .later-btn {
+    padding-right: 0 !important;
   }
 
   .mobile-hide {
     display: none !important;
+  }
+
+  .post-actions .btn-icon {
+    width: 22px !important;
+    height: 22px !important;
   }
 
   /* Discover Page Mobile Styling */

@@ -633,19 +633,19 @@ export default function PostCard({ post, onUnbookmark }) {
 
 
       <div className="post-actions" translate="no">
-        <button className={`action-btn reaction-btn ${userReaction === 'fire' ? 'liked' : ''}`} onClick={() => handleReact('fire')} style={{ color: userReaction === 'fire' ? 'var(--accent)' : '#fff' }}>
+        <button className={`action-btn reaction-btn ${userReaction === 'fire' ? 'liked' : ''}`} onClick={() => handleReact('fire')} style={{ color: userReaction === 'fire' ? 'var(--accent)' : 'rgb(201, 201, 201)' }}>
           <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="btn-icon"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" /></svg>
           <span className="btn-label">Love</span> {reactions.fire || 0}
         </button>
-        <button className={`action-btn reaction-btn ${userReaction === 'brain' ? 'liked' : ''}`} onClick={() => handleReact('brain')} style={{ color: userReaction === 'brain' ? 'var(--accent)' : '#fff' }}>
+        <button className={`action-btn reaction-btn ${userReaction === 'brain' ? 'liked' : ''}`} onClick={() => handleReact('brain')} style={{ color: userReaction === 'brain' ? 'var(--accent)' : 'rgb(201, 201, 201)' }}>
           <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="btn-icon"><circle cx="12" cy="12" r="10" /><path d="M8 13c0 2.2 1.8 4 4 4s4-1.8 4-4" /><path d="M9 9h.01" /><path d="M15 9h.01" /></svg>
           <span className="btn-label">LoL</span> {reactions.brain || 0}
         </button>
-        <button className={`action-btn reaction-btn ${userReaction === 'cold' ? 'liked' : ''}`} onClick={() => handleReact('cold')} style={{ color: userReaction === 'cold' ? 'var(--accent)' : '#fff' }}>
+        <button className={`action-btn reaction-btn ${userReaction === 'cold' ? 'liked' : ''}`} onClick={() => handleReact('cold')} style={{ color: userReaction === 'cold' ? 'var(--accent)' : 'rgb(201, 201, 201)' }}>
           <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="btn-icon"><circle cx="12" cy="12" r="10" /><path d="M16 16s-1.5-2-4-2-4 2-4 2" /><path d="M9 9h.01" /><path d="M15 9h.01" /></svg>
           <span className="btn-label">Sad</span> {reactions.cold || 0}
         </button>
-        <button className={`action-btn reaction-btn ${userReaction === 'spot_on' ? 'liked' : ''}`} onClick={() => handleReact('spot_on')} style={{ color: userReaction === 'spot_on' ? 'var(--accent)' : '#fff' }}>
+        <button className={`action-btn reaction-btn ${userReaction === 'spot_on' ? 'liked' : ''}`} onClick={() => handleReact('spot_on')} style={{ color: userReaction === 'spot_on' ? 'var(--accent)' : 'rgb(201, 201, 201)' }}>
           <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="btn-icon"><circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="6" /><circle cx="12" cy="12" r="2" /></svg>
           <span className="btn-label">Spot On</span> {reactions.spot_on || 0}
         </button>
@@ -655,16 +655,16 @@ export default function PostCard({ post, onUnbookmark }) {
         <button
           className="action-btn comment-btn"
           onClick={toggleComments}
-          style={{ color: totalComments > 0 ? 'var(--accent)' : '#fff' }}
+          style={{ color: totalComments > 0 ? 'var(--accent)' : 'rgb(201, 201, 201)' }}
         >
           <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="btn-icon"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z" /></svg>
           <span className="btn-label">Comments</span> {totalComments}
         </button>
-        <button className={`action-btn ${bookmarked ? 'bookmarked' : ''}`} onClick={handleBookmark} style={{ color: bookmarked ? 'var(--accent)' : '#fff' }}>
+        <button className={`action-btn later-btn ${bookmarked ? 'bookmarked' : ''}`} onClick={handleBookmark} style={{ color: bookmarked ? 'var(--accent)' : 'rgb(201, 201, 201)' }}>
           <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="btn-icon"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
           <span className="btn-label">Later</span>
         </button>
-        <button className="action-btn mobile-hide" onClick={handleCopyId} style={{ color: '#fff' }}>
+        <button className="action-btn mobile-hide" onClick={handleCopyId} style={{ color: 'rgb(201, 201, 201)' }}>
           <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="btn-icon"><path d="M7 17L17 7" /><polyline points="7 7 17 7 17 17" /></svg>
         </button>
       </div>
