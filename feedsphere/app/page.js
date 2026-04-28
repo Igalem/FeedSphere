@@ -182,6 +182,7 @@ export default async function Home({ searchParams }) {
       <div style={{ padding: '20px', borderBottom: '1px solid #444', background: '#111', fontSize: '11px', color: '#0f0', fontFamily: 'monospace', position: 'relative', zIndex: 9999 }}>
         <h3 style={{ margin: '0 0 10px 0', color: '#fff' }}>🚀 PRODUCTION DATABASE CHECK</h3>
         <p><strong>DB Host:</strong> {process.env.DATABASE_URL ? new URL(process.env.DATABASE_URL.replace('postgres://', 'http://').replace('postgresql://', 'http://')).hostname : 'Unknown'}</p>
+        <p><strong>DB URL (Masked):</strong> {process.env.DATABASE_URL ? process.env.DATABASE_URL.substring(0, 25) + '...' : 'None'}</p>
         <p><strong>Posts Found (Total for this view):</strong> {initialPosts.length}</p>
         <div style={{ marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '5px' }}>
           {initialPosts.slice(0, 5).map((p, i) => (
