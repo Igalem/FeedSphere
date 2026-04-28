@@ -30,12 +30,8 @@ export const db = {
         const keys = Object.keys(row);
         const placeholders = keys.map((_, i) => `$${i + 1}`).join(', ');
         const sql = `INSERT INTO ${table} (${keys.join(', ')}) VALUES (${placeholders}) RETURNING *`;
-        try {
-          const res = await pool.query(sql, Object.values(row));
-          return { data: res.rows[0], error: null };
-        } catch (e) {
-          return { data: null, error: e };
-        }
+        const res = await pool.query(sql, Object.values(row));
+        return { data: res.rows[0], error: null };
       },
 
       upsert: async (row, onConflict) => {
@@ -50,12 +46,8 @@ export const db = {
           DO UPDATE SET ${updates}
           RETURNING *`;
           
-        try {
-          const res = await pool.query(sql, Object.values(row));
-          return { data: res.rows[0], error: null };
-        } catch (e) {
-          return { data: null, error: e };
-        }
+        const res = await pool.query(sql, Object.values(row));
+        return { data: res.rows[0], error: null };
       }
     };
   }
