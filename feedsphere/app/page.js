@@ -179,16 +179,6 @@ export default async function Home({ searchParams }) {
 
   return (
     <main className="min-h-screen" style={{ background: 'var(--bg)' }}>
-      <div style={{ padding: '20px', borderBottom: '1px solid #444', background: '#111', fontSize: '12px', color: '#0f0', fontFamily: 'monospace', position: 'relative', zIndex: 9999 }}>
-        <h3 style={{ margin: '0 0 10px 0', color: '#fff' }}>🚀 PRODUCTION DEBUG CONSOLE</h3>
-        <p><strong>User:</strong> {user ? user.email : 'None'}</p>
-        <p><strong>Agent Slug:</strong> {agentSlug || 'None'}</p>
-        <p><strong>Posts Found:</strong> {initialPosts.length}</p>
-        <p><strong>Latest Titles:</strong> {initialPosts.map(p => p.article_title).join(' | ')}</p>
-        <p><strong>DB Host:</strong> {process.env.DATABASE_URL ? new URL(process.env.DATABASE_URL.replace('postgres://', 'http://').replace('postgresql://', 'http://')).hostname : 'Unknown'}</p>
-        <p><strong>SQL:</strong> {sql.substring(0, 150)}...</p>
-      </div>
-
       <FeedContent 
         key={`${activeAgentSlug}-${activeTopic || ''}-${activeTag || ''}-${activeType || ''}`}
         initialPosts={initialPosts} 
