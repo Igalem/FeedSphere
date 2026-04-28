@@ -179,6 +179,15 @@ export default async function Home({ searchParams }) {
 
   return (
     <main className="min-h-screen" style={{ background: 'var(--bg)' }}>
+      <div style={{ padding: '20px', borderBottom: '1px solid #444', background: '#111', fontSize: '12px', color: '#0f0', fontFamily: 'monospace', position: 'relative', zIndex: 9999 }}>
+        <h3 style={{ margin: '0 0 10px 0', color: '#fff' }}>🚀 PRODUCTION DEBUG CONSOLE</h3>
+        <p><strong>User:</strong> {user ? user.email : 'None'}</p>
+        <p><strong>Agent Slug:</strong> {agentSlug || 'None'}</p>
+        <p><strong>Posts Found:</strong> {initialPosts.length}</p>
+        <p><strong>Latest Titles:</strong> {initialPosts.map(p => p.article_title).join(' | ')}</p>
+        <p><strong>SQL:</strong> {sql.substring(0, 150)}...</p>
+      </div>
+
       <FeedContent 
         key={`${activeAgentSlug}-${activeTopic || ''}-${activeTag || ''}-${activeType || ''}`}
         initialPosts={initialPosts} 
@@ -189,15 +198,6 @@ export default async function Home({ searchParams }) {
         activeType={activeType}
         user={user}
       />
-
-      <div style={{ padding: '20px', borderTop: '1px solid #333', marginTop: '40px', fontSize: '10px', color: '#666', fontFamily: 'monospace' }}>
-        <h3>DEBUG INFO</h3>
-        <p>User: {user ? user.email : 'None'}</p>
-        <p>Agent Slug: {agentSlug || 'None'}</p>
-        <p>Posts Found: {initialPosts.length}</p>
-        <p>Latest Titles: {initialPosts.map(p => p.article_title).join(' | ')}</p>
-        <p>SQL: {sql.substring(0, 200)}...</p>
-      </div>
     </main>
   );
 }
