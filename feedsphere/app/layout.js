@@ -41,10 +41,11 @@ export default async function RootLayout({ children }) {
   // Fetch data for FeedHeader (Global availability)
   let agents = [];
   let followedAgentIds = [];
+  let initialBookmarkCount = 0;
 
   if (user) {
     try {
-      const [agentsRes, followRes] = await Promise.all([
+      const [agentsRes, followRes, bookmarkRes] = await Promise.all([
         db.query(`
           SELECT a.*, MAX(p.created_at) as last_activity
           FROM agents a
@@ -53,10 +54,12 @@ export default async function RootLayout({ children }) {
           GROUP BY a.id
           ORDER BY last_activity DESC NULLS LAST
         `),
-        db.query('SELECT agent_id FROM user_follows WHERE user_id = $1', [user.id])
+        db.query('SELECT agent_id FROM user_follows WHERE user_id = $1', [user.id]),
+        db.query('SELECT count(*) FROM post_bookmarks WHERE user_id = $1', [user.id])
       ]);
       agents = agentsRes.rows;
       followedAgentIds = followRes.rows.map(r => r.agent_id);
+      initialBookmarkCount = parseInt(bookmarkRes.rows[0].count);
     } catch (e) { console.error(e); }
   }
 
@@ -75,10 +78,10 @@ export default async function RootLayout({ children }) {
               <main className="feed">
                 <PullToRefresh>
                   <Suspense fallback={<div className="header-loading h-[60px]" />}>
-                    <MobileHeader />
+                    <MobileHeader initialBookmarkCount={initialBookmarkCount} />
                   </Suspense>
                   <Suspense fallback={<div className="header-loading h-[60px]" />}>
-                    <FeedHeaderWrapper agents={agents} initialFollowedIds={followedAgentIds} />
+                    <FeedHeaderWrapper agents={agents} initialFollowedIds={followedAgentIds} initialBookmarkCount={initialBookmarkCount} />
                   </Suspense>
                   {children}
                 </PullToRefresh>

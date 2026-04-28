@@ -2,11 +2,9 @@ import { db } from '@/lib/db';
 import { createClient } from '@/lib/supabase/server';
 import MobileHeaderClient from './MobileHeaderClient';
 
-export default async function MobileHeader() {
+export default async function MobileHeader({ initialBookmarkCount: propCount }) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-
-
 
   // Fetch initial debates
   let initialDebates = [];
@@ -24,16 +22,21 @@ export default async function MobileHeader() {
 
   // Per-user notification data
   let votedDebateIds = [];
+  let initialBookmarkCount = propCount || 0;
 
-  if (user) {
+  if (user && propCount === undefined) {
     try {
-      const voteRes = await db.query(
-        'SELECT debate_id FROM debate_votes WHERE user_id = $1',
-        [user.id]
-      );
+      const [voteRes, bookmarkRes] = await Promise.all([
+        db.query('SELECT debate_id FROM debate_votes WHERE user_id = $1', [user.id]),
+        db.query('SELECT count(*) FROM post_bookmarks WHERE user_id = $1', [user.id])
+      ]);
       votedDebateIds = voteRes.rows.map(r => r.debate_id);
-
-
+      initialBookmarkCount = parseInt(bookmarkRes.rows[0].count);
+    } catch (e) { console.error('User meta fetch error:', e); }
+  } else if (user) {
+    try {
+      const voteRes = await db.query('SELECT debate_id FROM debate_votes WHERE user_id = $1', [user.id]);
+      votedDebateIds = voteRes.rows.map(r => r.debate_id);
     } catch (e) { console.error('User meta fetch error:', e); }
   }
 
@@ -42,6 +45,7 @@ export default async function MobileHeader() {
       initialDebates={initialDebates}
       user={user}
       votedDebateIds={votedDebateIds}
+      initialBookmarkCount={initialBookmarkCount}
     />
   );
 }

@@ -56,7 +56,9 @@ export default function SidebarClient({ agents, followedAgentIds, initialDebates
   return (
     <aside className="sidebar">
       <div className="logo" translate="no">
-        <div className="logo-mark">⚡</div>
+        <div className="logo-mark">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="var(--accent)"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" /></svg>
+        </div>
         <div className="logo-text">Feed<span>Sphere</span></div>
       </div>
 
@@ -75,7 +77,7 @@ export default function SidebarClient({ agents, followedAgentIds, initialDebates
         ) : (
           <div className="user-profile-section" translate="no">
             <Link href="/login" onClick={scrollToTop} className={`nav-item ${isLogin ? 'active' : ''}`} style={{ textDecoration: 'none', marginBottom: '8px' }}>
-              <span className="nav-icon">🔑</span> Sign In
+              <span className="nav-icon"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><path d="M12 2v20" /><path d="M2 12h20" /><path d="m4.93 4.93 14.14 14.14" /><path d="m4.93 19.07 14.14-14.14" /></svg></span> Sign In
             </Link>
           </div>
         )}
@@ -83,16 +85,16 @@ export default function SidebarClient({ agents, followedAgentIds, initialDebates
         <nav translate="no">
           <div className="nav-label">Navigate</div>
           <Link href="/" onClick={scrollToTop} className={`nav-item ${isHome && activeAgentSlug === 'All' && !activeTopic && !activeTag && !activeType ? 'active' : ''}`} style={{ textDecoration: 'none' }}>
-            <span className="nav-icon">🏠</span> Home Feed
+            <span className="nav-icon"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><polyline points="9 22 9 12 15 12 15 22" /></svg></span> Home Feed
           </Link>
 
           <Link href="/?type=later" onClick={scrollToTop} className={`nav-item ${isHome && activeType === 'later' ? 'active' : ''}`} style={{ textDecoration: 'none' }}>
-            <span className="nav-icon">🕒</span> For Later
+            <span className="nav-icon"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg></span> For Later
           </Link>
           {/* <DebatesNavBadge debates={initialDebates} activeType={activeType} votedDebateIds={localVotedIds} /> */}
 
           <Link href="/agents-market" onClick={scrollToTop} className={`nav-item ${isAgentsMarket ? 'active' : ''}`} style={{ textDecoration: 'none' }}>
-            <span className="nav-icon">🤖</span> Agents Market
+            <span className="nav-icon"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="7" height="7" x="3" y="3" rx="1" /><rect width="7" height="7" x="14" y="3" rx="1" /><rect width="7" height="7" x="14" y="14" rx="1" /><rect width="7" height="7" x="3" y="14" rx="1" /></svg></span> Agents Market
           </Link>
         </nav>
 
