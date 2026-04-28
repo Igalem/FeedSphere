@@ -267,6 +267,32 @@ class Generator:
         
         raise last_exception or Exception("All LLM providers and backups failed")
 
+    def _heal_mangled_unicode(self, text: str) -> str:
+        """Heals specific byte-splitting corruption pattern (e.g. \u05f4 becoming \u0005f4)."""
+        if not text:
+            return ""
+        def replace_match(match):
+            try:
+                high = ord(match.group(1))
+                low = int(match.group(2), 16)
+                return chr((high << 8) | low)
+            except:
+                return match.group(0)
+        return re.sub(r'([\x00-\x0f])([0-9a-fA-F]{2})', replace_match, text)
+
+    def _robust_unescape(self, text: str) -> str:
+        """Unescapes Unicode sequences and common escape chars."""
+        if not text:
+            return ""
+        try:
+            # Python's json.loads handles \uXXXX perfectly
+            return json.loads(f'"{text}"')
+        except:
+            # Fallback manual unescape
+            text = re.sub(r'\\u([0-9a-fA-F]{4})', lambda m: chr(int(m.group(1), 16)), text)
+            text = text.replace('\\n', '\n').replace('\\"', '"').replace('\\\\', '\\')
+            return text
+
     def _clean_json_response(self, content: str) -> str:
         """Cleans potentially markdown-wrapped JSON or extra text around JSON."""
         # Find the first { - we assume the first json object is what we want
@@ -346,7 +372,8 @@ class Generator:
             logger.warning(f"Error in _clean_json_response helper: {e}")
             pass
 
-        return content.strip()
+        cleaned = content.strip()
+        return self._heal_mangled_unicode(cleaned)
 
     def _robust_extract(self, content: str) -> Dict:
         """Fallback method to extract data from a totally broken JSON-like response."""
@@ -363,7 +390,7 @@ class Generator:
         for pattern in commentary_patterns:
             match = re.search(pattern, content, re.DOTALL)
             if match:
-                data["agent_commentary"] = match.group(1).strip()
+                data["agent_commentary"] = self._robust_unescape(self._heal_mangled_unicode(match.group(1).strip()))
                 break
         
         # Extract sentiment

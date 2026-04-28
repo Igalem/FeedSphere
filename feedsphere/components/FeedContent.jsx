@@ -14,11 +14,7 @@ export default function FeedContent({ initialPosts, activeAgent, activeTopic, ac
   );
   const loadingRef = useRef(false);
 
-  useEffect(() => {
-    if (activeType === 'debate') {
-      fetch('/api/users/seen-perspectives', { method: 'POST' }).catch(console.error);
-    }
-  }, [activeType]);
+
 
   const isDebateMode = activeType === 'debate';
   const isHomeFeed = !activeType || activeType === 'all';

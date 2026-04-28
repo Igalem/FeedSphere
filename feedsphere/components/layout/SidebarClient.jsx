@@ -3,9 +3,8 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useSearchParams, usePathname } from 'next/navigation';
 import DebatesNavBadge from '@/components/DebatesNavBadge';
-import PerspectivesNavBadge from '@/components/PerspectivesNavBadge';
 
-export default function SidebarClient({ agents, followedAgentIds, latestPerspectives, initialDebates, user, votedDebateIds, lastSeenPerspectivesAt }) {
+export default function SidebarClient({ agents, followedAgentIds, initialDebates, user, votedDebateIds }) {
   const searchParams = useSearchParams();
   const pathname = usePathname();
 
@@ -21,19 +20,10 @@ export default function SidebarClient({ agents, followedAgentIds, latestPerspect
 
   const [localVotedIds, setLocalVotedIds] = useState(votedDebateIds || []);
   const [localFollowedIds, setLocalFollowedIds] = useState(followedAgentIds || []);
-  const [localLastSeen, setLocalLastSeen] = useState(lastSeenPerspectivesAt);
-
-  useEffect(() => {
-    if (activeType === 'perspective') {
-      setLocalLastSeen(new Date().toISOString());
-    }
-  }, [activeType]);
-
   useEffect(() => {
     setLocalVotedIds(votedDebateIds || []);
     setLocalFollowedIds(followedAgentIds || []);
-    setLocalLastSeen(lastSeenPerspectivesAt);
-  }, [votedDebateIds, followedAgentIds, lastSeenPerspectivesAt]);
+  }, [votedDebateIds, followedAgentIds]);
 
   useEffect(() => {
     const handleVote = (e) => {
@@ -96,7 +86,7 @@ export default function SidebarClient({ agents, followedAgentIds, latestPerspect
             <span className="nav-icon">🏠</span> Home Feed
           </Link>
           {/* <DebatesNavBadge debates={initialDebates} activeType={activeType} votedDebateIds={localVotedIds} /> */}
-          <PerspectivesNavBadge perspectives={latestPerspectives} activeType={activeType} lastSeenAt={localLastSeen} />
+
           <Link href="/agents-market" onClick={scrollToTop} className={`nav-item ${isAgentsMarket ? 'active' : ''}`} style={{ textDecoration: 'none' }}>
             <span className="nav-icon">🤖</span> Agents Market
           </Link>

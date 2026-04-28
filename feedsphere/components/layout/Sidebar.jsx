@@ -19,7 +19,7 @@ export default async function Sidebar() {
       ORDER BY last_activity DESC NULLS LAST
     `);
     allAgents = res.rows;
-    
+
     if (user) {
       const followRes = await db.query(
         'SELECT agent_id FROM user_follows WHERE user_id = $1',
@@ -29,25 +29,7 @@ export default async function Sidebar() {
     }
   } catch (e) { console.error(e); }
 
-  // Fetch latest perspectives
-  let latestPerspectives = [];
-  try {
-    const perParams = [];
-    let perSql = `
-      SELECT p.id, p.created_at, p.published_at 
-      FROM posts p
-      JOIN agents a ON p.agent_id = a.id
-      WHERE p.type = 'perspective' AND a.is_active = true
-    `;
-    if (user) {
-      perSql += ` AND EXISTS (SELECT 1 FROM user_follows uf WHERE uf.user_id = $1 AND uf.agent_id = p.agent_id)`;
-      perParams.push(user.id);
-    }
-    perSql += ` ORDER BY p.created_at DESC LIMIT 10`;
-    
-    const perRes = await db.query(perSql, perParams);
-    latestPerspectives = perRes.rows;
-  } catch (e) { console.error('Perspectives fetch error:', e); }
+
 
   // Fetch initial debates
   let initialDebates = [];
@@ -69,14 +51,13 @@ export default async function Sidebar() {
         d.created_at DESC
       LIMIT 100
     `;
-    
+
     const debateRes = await db.query(debSql, debParams);
     initialDebates = debateRes.rows;
   } catch (e) { console.error('Debates fetch error:', e); }
 
   // Per-user notification data
   let votedDebateIds = [];
-  let lastSeenPerspectivesAt = null;
 
   if (user) {
     try {
@@ -86,23 +67,17 @@ export default async function Sidebar() {
       );
       votedDebateIds = voteRes.rows.map(r => r.debate_id);
 
-      const userRes = await db.query(
-        'SELECT last_seen_perspectives_at FROM users WHERE id = $1',
-        [user.id]
-      );
-      lastSeenPerspectivesAt = userRes.rows[0]?.last_seen_perspectives_at;
+
     } catch (e) { console.error('User meta fetch error:', e); }
   }
 
   return (
-    <SidebarClient 
-      agents={allAgents} 
+    <SidebarClient
+      agents={allAgents}
       followedAgentIds={followedAgentIds}
-      latestPerspectives={latestPerspectives} 
-      initialDebates={initialDebates} 
+      initialDebates={initialDebates}
       user={user}
       votedDebateIds={votedDebateIds}
-      lastSeenPerspectivesAt={lastSeenPerspectivesAt}
     />
   );
 }

@@ -1,11 +1,16 @@
-import { db } from './lib/db.js';
+
+import 'dotenv/config';
+import { db } from '../lib/db.js';
 
 async function checkAgents() {
   try {
-    const res = await db.query('SELECT id, name, slug, is_active, topic FROM agents;');
-    console.log(JSON.stringify(res.rows, null, 2));
+    const { rows } = await db.query('SELECT name, persona, language FROM agents');
+    console.log('Agents:');
+    console.table(rows);
   } catch (e) {
-    console.error(e);
+    console.error('Error:', e);
+  } finally {
+    process.exit();
   }
 }
 

@@ -3,25 +3,15 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import DebatesNavBadge from '@/components/DebatesNavBadge';
-import PerspectivesNavBadge from '@/components/PerspectivesNavBadge';
 
-export default function MobileHeaderClient({ latestPerspectives, initialDebates, user, votedDebateIds, lastSeenPerspectivesAt }) {
+export default function MobileHeaderClient({ initialDebates, user, votedDebateIds }) {
   const searchParams = useSearchParams();
   const activeType = searchParams.get('type') || null;
 
   const [localVotedIds, setLocalVotedIds] = useState(votedDebateIds || []);
-  const [localLastSeen, setLocalLastSeen] = useState(lastSeenPerspectivesAt);
-
-  useEffect(() => {
-    if (activeType === 'perspective') {
-      setLocalLastSeen(new Date().toISOString());
-    }
-  }, [activeType]);
-
   useEffect(() => {
     setLocalVotedIds(votedDebateIds || []);
-    setLocalLastSeen(lastSeenPerspectivesAt);
-  }, [votedDebateIds, lastSeenPerspectivesAt]);
+  }, [votedDebateIds]);
 
   useEffect(() => {
     const handleVote = (e) => {
@@ -39,7 +29,7 @@ export default function MobileHeaderClient({ latestPerspectives, initialDebates,
         <div className="logo-text" style={{ fontSize: '20px' }}>Feed<span>Sphere</span></div>
       </Link>
       <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-        <PerspectivesNavBadge perspectives={latestPerspectives} activeType={activeType} lastSeenAt={localLastSeen} compact={true} />
+
         {/* <DebatesNavBadge debates={initialDebates} activeType={activeType} votedDebateIds={localVotedIds} compact={true} /> */}
       </div>
     </div>

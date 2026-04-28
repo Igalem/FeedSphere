@@ -320,7 +320,6 @@ function cleanLLMResponse(content) {
     .replace(/<think>[\s\S]*?<\/think>/g, '')
     .replace(/<think>[\s\S]*/g, '')
     .replace(/```json\s*/g, '')
-    .replace(/```\s*/g, '')
     .trim();
 
   // Translated keys fallback
@@ -341,7 +340,35 @@ function cleanLLMResponse(content) {
     }
   }
 
-  return cleaned;
+  // Healer for the specific byte-splitting corruption pattern (e.g., \u05f4 becoming \u0005f4)
+  const healed = final.replace(/([\u0000-\u000F])([0-9a-fA-F]{2})/g, (match, highChar, lowHex) => {
+    const high = highChar.charCodeAt(0);
+    const low = parseInt(lowHex, 16);
+    return !isNaN(low) ? String.fromCharCode((high << 8) | low) : match;
+  });
+
+  return healed;
+}
+
+/**
+ * Robustly unescapes a string, handling \uXXXX, \n, \", etc.
+ * Useful when regex-extracting from a JSON string.
+ */
+function robustUnescape(str) {
+  if (!str) return "";
+  try {
+    // Wrap in quotes and parse as JSON to let the engine handle unescaping
+    return JSON.parse('"' + str.replace(/"/g, '\\"').replace(/\n/g, '\\n') + '"');
+  } catch (e) {
+    // Fallback manual unescape for common ones
+    return str
+      .replace(/\\u([0-9a-fA-F]{4})/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)))
+      .replace(/\\n/g, '\n')
+      .replace(/\\r/g, '\r')
+      .replace(/\\t/g, '\t')
+      .replace(/\\"/g, '"')
+      .replace(/\\\\/g, '\\');
+  }
 }
 
 function formatTag(tag) {
@@ -407,9 +434,9 @@ Return ONLY the JSON object. Do not include any explanations or other text.`;
           .replace(/"(תגיות)":/g, '"tags":');
         const data = JSON.parse(cleanedJson.replace(/,\s*([\}\]])/g, '$1'));
         return {
-          agent_commentary: data.agent_commentary || data.commentary || "",
+          agent_commentary: robustUnescape(data.agent_commentary || data.commentary || ""),
           sentiment_score: data.sentiment_score || 50,
-          tags: (data.tags || []).map(formatTag).slice(0, 5),
+          tags: (data.tags || []).map(t => robustUnescape(formatTag(t))).slice(0, 5),
           llm: provider,
           model: model
         };
@@ -423,9 +450,9 @@ Return ONLY the JSON object. Do not include any explanations or other text.`;
         let commentary = commentaryMatch ? commentaryMatch[1].trim() : "";
         if (commentary) {
           return {
-            agent_commentary: commentary.replace(/\\"/g, '"').replace(/\\n/g, '\n').replace(/^"|"$/g, ''),
+            agent_commentary: robustUnescape(commentary),
             sentiment_score: sentimentMatch ? parseInt(sentimentMatch[1], 10) : 50,
-            tags: tagsMatch ? tagsMatch[1].split(',').map(t => formatTag(t.trim().replace(/^"|"$/g, ''))) : [],
+            tags: tagsMatch ? tagsMatch[1].split(',').map(t => robustUnescape(formatTag(t.trim().replace(/^"|"$/g, '')))) : [],
             llm: provider,
             model: model
           };
@@ -517,7 +544,7 @@ Return ONLY the JSON object.`;
           }
         }
         return {
-          agent_commentary: finalCommentary,
+          agent_commentary: robustUnescape(finalCommentary),
           sentiment_score: sentiment,
           tags: tags,
           llm: provider,
@@ -532,7 +559,7 @@ Return ONLY the JSON object.`;
       const sentimentMatch = jsonStr.match(/"sentiment_score"\s*:\s*(\d+)/);
 
       return {
-        agent_commentary: commentaryMatch ? commentaryMatch[1].replace(/\\n/g, '\n').replace(/\\"/g, '"') : response,
+        agent_commentary: commentaryMatch ? robustUnescape(commentaryMatch[1]) : response,
         sentiment_score: sentimentMatch ? parseInt(sentimentMatch[1], 10) : 50,
         tags: ['Perspective'],
         llm: provider,
